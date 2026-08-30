@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: baaz
+      POSTGRES_PASSWORD: baaz
+      POSTGRES_DB: baaz
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U baaz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  bot:
+    build: .
+    command: python run_bot.py
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://baaz:baaz@db:5432/baaz
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build: .
+    command: python run_web.py
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://baaz:baaz@db:5432/baaz
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

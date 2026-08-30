@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Kamchiliklar — BAAZ{% endblock %}
+{% block heading %}Kamchiliklar / qaytarishlar{% endblock %}
+{% block body %}
+
+{% if top_failed %}
+<div class="card pad" style="margin-bottom:16px">
+  <h3>Eng ko'p yiqiladigan tekshiruv punktlari</h3>
+  {% for f in top_failed %}
+  <div class="hbar">
+    <span class="t" title="{{ f.text }}">{{ f.stage_order }}. {{ f.text }}</span>
+    <span class="track"><i style="width:{{ (f.count / max_fail * 100)|round(1) }}%;background:var(--c-red)"></i></span>
+    <span class="v">{{ f.count }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card table-card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Mahsulot</th><th>Bosqich</th><th>Ishchi</th><th>Sifat xodimi</th><th>Sana</th><th>Sabab</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><a href="/products/{{ r.product.code }}" style="color:var(--brand);font-weight:650">{{ r.product.code }}</a></td>
+      <td>{{ r.stage_order }} — {{ r.stage.name }}</td>
+      <td class="muted">{{ r.worker.full_name if r.worker else '—' }}</td>
+      <td class="muted">{{ r.qc.full_name if r.qc else '—' }}</td>
+      <td class="muted num">{{ r.decided_at|dt }}</td>
+      <td>{{ r.qc_comment }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6"><div class="empty">Qaytarishlar yo'q 🎉</div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

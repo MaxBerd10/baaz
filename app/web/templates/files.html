@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Fayllar — Baaz{% endblock %}
+{% block heading %}Fayllar{% endblock %}
+{% block sub %}Barcha bosqichlardan yuklangan rasm va videolar{% endblock %}
+{% block body %}
+
+<div class="row" style="grid-template-columns:repeat(3,1fr)">
+  <div class="card kpi"><div class="lbl">Jami fayl</div><div class="val num">{{ counts.total }}</div></div>
+  <div class="card kpi"><div class="lbl">Rasm</div><div class="val num">{{ counts.photo }}</div></div>
+  <div class="card kpi"><div class="lbl">Video</div><div class="val num">{{ counts.video }}</div></div>
+</div>
+
+<div class="filters">
+  <a href="/files" class="{{ 'on' if not cur_stage and not cur_type }}">Hammasi</a>
+  <a href="/files?type=photo" class="{{ 'on' if cur_type=='photo' }}">Rasm</a>
+  <a href="/files?type=video" class="{{ 'on' if cur_type=='video' }}">Video</a>
+  {% for s in stages %}
+  <a href="/files?stage={{ s.order_no }}" class="{{ 'on' if cur_stage==s.order_no }}">{{ s.order_no }}. {{ s.name }}</a>
+  {% endfor %}
+</div>
+
+<div class="fgrid">
+  {% for it in items %}
+  <div class="fcard">
+    {% if it.type == 'photo' %}
+    <a href="/media/{{ it.id }}" target="_blank"><img class="ph" src="/media/{{ it.id }}" loading="lazy" alt=""></a>
+    {% else %}
+    <a href="/media/{{ it.id }}" target="_blank" class="vd">🎥 Video</a>
+    {% endif %}
+    <div class="meta">
+      <div class="p"><a href="/products/{{ it.code }}" style="color:var(--brand)">{{ it.code }}</a></div>
+      <div class="s">{{ it.stage }}</div>
+      <div class="s">{{ it.by }} · {{ it.at|tm }}</div>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty" style="grid-column:1/-1">Fayl yo'q</div>
+  {% endfor %}
+</div>
+{% endblock %}

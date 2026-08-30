@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Ogohlantirishlar — Baaz{% endblock %}
+{% block heading %}Ogohlantirishlar{% endblock %}
+{% block sub %}E'tibor talab qiladigan mahsulotlar{% endblock %}
+{% block body %}
+
+<div class="card table-card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Mahsulot</th><th>Liniya</th><th>Bosqich</th><th>Sabab</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><a href="/products/{{ r.code }}" style="color:var(--brand);font-weight:700">{{ r.code }}</a> <span class="muted">{{ r.name }}</span></td>
+      <td class="muted">{{ r.line or '—' }}</td>
+      <td class="num">{{ r.stage }}</td>
+      <td><span class="chip {{ 'warn' if r.tone=='amber' else 'warn' }}" style="{{ 'color:var(--c-red);background:#fdecec' if r.tone=='red' }}">{{ r.kind }}</span></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4"><div class="empty">Ogohlantirish yo'q 🎉</div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

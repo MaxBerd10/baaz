@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ product.code }} — Baaz{% endblock %}
+{% block heading %}{{ product.code }}{% endblock %}
+{% block sub %}{{ product.name }}{% if product.line %} · {{ product.line }}{% endif %}{% endblock %}
+{% block body %}
+
+<p class="muted" style="margin-top:-4px"><a href="/products">← Mahsulotlar ro'yxati</a></p>
+
+<div class="row" style="grid-template-columns:repeat(4,1fr)">
+  <div class="card kpi"><div class="lbl">Holat</div><div style="margin-top:8px"><span class="badge b-{{ product.status.value }}">{{ PRODUCT_STATUS_LABEL[product.status] }}</span></div></div>
+  <div class="card kpi"><div class="lbl">Joriy bosqich</div><div class="val num">{{ product.current_stage_order }} <span style="font-size:14px;color:var(--muted)">/ {{ total }}</span></div></div>
+  <div class="card kpi"><div class="lbl">Yaratilgan</div><div class="val num" style="font-size:15px;margin-top:6px">{{ product.created_at|dt }}</div><div class="sub">{{ product.created_by.full_name if product.created_by else '' }}</div></div>
+  <div class="card kpi"><div class="lbl">Tayyor bo'lgan</div><div class="val num" style="font-size:15px;margin-top:6px">{{ product.finished_at|dt }}</div></div>
+</div>
+
+{% if product.note %}<div class="card pad" style="margin-bottom:16px"><b>Izoh:</b> {{ product.note }}</div>{% endif %}
+
+<div class="card pad">
+  <div class="hd"><h3>Ishlab chiqarish yo'li</h3></div>
+  <div class="stepper">
+    {% for st in stages %}
+      {% set runs = by_stage.get(st.order_no, []) %}
+      {% set has_approved = runs | selectattr('status.value','equalto','approved') | list | length > 0 %}
+      {% set has_returned = runs | selectattr('status.value','equalto','returned') | list | length > 0 %}
+      {% if has_approved %}{% set state = 'done' %}
+      {% elif product.current_stage_order == st.order_no and product.status.value != 'done' %}{% set state = 'current' %}
+      {% elif has_returned %}{% set state = 'returned' %}
+      {% else %}{% set state = 'pending' %}{% endif %}
+      <div class="step {{ state }}">
+        <div class="node">{% if state=='done' %}✓{% elif state=='returned' %}!{% elif state=='current' %}●{% endif %}</div>
+        <div class="st-title">{{ st.order_no }}. {{ st.name }}</div>
+        {% if not runs %}<div class="st-meta">— hali boshlanmagan —</div>{% endif %}
+        {% for r in runs %}
+          <div class="st-meta" style="margin-top:8px">
+            Urinish #{{ r.attempt_no }} ·
+            <span class="badge b-{{ 'done' if r.status.value=='approved' else ('returned' if r.status.value=='returned' else ('qc_pending' if r.status.value=='qc_pending' else 'in_production')) }}">{{ r.status.value }}</span>
+            {% if r.worker %} · 👷 {{ r.worker.full_name }}{% endif %}
+            {% if r.submitted_at %} · yuborildi {{ r.submitted_at|tm }}{% endif %}
+            {% if r.decided_at %} · qaror {{ r.decided_at|tm }}{% if r.qc %} ({{ r.qc.full_name }}){% endif %}{% endif %}
+          </div>
+          {% if r.worker_comment %}<div class="st-note">📝 {{ r.worker_comment }}</div>{% endif %}
+          {% if r.qc_comment %}<div class="st-note qc">💬 {{ r.qc_comment }}</div>{% endif %}
+          {% if r.checks %}
+          {% set okc = r.checks | selectattr('ok') | list | length %}
+          <div class="st-note">📋 Tekshiruv: {{ okc }}/{{ r.checks|length }}
+            {% for c in r.checks if not c.ok %}<div style="color:var(--c-red);margin-left:14px">❌ {{ c.check_item.text }}</div>{% endfor %}
+          </div>
+          {% endif %}
+          {% if r.media %}
+          <div class="thumbs">
+            {% for m in r.media %}
+              {% if m.type.value == 'photo' %}<a href="/media/{{ m.id }}" target="_blank"><img src="/media/{{ m.id }}" loading="lazy" alt=""></a>
+              {% else %}<a href="/media/{{ m.id }}" target="_blank" class="vid">🎥 video</a>{% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

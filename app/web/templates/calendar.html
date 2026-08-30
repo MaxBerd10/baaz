@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Kalendar — Baaz{% endblock %}
+{% block heading %}Kalendar{% endblock %}
+{% block sub %}Ishlab chiqarish faolligi taqvimi{% endblock %}
+{% block body %}
+
+<div class="row" style="grid-template-columns:repeat(4,1fr)">
+  <div class="card kpi"><div class="lbl">Yaratilgan (oy)</div><div class="val num">{{ cal.totals.created }}</div></div>
+  <div class="card kpi"><div class="lbl">Tayyor bo'lgan</div><div class="val num">{{ cal.totals.finished }}</div></div>
+  <div class="card kpi"><div class="lbl">Tasdiqlar</div><div class="val num">{{ cal.totals.approved }}</div></div>
+  <div class="card kpi"><div class="lbl">Qaytarishlar</div><div class="val num">{{ cal.totals.returned }}</div></div>
+</div>
+
+<div class="card pad">
+  <div class="cal-top">
+    <h2>{{ month_label }}</h2>
+    <span class="cal-nav">
+      <a href="/calendar?month={{ prev_month }}">‹</a>
+      <a href="/calendar?month={{ next_month }}">›</a>
+    </span>
+    <span class="sp" style="flex:1"></span>
+    <span class="legend2" style="margin:0">
+      <span><span class="ev c">🆕</span> yaratildi</span>
+      <span><span class="ev f">🟢</span> tayyor</span>
+      <span><span class="ev a">✅</span> tasdiq</span>
+      <span><span class="ev r">🔴</span> qaytdi</span>
+    </span>
+  </div>
+
+  <div class="cal-grid">
+    {% for wd in weekdays %}<div class="wd">{{ wd }}</div>{% endfor %}
+    {% for week in cal.weeks %}
+      {% for cell in week %}
+        {% if cell is none %}
+        <div class="cal-cell empty"></div>
+        {% else %}
+        <div class="cal-cell {{ 'today' if cell.iso==today }} {{ 'sel' if cell.iso==sel_day }}">
+          <span class="d">{{ cell.day }}</span>
+          {% if cell.created %}<span class="ev c">🆕 {{ cell.created }}</span>{% endif %}
+          {% if cell.finished %}<span class="ev f">🟢 {{ cell.finished }}</span>{% endif %}
+          {% if cell.approved %}<span class="ev a">✅ {{ cell.approved }}</span>{% endif %}
+          {% if cell.returned %}<span class="ev r">🔴 {{ cell.returned }}</span>{% endif %}
+          {% if cell.created or cell.finished or cell.approved or cell.returned %}
+          <a class="d-link" href="/calendar?month={{ '%04d-%02d'|format(cal.year, cal.month) }}&day={{ cell.iso }}">batafsil</a>
+          {% endif %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+
+{% if sel_day %}
+<div class="card pad" style="margin-top:16px">
+  <div class="hd"><h3>{{ sel_day }} — hodisalar ({{ events|length }})</h3></div>
+  <div class="feed">
+    {% for f in events %}
+    <div class="it" style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-2)">
+      <div class="bd" style="flex:1"><div class="t1" style="font-size:12.5px;font-weight:600">{{ f.text }}</div>
+        {% if f.meta %}<div class="t2" style="font-size:11px;color:var(--faint)">Xodim: {{ f.meta }}</div>{% endif %}</div>
+      <span class="tm" style="font-size:11px;color:var(--faint)">{{ f.time|tm }}</span>
+    </div>
+    {% else %}<div class="empty">Bu kunda hodisa yo'q</div>{% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

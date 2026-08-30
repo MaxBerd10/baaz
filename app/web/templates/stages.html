@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Bosqichlar — Baaz{% endblock %}
+{% block heading %}Ishlab chiqarish bosqichlari{% endblock %}
+{% block sub %}Har bosqich uchun sifat nazorati tekshiruv ro'yxati (Telegram bot orqali tahrirlanadi){% endblock %}
+{% block body %}
+
+<div class="row" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
+  {% for s in stages %}
+  <div class="card pad">
+    <div class="hd"><h3>{{ s.order_no }}. {{ s.name }}</h3></div>
+    {% if s.description %}<p class="muted" style="margin:-6px 0 10px">{{ s.description }}</p>{% endif %}
+    <div style="font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">
+      Tekshiruv ro'yxati ({{ checks[s.id]|length }})
+    </div>
+    {% for it in checks[s.id] %}
+    <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-2);font-size:12.5px">
+      <span class="faint num">{{ it.order_no }}</span><span>{{ it.text }}</span>
+    </div>
+    {% else %}<div class="faint" style="font-size:12.5px">— punkt yo'q —</div>{% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

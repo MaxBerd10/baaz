@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Sozlamalar — Baaz{% endblock %}
+{% block heading %}Sozlamalar{% endblock %}
+{% block sub %}Tizim konfiguratsiyasi (o'zgartirish — Telegram bot yoki .env orqali){% endblock %}
+{% block body %}
+
+<div class="cfg">
+  <div class="card pad">
+    <div class="hd"><h3>Tizim</h3></div>
+    <div class="kv"><span>Ma'lumotlar bazasi</span><b>{{ cfg.db }}</b></div>
+    <div class="kv"><span>Media papkasi</span><b>{{ cfg.media_root }}</b></div>
+    <div class="kv"><span>Vaqt mintaqasi</span><b>{{ cfg.timezone }}</b></div>
+    <div class="kv"><span>Sifatga yuborish uchun min. media</span><b>{{ cfg.min_media }}</b></div>
+    <div class="kv"><span>Telegram bot</span><b>@BaazT_bot</b></div>
+  </div>
+
+  <div class="card pad">
+    <div class="hd"><h3>Jarayon</h3></div>
+    <div class="kv"><span>Faol bosqichlar</span><b>{{ cfg.stage_count }}</b></div>
+    <div class="kv"><span>Tekshiruv punktlari (jami)</span><b>{{ cfg.check_items }}</b></div>
+    <div class="kv"><span>Mahsulotlar</span><b>{{ cfg.products }}</b></div>
+    <div class="kv"><span>Fayllar</span><b>{{ cfg.media_total }}</b></div>
+    <div class="kv"><span></span><a href="/stages" style="color:var(--brand);font-weight:600">Bosqichlarni ko'rish →</a></div>
+  </div>
+
+  <div class="card pad">
+    <div class="hd"><h3>Xodimlar</h3></div>
+    <div class="kv"><span>👑 Rahbar</span><b>{{ cfg.admins }}</b></div>
+    <div class="kv"><span>🔍 Sifat nazorati</span><b>{{ cfg.qc }}</b></div>
+    <div class="kv"><span>👷 Ishchi</span><b>{{ cfg.workers }}</b></div>
+    <div class="kv"><span>⏳ Tayinlanmagan</span><b>{{ cfg.pending }}</b></div>
+    <div class="kv"><span></span><span class="faint">Rollar Telegram botda beriladi</span></div>
+  </div>
+
+  <div class="card pad">
+    <div class="hd"><h3>O'zgartirish qayerda</h3></div>
+    <div class="kv"><span>Bosqich nomi / tavsifi / checklist</span><b>Bot → 🏭 Bosqichlar</b></div>
+    <div class="kv"><span>Xodim rollari</span><b>Bot → 👥 Xodimlar</b></div>
+    <div class="kv"><span>Yangi mahsulot</span><b>Bot → ➕ Yangi mahsulot</b></div>
+    <div class="kv"><span>Parol, token, DB, TZ</span><b>.env fayli</b></div>
+  </div>
+</div>
+{% endblock %}

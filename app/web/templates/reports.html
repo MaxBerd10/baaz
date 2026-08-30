@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Hisobotlar — Baaz{% endblock %}
+{% block heading %}Hisobotlar{% endblock %}
+{% block sub %}Kamchiliklar, ishchilar samaradorligi va amallar tarixi{% endblock %}
+{% block body %}
+
+<div class="row c2">
+  <div class="card pad">
+    <div class="hd"><h3>Eng ko'p yiqiladigan tekshiruv punktlari</h3></div>
+    {% for f in top_failed %}
+    <div class="rsn">
+      <span class="ic"><i style="background:var(--c-red)"></i></span>
+      <span class="tx" title="{{ f.text }}">{{ f.stage_order }}. {{ f.text }}</span>
+      <span class="ct num">{{ f.count }} ta</span>
+      <span class="tk"><i style="width:{{ (f.count / max_fail * 100)|round(1) }}%;background:var(--c-red)"></i></span>
+    </div>
+    {% else %}<div class="empty">Ma'lumot yo'q</div>{% endfor %}
+  </div>
+
+  <div class="card pad table-card">
+    <div class="hd"><h3>Ishchilar samaradorligi</h3><a class="lnk" href="/workers">Batafsil</a></div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Ishchi</th><th>Bosqich</th><th>✅</th><th>🔴</th><th>Sifat %</th></tr></thead>
+      <tbody>
+      {% for r in workers %}
+      {% set tot = r.approved + r.returned %}
+      <tr>
+        <td style="font-weight:650">{{ r.name }}</td>
+        <td class="muted">{{ r.stage }}</td>
+        <td class="num">{{ r.approved }}</td>
+        <td class="num">{{ r.returned }}</td>
+        <td class="num">{{ ((r.approved/tot*100)|round(0)|int) if tot else '—' }}{{ '%' if tot }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<div class="card pad table-card" style="margin-bottom:16px">
+  <div class="hd"><h3>Kamchiliklar / qaytarishlar ({{ defects|length }})</h3></div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Mahsulot</th><th>Bosqich</th><th>Ishchi</th><th>Sifat xodimi</th><th>Sana</th><th>Sabab</th></tr></thead>
+    <tbody>
+    {% for r in defects %}
+    <tr>
+      <td><a href="/products/{{ r.product.code }}" style="color:var(--brand);font-weight:700">{{ r.product.code }}</a></td>
+      <td>{{ r.stage_order }} — {{ r.stage.name }}</td>
+      <td class="muted">{{ r.worker.full_name if r.worker else '—' }}</td>
+      <td class="muted">{{ r.qc.full_name if r.qc else '—' }}</td>
+      <td class="muted num">{{ r.decided_at|dt }}</td>
+      <td>{{ r.qc_comment }}</td>
+    </tr>
+    {% else %}<tr><td colspan="6"><div class="empty">Qaytarishlar yo'q 🎉</div></td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="card pad table-card">
+  <div class="hd"><h3>Amallar tarixi (audit)</h3></div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Vaqt</th><th>Kim</th><th>Amal</th><th>Mahsulot</th><th>Tafsilot</th></tr></thead>
+    <tbody>
+    {% for r in audit %}
+    <tr>
+      <td class="muted num">{{ r.created_at|dt }}</td>
+      <td style="font-weight:600">{{ r.actor_name or '—' }}</td>
+      <td><span class="chip ok">{{ ACTION_LABEL.get(r.action, r.action) }}</span></td>
+      <td class="num">{{ r.product_id or '' }}</td>
+      <td class="muted">{{ r.details or '' }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

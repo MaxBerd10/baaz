@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Ishchilar — Baaz{% endblock %}
+{% block heading %}Ishchilar samaradorligi{% endblock %}
+{% block sub %}Har bir ishchi bo'yicha tasdiq / qaytarish va sifat darajasi{% endblock %}
+{% block body %}
+
+<div class="card table-card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Ishchi</th><th>Bosqich</th><th>Tasdiqlangan</th><th>Qaytarilgan</th><th style="width:240px">Sifat darajasi</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    {% set tot = r.approved + r.returned %}
+    {% set pct = (r.approved / tot * 100) if tot else 0 %}
+    <tr>
+      <td style="font-weight:700">{{ r.name }}</td>
+      <td class="muted">{{ r.stage }}</td>
+      <td class="num">{{ r.approved }}</td>
+      <td class="num">{{ r.returned }}</td>
+      <td>
+        {% if tot %}
+        <span class="mbar">
+          <span class="tk"><i style="width:{{ pct|round(0) }}%;background:{{ 'var(--c-green)' if pct>=85 else ('var(--c-amber)' if pct>=60 else 'var(--c-red)') }}"></i></span>
+          <b>{{ pct|round(0)|int }}%</b>
+        </span>
+        {% else %}<span class="faint">—</span>{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5"><div class="empty">Ma'lumot yo'q</div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

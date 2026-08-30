@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Sifat nazorati — Baaz{% endblock %}
+{% block heading %}Sifat nazorati{% endblock %}
+{% block sub %}Tekshiruv navbati va so'nggi qarorlar{% endblock %}
+{% block body %}
+
+<div class="row c2">
+  <div class="card pad table-card">
+    <div class="hd"><h3>Tekshiruv navbati · {{ queue|length }}</h3></div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Mahsulot</th><th>Bosqich</th><th>Ishchi</th><th>Media</th><th>Yuborilgan</th></tr></thead>
+      <tbody>
+      {% for r in queue %}
+      <tr>
+        <td><a href="/products/{{ r.product.code }}" style="color:var(--brand);font-weight:700">{{ r.product.code }}</a></td>
+        <td>{{ r.stage_order }} — {{ r.stage.name }}</td>
+        <td class="muted">{{ r.worker.full_name if r.worker else '—' }}</td>
+        <td class="num">{{ r.media|length }}</td>
+        <td class="muted num">{{ r.submitted_at|tm }}</td>
+      </tr>
+      {% else %}<tr><td colspan="5"><div class="empty">Navbat bo'sh 🎉</div></td></tr>{% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="card pad table-card">
+    <div class="hd"><h3>So'nggi qarorlar</h3></div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Mahsulot</th><th>Bosqich</th><th>Qaror</th><th>Sana</th></tr></thead>
+      <tbody>
+      {% for r in recent %}
+      <tr>
+        <td><a href="/products/{{ r.product.code }}" style="color:var(--brand);font-weight:700">{{ r.product.code }}</a></td>
+        <td>{{ r.stage_order }}</td>
+        <td>{% if r.status.value=='approved' %}<span class="chip good">Tasdiqlangan</span>{% else %}<span class="chip warn">Qaytarilgan</span>{% endif %}</td>
+        <td class="muted num">{{ r.decided_at|tm }}</td>
+      </tr>
+      {% else %}<tr><td colspan="4"><div class="empty">Qaror yo'q</div></td></tr>{% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
