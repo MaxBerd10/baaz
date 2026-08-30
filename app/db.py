@@ -52,6 +52,8 @@ def _normalize(url: str) -> tuple[str, dict]:
 
 _url, _connect_args = _normalize(settings.database_url)
 _is_sqlite = _url.startswith("sqlite")
+# Faqat-o'qish SQLite (Vercel'da loyihaga qo'shilgan demo.db uchun)
+_sqlite_ro = _is_sqlite and ("mode=ro" in _url or "immutable=1" in _url)
 
 _kw: dict = {"echo": False, "pool_pre_ping": True}
 if not _is_sqlite:
@@ -69,7 +71,8 @@ if _is_sqlite:
     def _sqlite_pragmas(dbapi_conn, _):  # pragma: no cover
         cur = dbapi_conn.cursor()
         cur.execute("PRAGMA foreign_keys=ON")
-        cur.execute("PRAGMA journal_mode=WAL")
+        if not _sqlite_ro:  # WAL — yozish talab qiladi, RO rejimda o'tkazib yuboriladi
+            cur.execute("PRAGMA journal_mode=WAL")
         cur.close()
 
 
