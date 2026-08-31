@@ -188,7 +188,8 @@ async def build(session: AsyncSession, *, line: str | None = None) -> dict:
     # passed[k] >= passed[k+1] bo'lgani uchun bu monoton — keyingi bosqich
     # oldingisidan oldin "bajarilgan" bo'lib qolmaydi.
     _PROGRESS_DONE = 0.6
-    _STAGE_ICONS = ["chassis", "corpus", "insulation", "gas", "power", "fork", "truckcheck"]
+    # 6 liniya: Karkas, Kuzov, Ichki addelka, Bo'yash, Eshik-deraza, Zborka
+    _STAGE_ICONS = ["weld", "truckbody", "layers", "paintroller", "window", "wrench"]
     frontier_found = False
     steps = []
     kpi_rows = []

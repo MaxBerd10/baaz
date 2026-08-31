@@ -45,7 +45,7 @@ STAGES: list[tuple[int, str, str, list[str]]] = [
     ),
     (
         4,
-        "Malyarka",
+        "Bo'yash",
         "Bo'yash va kraska ishlari — tashqi va ichki yuzalar.",
         [
             "Yuza tozalangan, gruntlangan, silliqlangan",

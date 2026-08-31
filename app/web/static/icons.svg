@@ -37,4 +37,7 @@
   <symbol id="drop" viewBox="0 0 24 24"><path d="M12 2.7 6.3 8.4a8 8 0 1 0 11.4 0z"/></symbol>
   <symbol id="logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
   <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol>
+  <symbol id="truckbody" viewBox="0 0 24 24"><path d="M2 7h11v9H2zM13 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></symbol>
+  <symbol id="window" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M12 3v18M4 12h16"/></symbol>
+  <symbol id="paintroller" viewBox="0 0 24 24"><rect x="3" y="4" width="13" height="6" rx="1"/><path d="M16 7h3a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-6v2M11 15v3a2 2 0 0 1-2 2H8"/></symbol>
 </svg>
