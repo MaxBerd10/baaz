@@ -10,14 +10,17 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-# Baza: berilmagan yoki demo.db ga ishora qilsa — Vercel'ning yoziladigan /tmp
-# papkasida yaratamiz va cold-start'da demo bilan to'ldiramiz.
-_db = os.environ.get("DATABASE_URL", "")
-if (not _db) or ("demo.db" in _db) or _db.startswith("sqlite+aiosqlite:///./"):
+# --- Vercel muhitini majburan to'g'rilaymiz (dashboard'dagi eski qiymatlardan qat'i nazar) ---
+_db = os.environ.get("DATABASE_URL", "").strip()
+_is_real_pg = _db.startswith(("postgres://", "postgresql://", "postgresql+asyncpg://"))
+if not _is_real_pg:
+    # SQLite: yagona ishonchli joy — yoziladigan /tmp. Cold-start'da demo bilan to'ldiriladi.
     os.environ["DATABASE_URL"] = "sqlite+aiosqlite:////tmp/baaz.db"
-    os.environ.setdefault("AUTO_SEED", "1")
+    os.environ["AUTO_SEED"] = "1"
     os.environ.pop("SKIP_INIT_DB", None)
-os.environ.setdefault("MEDIA_ROOT", "/tmp/media")
+# Media ham faqat /tmp da yozila oladi.
+os.environ["MEDIA_ROOT"] = "/tmp/media"
+os.environ.setdefault("SHOW_ERRORS", "1")
 
 try:
     from app.web.main import app  # noqa: E402
@@ -26,6 +29,9 @@ except Exception:  # pragma: no cover
 
     async def app(scope, receive, send):  # type: ignore
         if scope["type"] != "http":
+            if scope["type"] == "lifespan":
+                msg = await receive()
+                await send({"type": msg["type"] + ".complete"})
             return
         body = ("IMPORT ERROR\n\n" + _tb).encode()
         await send({"type": "http.response.start", "status": 500,
