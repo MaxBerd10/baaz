@@ -1,98 +1,86 @@
-"""Food truck ishlab chiqarish uchun standart bosqichlar va QC tekshiruv ro'yxati."""
+"""Food truck ishlab chiqarish liniyalari va QC tekshiruv ro'yxati.
+
+6 ta ish liniyasi ketma-ket. Liniya 6 tugagach truck "Tayyor" holatiga o'tadi
+(alohida bosqich emas — tugash belgisi)."""
 from __future__ import annotations
 
 # (order_no, nom, tavsif, [tekshiruv punktlari])
 STAGES: list[tuple[int, str, str, list[str]]] = [
     (
         1,
-        "Shassi va rama",
-        "Pritsep/shassi tayyorlash, ramka payvandlash, o'qlar, ressora, gorizontal tekislash.",
+        "Karkas",
+        "Truck karkasini (skeletini) payvandlash — asosiy metall konstruksiya.",
         [
             "Payvand choklari to'liq va yorilishsiz",
-            "Rama diagonallari teng (to'g'riburchak)",
-            "O'qlar va ressora mahkam, lyuft yo'q",
+            "Karkas diagonallari teng (to'g'riburchak)",
+            "O'lchamlar chizmaga mos (model bo'yicha)",
             "Zang tozalangan, gruntlangan",
-            "Rama o'lchamlari chizmaga mos",
-            "Tortish qurilmasi (fartsep) va tormoz tekshirildi",
-        ],
-    ),
-    (
-        2,
-        "Korpus va karkas",
-        "Devor va tom karkasi, eshik-deraza o'yiqlari, metall skelet.",
-        [
-            "Karkas to'g'riburchak va vertikal",
-            "Eshik/deraza o'yiqlari o'lchamlari spetsifikatsiyaga mos",
-            "Payvand nuqtalari mustahkam",
             "Kuchlanish joylari (jihoz osiladigan) kuchaytirilgan",
             "Pol asosi tekis va mahkam",
         ],
     ),
     (
-        3,
-        "Izolyatsiya va tashqi qoplama",
-        "Issiqlik izolyatsiyasi, sendvich-panel/list qoplash, germetizatsiya, tom suvo'tkazmasligi.",
+        2,
+        "Kuzov o'rnatish",
+        "Karkas ustiga kuzov (devor va tom panellari) o'rnatiladi.",
         [
-            "Izolyatsiya bo'shliqsiz, to'liq qoplangan",
-            "Tashqi panellar tekis va tutash",
-            "Barcha choklar germetiklangan",
-            "Tom suv o'tkazmaydi (suv sinovi)",
-            "Eshik/deraza o'rnatilgan va zich yopiladi",
+            "Kuzov karkasga mahkam biriktirilgan",
+            "Devorlar vertikal, tom gorizontal",
+            "Panel choklari zich, bo'shliqsiz",
+            "Eshik/deraza o'yiqlari o'lchami model spetsifikatsiyasiga mos",
+            "Tom suv oqishi uchun qiyalik to'g'ri",
+        ],
+    ),
+    (
+        3,
+        "Ichki addelka",
+        "Ichki bezak: izolyatsiya, qoplama, pol, shift, ichki panellar.",
+        [
+            "Issiqlik izolyatsiyasi bo'shliqsiz qoplangan",
+            "Ichki qoplama tekis, choksiz (gigiyenik)",
+            "Pol qoplamasi mustahkam va suv o'tkazmaydi",
+            "Shift panellari mahkam",
+            "Simlar/quvurlar uchun kanallar tayyor",
         ],
     ),
     (
         4,
-        "Suv va gaz tizimi",
-        "Toza/iflos suv baklari, rakovina, LPG quvurlari, reduktor, bosim sinovi.",
+        "Malyarka",
+        "Bo'yash va kraska ishlari — tashqi va ichki yuzalar.",
         [
-            "Suv baklari mahkam, sizish yo'q",
-            "Nasos va rakovinalar ishlaydi, drenaj to'g'ri",
-            "Gaz quvurlari sertifikatlangan fitinglar bilan",
-            "Gaz bosim sinovi o'tdi (belgilangan vaqt ushlab turildi)",
-            "Sovunli sinov — gaz sizishi yo'q",
-            "Avariya gaz krani va ventilyatsiya mavjud",
-            "Ballon bo'limi ajratilgan va shamollaydigan",
+            "Yuza tozalangan, gruntlangan, silliqlangan",
+            "Rang mijoz buyurtmasiga mos",
+            "Bo'yoq bir tekis, dog' va oqma yo'q",
+            "Qirralar va burchaklar to'liq bo'yalgan",
+            "Quritish rejimi bajarilgan",
         ],
     ),
     (
         5,
-        "Elektr tizimi",
-        "Simlar, avtomat shchit, rozetkalar, akkumulyator/invertor/tashqi ta'minot, yoritish.",
+        "Eshik-deraza",
+        "Eshik va derazalarni o'rnatish, germetizatsiya, mexanizmlar.",
         [
-            "Simlar kesimi yuklamaga mos, izolyatsiya butun",
-            "Zazemleniye (yer) barcha metall qismlarga ulangan",
-            "UZO/differensial avtomat sinovda ishladi",
-            "Avtomatlar nominali to'g'ri, zanjirlar belgilangan",
-            "Tashqi 220V kirish va akkumulyator/invertor ishlaydi",
-            "Yoritish va rozetkalar yuklamada sinovdan o'tdi",
+            "Eshiklar to'g'ri o'rnatilgan, zich yopiladi",
+            "Derazalar germetik, suv o'tkazmaydi",
+            "Petlya va qulflar ishlaydi",
+            "Rezina uplotnitellar butun",
+            "Ochish-yopish silliq, qiyshiqlik yo'q",
         ],
     ),
     (
         6,
-        "Oshxona jihozlarini o'rnatish",
-        "Plita/fritür, so'rg'ich zont va ventilyator, muzlatgich, ish stollari, yong'in o'chirish tizimi.",
+        "Zborka",
+        "Yakuniy yig'ish: payvand ishlari, jihozlarni o'rnatish, ichki jihozlash, sinov.",
         [
-            "Jihozlar mahkamlangan, harakatda siljimaydi",
-            "So'rg'ich zont havo oqimi yetarli (o'lchov)",
-            "Yonuvchan yuzalardan xavfsiz masofa saqlangan",
-            "Gaz jihozlari ulangan va sizishsiz",
-            "Yong'in o'chirish tizimi o'rnatilgan va sertifikatlangan",
-            "Ish yuzalari gigiyenik (choksiz, oson tozalanadi)",
-            "Muzlatgich harorati normal ishlaydi",
-        ],
-    ),
-    (
-        7,
-        "Yakuniy jihozlash va sinov",
-        "Brending/plyonka, ichki bezak, tozalash, barcha tizimlarni to'liq sinash, yo'l sinovi, hujjatlar.",
-        [
-            "Tashqi ko'rinish/plyonka toza va nuqsonsiz",
-            "Barcha tizimlar bir vaqtda ishlashda sinovdan o'tdi",
-            "Yo'l sinovi o'tkazildi (tormoz, chiroqlar, tebranish)",
-            "Umumiy og'irlik va o'qqa yuklama me'yorda",
-            "Hujjatlar to'liq (sertifikatlar, kafolat, instruksiya)",
-            "Yakuniy tozalash bajarildi",
-            "Mijozga topshirishga tayyor",
+            "Barcha jihozlar mahkamlangan, siljimaydi",
+            "Payvand/mahkamlash nuqtalari mustahkam",
+            "Elektr va suv tizimlari ulangan va sinovdan o'tgan",
+            "Ichki jihozlar (stol, javon, rakovina) o'rnatilgan",
+            "Umumiy tozalash bajarilgan",
+            "Yakuniy ko'zdan kechirish — mijozga topshirishga tayyor",
         ],
     ),
 ]
+
+# O'lcham (metr) tugmalari
+SIZES = [3, 4, 5, 6, 7]

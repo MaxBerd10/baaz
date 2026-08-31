@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.foodtruck import STAGES as FT_STAGES
-from app.models import Stage, StageCheckItem
+from app.models import Stage, StageCheckItem, TruckModel
 
 
 async def list_stages(session: AsyncSession, only_active: bool = True) -> list[Stage]:
@@ -48,6 +48,7 @@ async def ensure_seeded(session: AsyncSession) -> int:
     await session.flush()
 
     await seed_check_items(session)
+    await ensure_models(session, ["T1", "T2", "T3", "T4", "T5"])
 
     return await active_count(session)
 
@@ -135,3 +136,42 @@ async def deactivate_check_item(session: AsyncSession, item_id: int) -> None:
     item = await session.get(StageCheckItem, item_id)
     if item:
         item.is_active = False
+
+
+# --------------------------------------------------------------------------- #
+# Truck modellari (T1, T2, ...)
+# --------------------------------------------------------------------------- #
+async def list_models(session: AsyncSession, only_active: bool = True) -> list[TruckModel]:
+    q = select(TruckModel).order_by(TruckModel.name)
+    if only_active:
+        q = q.where(TruckModel.is_active.is_(True))
+    return list((await session.scalars(q)).all())
+
+
+async def add_model(session: AsyncSession, name: str) -> TruckModel | None:
+    name = name.strip()
+    if not name:
+        return None
+    existing = await session.scalar(select(TruckModel).where(TruckModel.name == name))
+    if existing:
+        existing.is_active = True
+        return existing
+    m = TruckModel(name=name, is_active=True)
+    session.add(m)
+    await session.flush()
+    return m
+
+
+async def deactivate_model(session: AsyncSession, model_id: int) -> None:
+    m = await session.get(TruckModel, model_id)
+    if m:
+        m.is_active = False
+
+
+async def ensure_models(session: AsyncSession, names: list[str]) -> None:
+    have = await session.scalar(select(func.count()).select_from(TruckModel))
+    if have:
+        return
+    for i, n in enumerate(names):
+        session.add(TruckModel(name=n, is_active=True))
+    await session.flush()

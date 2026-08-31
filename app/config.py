@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     web_password: str = "admin"
     secret_key: str = "change-me"
 
-    default_stage_count: int = 7
+    default_stage_count: int = 6
     timezone: str = "Asia/Tashkent"
 
     # Sifatga yuborishdan oldin talab qilinadigan minimal media soni

@@ -14,9 +14,10 @@ class QcFlow(StatesGroup):
 
 
 class AdminFlow(StatesGroup):
-    product_name = State()
-    product_line = State()      # data: {"name": str}
-    product_note = State()      # data: {"name": str, "line": str}
+    # Yangi truck: model (callback) -> size (callback) -> color (text) -> note (text)
+    product_color = State()     # data: {"model": str, "size": int}
+    product_note = State()      # data: {"model": str, "size": int, "color": str}
+    model_add = State()
     stage_name = State()
     stage_rename = State()      # data: {"stage_id": int}
     stage_desc = State()        # data: {"stage_id": int}

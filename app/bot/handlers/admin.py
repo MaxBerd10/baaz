@@ -13,7 +13,8 @@ from app.bot.notify import send_one
 from app.bot.states import AdminFlow
 from app.config import settings
 from app.enums import PRODUCT_STATUS_LABEL, ROLE_LABEL, ProductStatus, Role
-from app.models import User
+from app.foodtruck import SIZES
+from app.models import TruckModel, User
 from app.services import products as products_svc
 from app.services import stages as stages_svc
 from app.services import stats as stats_svc
@@ -67,13 +68,13 @@ async def dashboard_cb(cb: CallbackQuery, session: AsyncSession) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Mahsulotlar
+# Trucklar
 # --------------------------------------------------------------------------- #
-@router.message(F.text == "📦 Mahsulotlar")
+@router.message(F.text.in_(["🚚 Trucklar", "📦 Mahsulotlar"]))
 async def products_list(message: Message, session: AsyncSession) -> None:
     items = await products_svc.list_products(session, limit=30)
     await message.answer(
-        f"📦 <b>So'nggi mahsulotlar</b> ({len(items)})",
+        f"🚚 <b>So'nggi trucklar</b> ({len(items)})",
         reply_markup=kb.admin_product_list(items),
     )
 
@@ -82,7 +83,7 @@ async def products_list(message: Message, session: AsyncSession) -> None:
 async def products_list_cb(cb: CallbackQuery, session: AsyncSession) -> None:
     items = await products_svc.list_products(session, limit=30)
     await cb.message.answer(
-        f"📦 <b>So'nggi mahsulotlar</b> ({len(items)})",
+        f"🚚 <b>So'nggi trucklar</b> ({len(items)})",
         reply_markup=kb.admin_product_list(items),
     )
     await cb.answer()
@@ -104,31 +105,58 @@ async def product_detail(cb: CallbackQuery, session: AsyncSession) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Yangi mahsulot
+# Yangi truck: model -> o'lcham -> rang -> izoh
 # --------------------------------------------------------------------------- #
-@router.message(F.text == "➕ Yangi mahsulot")
-async def new_product(message: Message, state: FSMContext) -> None:
-    await state.set_state(AdminFlow.product_name)
-    await message.answer("Mahsulot nomini yuboring:")
+@router.message(F.text.in_(["➕ Yangi truck", "➕ Yangi mahsulot"]))
+async def new_product(message: Message, state: FSMContext, session: AsyncSession) -> None:
+    await state.set_state(None)
+    models = await stages_svc.list_models(session)
+    await message.answer(
+        "🚚 <b>Yangi truck</b>\nModelni tanlang:",
+        reply_markup=kb.admin_pick_model(models),
+    )
 
 
-@router.message(AdminFlow.product_name, F.text)
-async def new_product_name(message: Message, state: FSMContext) -> None:
-    await state.update_data(name=message.text.strip())
-    await state.set_state(AdminFlow.product_line)
-    await message.answer("Liniya nomini yuboring (masalan «Liniya 1») yoki «-»:")
+@router.callback_query(F.data.startswith("a:npmodel:"))
+async def np_model(cb: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
+    val = cb.data.split(":")[2]
+    if val == "new":
+        await state.set_state(AdminFlow.model_add)
+        await state.update_data(_np=True)
+        await cb.message.answer("Yangi model nomini yuboring (masalan T6):")
+        await cb.answer()
+        return
+    m = await session.get(TruckModel, int(val))
+    if m is None:
+        await cb.answer("Topilmadi.", show_alert=True)
+        return
+    await state.set_state(None)
+    await state.update_data(model=m.name)
+    await cb.message.answer(
+        f"Model: <b>{texts.e(m.name)}</b>\nO'lchamni tanlang:",
+        reply_markup=kb.admin_pick_size(SIZES),
+    )
+    await cb.answer()
 
 
-@router.message(AdminFlow.product_line, F.text)
-async def new_product_line(message: Message, state: FSMContext) -> None:
-    line = None if message.text.strip() in ("-", "—", "") else message.text.strip()
-    await state.update_data(line=line)
+@router.callback_query(F.data.startswith("a:npsize:"))
+async def np_size(cb: CallbackQuery, state: FSMContext) -> None:
+    size = int(cb.data.split(":")[2])
+    await state.update_data(size=size)
+    await state.set_state(AdminFlow.product_color)
+    await cb.message.answer(f"O'lcham: <b>{size} m</b>\nRangni yozing (masalan «Oq», «Qizil»):")
+    await cb.answer()
+
+
+@router.message(AdminFlow.product_color, F.text)
+async def np_color(message: Message, state: FSMContext) -> None:
+    await state.update_data(color=message.text.strip())
     await state.set_state(AdminFlow.product_note)
     await message.answer("Izoh yuboring (yoki «-» qo'ying):")
 
 
 @router.message(AdminFlow.product_note, F.text)
-async def new_product_note(
+async def np_note(
     message: Message, state: FSMContext, session: AsyncSession, user: User, bot: Bot
 ) -> None:
     data = await state.get_data()
@@ -136,7 +164,8 @@ async def new_product_note(
     note = None if message.text.strip() in ("-", "—", "") else message.text.strip()
     try:
         product = await workflow.create_product(
-            session, name=data["name"], note=note, creator=user, line=data.get("line")
+            session, creator=user, note=note,
+            model=data.get("model"), size_m=data.get("size"), color=data.get("color"),
         )
     except workflow.WorkflowError as exc:
         await message.answer(str(exc))
@@ -144,18 +173,72 @@ async def new_product_note(
     await session.flush()
     workers = await users_svc.workers_at_stage(session, 1)
     await message.answer(
-        f"✅ Yaratildi: <b>{product.code}</b> — {texts.e(product.name)}"
-        + (f"\nLiniya: {texts.e(product.line)}" if product.line else "")
-        + f"\n1-bosqich ishchilariga xabar berildi ({len(workers)} ta)."
+        f"✅ Yaratildi: <b>{product.code}</b>\n"
+        f"🚚 {texts.e(product.model or '—')} · {product.size_m or '—'} m · {texts.e(product.color or '—')}\n"
+        f"1-liniya ({texts.e((await stages_svc.get_by_order(session, 1)).name)}) ishchilariga xabar berildi ({len(workers)} ta)."
     )
     for w in workers:
         await send_one(
             bot, w,
-            f"🔔 <b>Yangi ish</b>\n📦 {product.code} — {product.name}"
-            + (f"  ·  {product.line}" if product.line else "")
-            + "\n1-bosqichdan boshlanadi.",
+            f"🔔 <b>Yangi truck</b>\n{product.code} · {product.model or '—'} · {product.size_m or '—'} m · {product.color or '—'}\n"
+            "1-liniyadan boshlanadi.",
             markup=kb.open_button("w", product.id, "Ochish"),
         )
+
+
+# --------------------------------------------------------------------------- #
+# Modellar
+# --------------------------------------------------------------------------- #
+@router.message(F.text == "🚚 Modellar")
+async def models_list(message: Message, session: AsyncSession) -> None:
+    models = await stages_svc.list_models(session)
+    lines = [f"🚚 <b>Modellar</b> ({len(models)})"] + [f"• {texts.e(m.name)}" for m in models]
+    await message.answer("\n".join(lines), reply_markup=kb.admin_models_list(models))
+
+
+@router.callback_query(F.data == "a:models")
+async def models_list_cb(cb: CallbackQuery, session: AsyncSession) -> None:
+    models = await stages_svc.list_models(session)
+    await cb.message.answer("🚚 <b>Modellar</b>", reply_markup=kb.admin_models_list(models))
+    await cb.answer()
+
+
+@router.callback_query(F.data == "a:modeladd")
+async def model_add(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(AdminFlow.model_add)
+    await cb.message.answer("Yangi model nomini yuboring (masalan T6):")
+    await cb.answer()
+
+
+@router.message(AdminFlow.model_add, F.text)
+async def model_add_do(message: Message, state: FSMContext, session: AsyncSession) -> None:
+    data = await state.get_data()
+    is_np = bool(data.get("_np"))
+    await state.clear()
+    m = await stages_svc.add_model(session, message.text)
+    await session.flush()
+    if m is None:
+        await message.answer("Nom bo'sh. Qaytadan urinib ko'ring.")
+        return
+    await message.answer(f"✅ Model qo'shildi: <b>{texts.e(m.name)}</b>")
+    if is_np:
+        await state.update_data(model=m.name)  # state=None, keyingi qadam a:npsize:
+        await message.answer(
+            f"Model: <b>{texts.e(m.name)}</b>\nO'lchamni tanlang:",
+            reply_markup=kb.admin_pick_size(SIZES),
+        )
+    else:
+        models = await stages_svc.list_models(session)
+        await message.answer("🚚 <b>Modellar</b>", reply_markup=kb.admin_models_list(models))
+
+
+@router.callback_query(F.data.startswith("a:modeldel:"))
+async def model_del(cb: CallbackQuery, session: AsyncSession) -> None:
+    await stages_svc.deactivate_model(session, int(cb.data.split(":")[2]))
+    await session.flush()
+    models = await stages_svc.list_models(session)
+    await cb.message.answer("🚚 <b>Modellar</b>", reply_markup=kb.admin_models_list(models))
+    await cb.answer("O'chirildi")
 
 
 # --------------------------------------------------------------------------- #
@@ -259,11 +342,11 @@ async def toggle_user(cb: CallbackQuery, session: AsyncSession) -> None:
 # --------------------------------------------------------------------------- #
 # Bosqichlar
 # --------------------------------------------------------------------------- #
-@router.message(F.text == "🏭 Bosqichlar")
+@router.message(F.text.in_(["🏭 Liniyalar", "🏭 Bosqichlar"]))
 async def stages_list(message: Message, session: AsyncSession) -> None:
     items = await stages_svc.list_stages(session)
     await message.answer(
-        f"🏭 <b>Ishlab chiqarish bosqichlari</b> ({len(items)})",
+        f"🏭 <b>Ishlab chiqarish liniyalari</b> ({len(items)})",
         reply_markup=kb.admin_stages_list(items),
     )
 

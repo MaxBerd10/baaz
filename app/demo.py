@@ -84,21 +84,24 @@ async def seed_demo(session: AsyncSession) -> None:
             await workflow.qc_approve(session, run, qc)
             await session.flush()
 
+    # (model, size, color, note, upto, returns)
     specs = [
-        ("Food truck «Burger»", "Partiya A", "Liniya 1", N, {2: 1, 5: 2}),
-        ("Food truck «Coffee»", None, "Liniya 1", N, {4: 3}),
-        ("Food truck «Pizza»", None, "Liniya 2", 4, {1: 0}),
-        ("Food truck «Shaurma»", "Shoshilinch", "Liniya 2", 3, None),
-        ("Food truck «Doner»", None, "Liniya 3", 3, {3: 1}),
-        ("Food truck «Ice cream»", None, "Liniya 1", 6, {2: 1, 4: 3}),
-        ("Food truck «BBQ»", None, "Liniya 3", 2, {1: 0}),
-        ("Food truck «Fish»", "Partiya B", "Liniya 2", 1, None),
-        ("Food truck «Vegan»", None, "Liniya 1", N, {6: 4}),
-        ("Food truck «Crepe»", None, "Liniya 3", 0, None),
+        ("T1", 5, "Oq", "Partiya A", N, {2: 1, 5: 2}),
+        ("T2", 6, "Qora", None, N, {4: 3}),
+        ("T1", 4, "Qizil", None, 4, {1: 0}),
+        ("T3", 7, "Ko'k", "Shoshilinch", 3, None),
+        ("T2", 5, "Kulrang", None, 3, {3: 1}),
+        ("T1", 3, "Sariq", None, 6, {2: 1, 4: 3}),
+        ("T4", 6, "Yashil", None, 2, {1: 0}),
+        ("T3", 5, "Oq", "Partiya B", 1, None),
+        ("T2", 4, "Qora", None, N, {6: 4}),
+        ("T5", 7, "Kumush", None, 0, None),
     ]
     products = []
-    for name, note, line, upto, rets in specs:
-        p = await workflow.create_product(session, name=name, note=note, creator=admin, line=line)
+    for model, size, color, note, upto, rets in specs:
+        p = await workflow.create_product(
+            session, creator=admin, model=model, size_m=size, color=color, note=note
+        )
         await session.flush()
         if upto >= 1:
             await run_to(p, upto, returns=rets)

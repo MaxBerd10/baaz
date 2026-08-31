@@ -31,9 +31,10 @@ QC_MENU = ReplyKeyboardMarkup(
 
 ADMIN_MENU = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="📊 Boshqaruv paneli"), KeyboardButton(text="📦 Mahsulotlar")],
-        [KeyboardButton(text="➕ Yangi mahsulot"), KeyboardButton(text="👥 Xodimlar")],
-        [KeyboardButton(text="🏭 Bosqichlar"), KeyboardButton(text="📈 Hisobot")],
+        [KeyboardButton(text="📊 Boshqaruv paneli"), KeyboardButton(text="🚚 Trucklar")],
+        [KeyboardButton(text="➕ Yangi truck"), KeyboardButton(text="👥 Xodimlar")],
+        [KeyboardButton(text="🏭 Liniyalar"), KeyboardButton(text="🚚 Modellar")],
+        [KeyboardButton(text="📈 Hisobot")],
     ],
     resize_keyboard=True,
 )
@@ -260,6 +261,29 @@ def admin_checklist(stage: Stage, items: list) -> InlineKeyboardMarkup:
 def admin_product_open(product: Product) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="⬅️ Mahsulotlar", callback_data="a:products")]
+            [InlineKeyboardButton(text="⬅️ Trucklar", callback_data="a:products")]
         ]
     )
+
+
+def admin_pick_model(models: list) -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton(text=f"🚚 {m.name}", callback_data=f"a:npmodel:{m.id}")]
+        for m in models
+    ]
+    rows.append([InlineKeyboardButton(text="✏️ Yangi model", callback_data="a:npmodel:new")])
+    return InlineKeyboardMarkup(inline_keyboard=rows or [[InlineKeyboardButton(text="✏️ Model qo'shish", callback_data="a:npmodel:new")]])
+
+
+def admin_pick_size(sizes: list[int]) -> InlineKeyboardMarkup:
+    row = [InlineKeyboardButton(text=f"{s} m", callback_data=f"a:npsize:{s}") for s in sizes]
+    return InlineKeyboardMarkup(inline_keyboard=[row])
+
+
+def admin_models_list(models: list) -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton(text=f"🗑 {m.name}", callback_data=f"a:modeldel:{m.id}")]
+        for m in models
+    ]
+    rows.append([InlineKeyboardButton(text="➕ Model qo'shish", callback_data="a:modeladd")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)

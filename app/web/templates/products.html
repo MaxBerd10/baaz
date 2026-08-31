@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Mahsulotlar — Baaz{% endblock %}
-{% block heading %}Mahsulotlar{% endblock %}
-{% block sub %}Barcha mahsulotlar ro'yxati va joriy holati{% endblock %}
+{% block title %}Trucklar — Baaz{% endblock %}
+{% block heading %}Trucklar{% endblock %}
+{% block sub %}Barcha trucklar ro'yxati va joriy holati{% endblock %}
 {% block body %}
 
 <div class="filters">
   <a href="/products" class="{{ 'on' if not cur_status and not cur_stage }}">Hammasi</a>
-  <a href="/products?status=in_production" class="{{ 'on' if cur_status=='in_production' }}">Ishlab chiqarishda</a>
+  <a href="/products?status=in_production" class="{{ 'on' if cur_status=='in_production' }}">Ishlanmoqda</a>
   <a href="/products?status=qc_pending" class="{{ 'on' if cur_status=='qc_pending' }}">Sifat nazoratida</a>
   <a href="/products?status=returned" class="{{ 'on' if cur_status=='returned' }}">Qaytarilgan</a>
   <a href="/products?status=done" class="{{ 'on' if cur_status=='done' }}">Tayyor</a>
@@ -15,20 +15,21 @@
 <div class="card table-card">
   <div class="table-wrap">
   <table>
-    <thead><tr><th>Kod</th><th>Nomi</th><th>Liniya</th><th>Holat</th><th>Bosqich</th><th>Yaratilgan</th><th>Tayyor</th></tr></thead>
+    <thead><tr><th>Kod</th><th>Model</th><th>O'lcham</th><th>Rang</th><th>Holat</th><th>Liniya</th><th>Yaratilgan</th><th>Tayyor</th></tr></thead>
     <tbody>
     {% for p in items %}
     <tr>
       <td><a href="/products/{{ p.code }}" style="color:var(--brand);font-weight:700">{{ p.code }}</a></td>
-      <td>{{ p.name }}</td>
-      <td class="muted">{{ p.line or '—' }}</td>
+      <td style="font-weight:650">{{ p.model or '—' }}</td>
+      <td class="num">{{ (p.size_m ~ ' m') if p.size_m else '—' }}</td>
+      <td>{{ p.color or '—' }}</td>
       <td><span class="badge b-{{ p.status.value }}">{{ PRODUCT_STATUS_LABEL[p.status] }}</span></td>
       <td class="num">{{ p.current_stage_order }}</td>
       <td class="muted num">{{ p.created_at|dt }}</td>
       <td class="muted num">{{ p.finished_at|dt }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="7"><div class="empty">Mahsulot yo'q</div></td></tr>
+    <tr><td colspan="8"><div class="empty">Truck yo'q</div></td></tr>
     {% endfor %}
     </tbody>
   </table>

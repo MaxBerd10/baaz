@@ -52,7 +52,7 @@ async def _daily(session: AsyncSession, col, days: int, extra=None) -> tuple[lis
 
 # --------------------------------------------------------------------------- #
 async def build(session: AsyncSession, *, line: str | None = None) -> dict:
-    line_f = (Product.line == line) if line else None
+    line_f = (Product.model == line) if line else None
 
     # ---- status sanoqlari ----
     q = select(Product.status, func.count()).group_by(Product.status)
@@ -289,8 +289,8 @@ async def build(session: AsyncSession, *, line: str | None = None) -> dict:
     # ---- real-time faollik ----
     feed = await activity_feed(session, limit=6)
 
-    # ---- liniyalar bo'yicha holat ----
-    lines = await lines_status(session)
+    # ---- liniyalar bo'yicha jonli taxta ----
+    board = await line_board(session)
 
     # ---- kunlik dinamika ----
     dyn = await daily_dynamics(session, days=7)
@@ -298,11 +298,11 @@ async def build(session: AsyncSession, *, line: str | None = None) -> dict:
     # ---- KPI summary ----
     summary = await kpi_summary(session)
 
-    # ---- liniya filtri variantlari ----
+    # ---- model filtri variantlari ----
     line_opts = [
         r[0] for r in (
             await session.execute(
-                select(Product.line).where(Product.line.is_not(None)).distinct().order_by(Product.line)
+                select(Product.model).where(Product.model.is_not(None)).distinct().order_by(Product.model)
             )
         ).all()
     ]
@@ -315,7 +315,7 @@ async def build(session: AsyncSession, *, line: str | None = None) -> dict:
         "donut": donut,
         "reasons": reasons,
         "feed": feed,
-        "lines": lines,
+        "board": board,
         "dyn": dyn,
         "summary": summary,
         "line_opts": line_opts,
@@ -475,26 +475,79 @@ async def _format_audit(session: AsyncSession, rows: list) -> list[dict]:
     return out
 
 
-async def lines_status(session: AsyncSession) -> list[dict]:
-    rows = (
-        await session.execute(
-            select(Product.line, Product.status, func.count()).group_by(Product.line, Product.status)
+_ST_LABEL = {
+    ProductStatus.in_production: ("Ishlanmoqda", "blue"),
+    ProductStatus.qc_pending: ("QC tekshiruvida", "amber"),
+    ProductStatus.returned: ("Qaytarilgan", "red"),
+}
+
+
+async def line_board(session: AsyncSession) -> dict:
+    """Har liniyada hozir turgan trucklar: model · o'lcham · rang · kim ishlayapti."""
+    stages = list(
+        (
+            await session.scalars(
+                select(Stage).where(Stage.is_active.is_(True)).order_by(Stage.order_no)
+            )
+        ).all()
+    )
+    active = list(
+        (
+            await session.scalars(
+                select(Product).where(Product.status != ProductStatus.done)
+            )
+        ).all()
+    )
+    # joriy liniyadagi ishchi (agar biriktirilgan bo'lsa)
+    run_worker: dict[int, str] = {}
+    if active:
+        rows = (
+            await session.execute(
+                select(StageRun.product_id, User.full_name)
+                .join(User, User.id == StageRun.worker_id)
+                .where(
+                    StageRun.status.in_(
+                        [StageRunStatus.in_progress, StageRunStatus.qc_pending]
+                    )
+                )
+            )
+        ).all()
+        for pid, wn in rows:
+            run_worker[pid] = wn
+
+    by_stage: dict[int, list[dict]] = {s.order_no: [] for s in stages}
+    for p in active:
+        lbl, tone = _ST_LABEL.get(p.status, ("—", "slate"))
+        by_stage.setdefault(p.current_stage_order, []).append(
+            {
+                "code": p.code,
+                "model": p.model or "—",
+                "size": p.size_m,
+                "color": p.color or "—",
+                "worker": run_worker.get(p.id) or "— (kutmoqda)",
+                "status": lbl,
+                "tone": tone,
+            }
         )
-    ).all()
-    agg: dict[str, dict[ProductStatus, int]] = {}
-    for line, st, c in rows:
-        agg.setdefault(line or "Liniya belgilanmagan", {})[st] = c
-    out = []
-    for name, d in sorted(agg.items()):
-        ready = d.get(ProductStatus.done, 0)
-        wip = d.get(ProductStatus.in_production, 0) + d.get(ProductStatus.qc_pending, 0)
-        ret = d.get(ProductStatus.returned, 0)
-        tot = sum(d.values())
-        out.append({
-            "name": name, "ready": ready, "wip": wip, "returned": ret, "total": tot,
-            "pct": round(ready / tot * 100) if tot else 0,
-        })
-    return out
+
+    lines = [
+        {
+            "order": s.order_no,
+            "name": s.name,
+            "trucks": by_stage.get(s.order_no, []),
+            "count": len(by_stage.get(s.order_no, [])),
+        }
+        for s in stages
+    ]
+    done = int(
+        await session.scalar(
+            select(func.count()).select_from(Product).where(
+                Product.status == ProductStatus.done
+            )
+        )
+        or 0
+    )
+    return {"lines": lines, "done": done}
 
 
 async def daily_dynamics(session: AsyncSession, days: int = 7) -> dict:

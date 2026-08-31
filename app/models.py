@@ -83,12 +83,26 @@ class StageRunCheck(Base):
     check_item: Mapped["StageCheckItem"] = relationship(lazy="selectin")
 
 
+class TruckModel(Base):
+    """Rahbar tuzadigan model ro'yxati (T1, T2, ...)."""
+
+    __tablename__ = "truck_models"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), unique=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Product(Base):
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
+    model: Mapped[str | None] = mapped_column(String(64), index=True)
+    size_m: Mapped[int | None] = mapped_column(Integer)
+    color: Mapped[str | None] = mapped_column(String(64))
     line: Mapped[str | None] = mapped_column(String(64), index=True)
     note: Mapped[str | None] = mapped_column(Text)
     status: Mapped[ProductStatus] = mapped_column(

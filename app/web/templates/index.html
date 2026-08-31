@@ -5,7 +5,7 @@
 {% block topctl %}
 <form method="get" action="/" style="margin:0">
   <select name="line" class="ctl" onchange="this.form.submit()" style="appearance:none;cursor:pointer;padding-right:26px">
-    <option value="">Barcha liniyalar</option>
+    <option value="">Barcha modellar</option>
     {% for l in d.line_opts %}<option value="{{ l }}" {{ 'selected' if d.cur_line==l }}>{{ l }}</option>{% endfor %}
   </select>
 </form>
@@ -42,7 +42,7 @@
 <!-- ============ process + donut ============ -->
 <div class="row c2">
   <div class="card pad">
-    <div class="hd"><h2>{{ d.steps|length }} bosqichli ishlab chiqarish jarayoni</h2></div>
+    <div class="hd"><h2>{{ d.steps|length }} liniyali ishlab chiqarish jarayoni</h2></div>
     <div class="proc">
       {% for s in d.steps %}
       <div class="stp {{ s.state }}">
@@ -55,10 +55,17 @@
         <span class="pc" style="color:{{ 'var(--c-green)' if s.state=='done' else ('var(--brand)' if s.state=='current' else 'var(--faint)') }}">{{ s.pct }}%</span>
       </div>
       {% endfor %}
+      <div class="stp done">
+        <div class="dot">✓</div>
+        <span class="sic" style="color:var(--c-green)">{{ icon('check') }}</span>
+        <span class="nm">Tayyor</span>
+        <span class="ct num">{{ d.board.done }} ta</span>
+        <span class="pc" style="color:var(--c-green)">chiqarilgan</span>
+      </div>
     </div>
     <div class="proc-legend">
       <span class="d"><i style="background:var(--c-green)"></i>Tugallangan</span>
-      <span class="d"><i style="background:var(--brand)"></i>Joriy bosqich</span>
+      <span class="d"><i style="background:var(--brand)"></i>Joriy liniya</span>
       <span class="d"><i style="background:var(--c-amber)"></i>Kutilmoqda</span>
       <span class="d"><i style="background:var(--c-red)"></i>Muammoli</span>
       <a class="more" href="/analytics"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>Batafsil statistika</a>
@@ -145,30 +152,34 @@
   </div>
 </div>
 
-<!-- ============ bottom 3 ============ -->
-<div class="row c3">
-  <div class="card pad table-card">
-    <div class="hd"><h3>Liniyalar bo'yicha holat</h3><a class="lnk" href="/products">Batafsil</a></div>
-    <div class="table-wrap">
-    <table>
-      <thead><tr><th>Liniya</th><th></th><th>Tayyor</th><th>Jarayonda</th><th>Qaytarilgan</th><th>Jami</th><th>%</th></tr></thead>
-      <tbody>
-      {% for l in d.lines %}
-      <tr>
-        <td><span class="rowic">{{ icon('trend') }}</span> {{ l.name }}</td>
-        <td style="width:30%"><span class="mbar"><span class="tk"><i style="width:{{ l.pct }}%"></i></span></span></td>
-        <td class="num pos">{{ l.ready }}</td>
-        <td class="num" style="color:var(--c-blue)">{{ l.wip }}</td>
-        <td class="num neg">{{ l.returned }}</td>
-        <td class="num">{{ l.total }}</td>
-        <td class="num"><b>{{ l.pct }}%</b></td>
-      </tr>
-      {% else %}<tr><td colspan="7"><div class="empty">Liniya belgilanmagan</div></td></tr>{% endfor %}
-      </tbody>
-    </table>
+<!-- ============ liniyalar — jonli holat ============ -->
+<div class="card pad" style="margin-bottom:18px">
+  <div class="hd"><h3>Liniyalar — jonli holat</h3><a class="lnk" href="/products">Barcha trucklar</a></div>
+  <div class="board">
+    {% for ln in d.board.lines %}
+    <div class="bcol">
+      <div class="bhead"><span class="bno">{{ ln.order }}</span> {{ ln.name }}<span class="bcnt">{{ ln.count }}</span></div>
+      {% for t in ln.trucks %}
+      <div class="btruck">
+        <div class="bt1"><b>{{ t.model }}</b> · {{ t.size or '—' }} m
+          <span class="bt-dot bt-{{ t.tone }}" title="{{ t.status }}"></span></div>
+        <div class="bt2">{{ t.color }} · <a href="/products/{{ t.code }}">{{ t.code }}</a></div>
+        <div class="bt3">👷 {{ t.worker }}</div>
+      </div>
+      {% else %}
+      <div class="bempty">— bo'sh —</div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    <div class="bcol bdone">
+      <div class="bhead"><span class="bno">✓</span> Tayyor<span class="bcnt">{{ d.board.done }}</span></div>
+      <div class="bempty" style="color:var(--c-green)">chiqarilgan trucklar</div>
     </div>
   </div>
+</div>
 
+<!-- ============ bottom 2 ============ -->
+<div class="row c2">
   <div class="card pad">
     <div class="hd"><h3>KPI summary</h3><a class="lnk" href="/analytics">Batafsil</a></div>
     <div class="mini">

@@ -9,3 +9,5 @@ venv/
 media/
 .DS_Store
 .pytest_cache/
+.vercel
+.env*

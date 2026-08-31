@@ -54,16 +54,26 @@ async def get_run(session: AsyncSession, run_id: int) -> StageRun | None:
 # Mahsulot yaratish
 # --------------------------------------------------------------------------- #
 async def create_product(
-    session: AsyncSession, *, name: str, note: str | None, creator: User,
-    line: str | None = None,
+    session: AsyncSession, *, creator: User,
+    model: str | None = None, size_m: int | None = None, color: str | None = None,
+    name: str | None = None, note: str | None = None, line: str | None = None,
 ) -> Product:
     stage1 = await stages.get_by_order(session, 1)
     if stage1 is None:
-        raise WorkflowError("Bosqichlar sozlanmagan. Avval bosqich qo'shing.")
+        raise WorkflowError("Liniyalar sozlanmagan. Avval liniya qo'shing.")
+
+    model = (model or "").strip() or None
+    color = (color or "").strip() or None
+    if not name:
+        parts = [p for p in (model, f"{size_m} m" if size_m else None, color) if p]
+        name = " · ".join(parts) or "Food truck"
 
     product = Product(
         code="",
         name=name.strip(),
+        model=model,
+        size_m=size_m,
+        color=color,
         line=(line.strip() if line and line.strip() else None),
         note=(note or None),
         status=ProductStatus.in_production,

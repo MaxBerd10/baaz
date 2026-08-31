@@ -19,6 +19,12 @@ def e(text: str | None) -> str:
     return html.escape(str(text or ""))
 
 
+def truck_line(p: Product) -> str:
+    """T1 · 5 m · Oq"""
+    parts = [p.model, f"{p.size_m} m" if p.size_m else None, p.color]
+    return " · ".join(e(x) for x in parts if x) or "—"
+
+
 def fmt_dt(value: dt.datetime | None) -> str:
     if not value:
         return "—"
@@ -56,8 +62,8 @@ def worker_card(
     media_videos = sum(1 for m in run.media if m.type.value == "video")
     lines = [
         f"📦 <b>{e(product.code)}</b> — {e(product.name)}"
-        + (f"  ·  {e(product.line)}" if product.line else ""),
-        f"Bosqich: {run.stage_order}/{total_stages} · {e(run.stage.name)}",
+        + f"\n🚚 {truck_line(product)}",
+        f"Liniya {run.stage_order}/{total_stages}: {e(run.stage.name)}",
         f"Urinish: #{run.attempt_no}   Holat: {PRODUCT_STATUS_LABEL[product.status]}",
         f"Media: 📸 {media_photos} · 🎥 {media_videos}",
     ]
@@ -90,8 +96,8 @@ def qc_card(run: StageRun, total_stages: int) -> str:
     lines = [
         "🔍 <b>SIFAT TEKSHIRUVI</b>",
         f"📦 {e(product.code)} — {e(product.name)}"
-        + (f"  ·  {e(product.line)}" if product.line else ""),
-        f"Bosqich: {run.stage_order}/{total_stages} · {e(run.stage.name)}",
+        + f"\n🚚 {truck_line(product)}",
+        f"Liniya {run.stage_order}/{total_stages}: {e(run.stage.name)}",
         f"Urinish: #{run.attempt_no}   👷 {e(run.worker.full_name) if run.worker else '—'}",
         f"Yuborilgan: {fmt_dt(run.submitted_at)}",
         f"Media: 📸 {media_photos} · 🎥 {media_videos}",
@@ -106,8 +112,9 @@ def qc_card(run: StageRun, total_stages: int) -> str:
 def product_timeline(product: Product, runs: list[StageRun], total_stages: int) -> str:
     lines = [
         f"📦 <b>{e(product.code)}</b> — {e(product.name)}",
+        f"🚚 {truck_line(product)}",
         f"Holat: {PRODUCT_STATUS_LABEL[product.status]}",
-        f"Joriy bosqich: {product.current_stage_order}/{total_stages}",
+        f"Joriy liniya: {product.current_stage_order}/{total_stages}",
         f"Yaratilgan: {fmt_dt(product.created_at)}"
         + (f" · {e(product.created_by.full_name)}" if product.created_by else ""),
     ]
@@ -117,7 +124,7 @@ def product_timeline(product: Product, runs: list[StageRun], total_stages: int) 
         lines.append(f"Izoh: {e(product.note)}")
     lines.append("\n<b>Tarix:</b>")
     for r in runs:
-        head = f"• {r.stage_order}-bosqich (#{r.attempt_no}) — {RUN_STATUS_LABEL[r.status]}"
+        head = f"• {r.stage_order}-liniya (#{r.attempt_no}) — {RUN_STATUS_LABEL[r.status]}"
         lines.append(head)
         sub = []
         if r.worker:
