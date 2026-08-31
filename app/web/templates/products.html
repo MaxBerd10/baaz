@@ -1,38 +1,28 @@
 {% extends "base.html" %}
 {% block title %}Trucklar — Baaz{% endblock %}
-{% block heading %}Trucklar{% endblock %}
-{% block sub %}Barcha trucklar ro'yxati va joriy holati{% endblock %}
+{% block heading %}Trucklar parki{% endblock %}
+{% block sub %}Har bir food truckning ishlab chiqarish holatini boshqaring{% endblock %}
 {% block body %}
-
-<div class="filters">
-  <a href="/products" class="{{ 'on' if not cur_status and not cur_stage }}">Hammasi</a>
-  <a href="/products?status=in_production" class="{{ 'on' if cur_status=='in_production' }}">Ishlanmoqda</a>
-  <a href="/products?status=qc_pending" class="{{ 'on' if cur_status=='qc_pending' }}">Sifat nazoratida</a>
-  <a href="/products?status=returned" class="{{ 'on' if cur_status=='returned' }}">Qaytarilgan</a>
-  <a href="/products?status=done" class="{{ 'on' if cur_status=='done' }}">Tayyor</a>
-</div>
-
-<div class="card table-card">
-  <div class="table-wrap">
-  <table>
-    <thead><tr><th>Kod</th><th>Model</th><th>O'lcham</th><th>Rang</th><th>Holat</th><th>Liniya</th><th>Yaratilgan</th><th>Tayyor</th></tr></thead>
-    <tbody>
-    {% for p in items %}
-    <tr>
-      <td><a href="/products/{{ p.code }}" style="color:var(--brand);font-weight:700">{{ p.code }}</a></td>
-      <td style="font-weight:650">{{ p.model or '—' }}</td>
-      <td class="num">{{ (p.size_m ~ ' m') if p.size_m else '—' }}</td>
-      <td>{{ p.color or '—' }}</td>
-      <td><span class="badge b-{{ p.status.value }}">{{ PRODUCT_STATUS_LABEL[p.status] }}</span></td>
-      <td class="num">{{ p.current_stage_order }}</td>
-      <td class="muted num">{{ p.created_at|dt }}</td>
-      <td class="muted num">{{ p.finished_at|dt }}</td>
-    </tr>
-    {% else %}
-    <tr><td colspan="8"><div class="empty">Truck yo'q</div></td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
+<style>
+  .fleet{--violet:#735ee9;--teal:#16b69d;--orange:#f2943f;--sky:#458cea}.fleet .sum{display:grid;grid-template-columns:1.45fr repeat(4,1fr);gap:12px;margin-bottom:16px}.fleet .sum-card{display:flex;align-items:center;gap:11px;padding:15px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 7px 17px rgba(20,31,55,.04)}.fleet .sum-card:first-child{background:linear-gradient(135deg,#7460e9,#8c76f1);border:0;color:#fff;box-shadow:0 9px 20px rgba(107,88,227,.23)}.fleet .sum-card .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#eef0ff;color:var(--violet)}.fleet .sum-card:first-child .ic{background:rgba(255,255,255,.18);color:#fff}.fleet .sum-card .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}.fleet .sum-card span{display:block;font-size:10.5px;color:var(--muted);font-weight:700}.fleet .sum-card:first-child span{color:#e7e1ff}.fleet .sum-card b{display:block;font-size:21px;line-height:1.1;margin-top:2px;letter-spacing:-.04em}.fleet .sum-card:nth-child(3) .ic{background:#e6f8f1;color:var(--teal)}.fleet .sum-card:nth-child(4) .ic{background:#fff4e5;color:var(--orange)}.fleet .sum-card:nth-child(5) .ic{background:#e9f2ff;color:var(--sky)}
+  .fleet .fleet-board{display:block;overflow:hidden}.fleet .toolbar{padding:17px 20px;border-bottom:1px solid var(--line-2);display:grid;grid-template-columns:minmax(240px,.7fr) 1fr auto;align-items:center;gap:12px}.fleet .search{height:38px;display:flex;align-items:center;gap:8px;padding:0 11px;border:1px solid var(--line);border-radius:10px;background:#fafbfc}.fleet .search svg{width:16px;height:16px;stroke:var(--faint);fill:none;stroke-width:2}.fleet .search input{border:0;outline:0;background:transparent;width:100%;font:inherit;font-size:12px;color:var(--ink)}.fleet .filters{margin:0;gap:6px;justify-content:center}.fleet .filters a{padding:6px 10px;font-size:11px}.fleet .filters a.on{background:var(--violet);border-color:var(--violet)}.fleet .result{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}.fleet .result b{color:var(--ink)}
+  .fleet .fleet-list{min-width:980px}.fleet .list-head,.fleet .truck-row{display:grid;grid-template-columns:1.28fr .72fr .72fr 1.1fr .9fr .95fr 34px;gap:16px;align-items:center;padding:0 20px}.fleet .list-head{height:43px;background:#fbfcfd;border-bottom:1px solid var(--line-2);color:var(--faint);font-size:10px;font-weight:800;letter-spacing:.055em;text-transform:uppercase}.fleet .truck-row{min-height:72px;border-bottom:1px solid var(--line-2);transition:background .15s ease}.fleet .truck-row:last-child{border:0}.fleet .truck-row:hover{background:#faf9ff}.fleet .truck{display:flex;align-items:center;gap:10px}.fleet .truck .vehicle{width:32px;height:32px;border-radius:9px;background:#f0edff;color:var(--violet);display:grid;place-items:center;flex:none}.fleet .truck .vehicle svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9}.fleet .truck a{font-size:13px;font-weight:800;color:var(--violet)}.fleet .truck small{display:block;color:var(--muted);font-size:10px;margin-top:1px}.fleet .spec{font-weight:750;font-size:12px}.fleet .color{display:inline-flex;align-items:center;gap:7px;font-size:12px}.fleet .color i{width:9px;height:9px;border-radius:50%;background:#a6afbd}.fleet .color[data-color*="qora"] i{background:#2a3040}.fleet .color[data-color*="oq"] i{background:#fff;border:1px solid #dce1e9}.fleet .color[data-color*="qizil"] i{background:#ee625b}.fleet .color[data-color*="yashil"] i{background:#20ad73}.fleet .color[data-color*="ko'k"] i{background:#478fe5}.fleet .stage-top{display:flex;justify-content:space-between;gap:8px;font-size:10.5px;color:var(--muted);font-weight:700}.fleet .stage-top b{color:var(--ink)}.fleet .stage-bar{height:6px;border-radius:99px;background:#edf0f4;margin-top:6px;overflow:hidden}.fleet .stage-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#87a5ff,var(--violet))}.fleet .badge{font-size:10.5px;white-space:nowrap}.fleet .date{font-size:10.5px;color:var(--muted);line-height:1.35;white-space:nowrap}.fleet .go{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--faint)}.fleet .go svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}.fleet .truck-row:hover .go{background:#f0edff;color:var(--violet)}
+  @media(max-width:1180px){.fleet .sum{grid-template-columns:repeat(3,1fr)}.fleet .sum-card:first-child{grid-column:span 2}.fleet .toolbar{grid-template-columns:1fr auto}.fleet .filters{grid-column:1/-1;justify-content:flex-start}}@media(max-width:760px){.fleet .sum{grid-template-columns:repeat(2,1fr)}.fleet .sum-card:first-child{grid-column:span 2}.fleet .toolbar{grid-template-columns:1fr}.fleet .result{display:none}}
+</style>
+<div class="fleet">
+  <section class="sum">
+    <div class="sum-card"><span class="ic">{{ icon('foodtruck') }}</span><div><span>JAMI TRUCKLAR</span><b>{{ total_count }}</b></div></div>
+    <div class="sum-card"><span class="ic">{{ icon('bolt') }}</span><div><span>ISHLAB CHIQARISHDA</span><b>{{ status_counts['in_production'] }}</b></div></div>
+    <div class="sum-card"><span class="ic">{{ icon('shield') }}</span><div><span>QC KUTMOQDA</span><b>{{ status_counts['qc_pending'] }}</b></div></div>
+    <div class="sum-card"><span class="ic">{{ icon('check') }}</span><div><span>TAYYOR</span><b>{{ status_counts['done'] }}</b></div></div>
+  </section>
+  <section class="card fleet-board">
+    <div class="toolbar">
+      <form class="search" method="get" action="/products"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input name="q" value="{{ query }}" placeholder="Kod, model yoki rang bo‘yicha qidirish"></form>
+      <div class="filters"><a href="/products" class="{{ 'on' if not cur_status and not cur_stage }}">Hammasi</a><a href="/products?status=in_production" class="{{ 'on' if cur_status=='in_production' }}">Jarayonda</a><a href="/products?status=qc_pending" class="{{ 'on' if cur_status=='qc_pending' }}">QC</a><a href="/products?status=returned" class="{{ 'on' if cur_status=='returned' }}">Qaytarilgan</a><a href="/products?status=done" class="{{ 'on' if cur_status=='done' }}">Tayyor</a></div>
+      <span class="result"><b>{{ items|length }}</b> ta truck</span>
+    </div>
+    <div class="table-wrap"><div class="fleet-list"><div class="list-head"><span>Truck</span><span>Parametr</span><span>Rang</span><span>Jarayon</span><span>Holat</span><span>Yaratilgan</span><span></span></div>{% for p in items %}<div class="truck-row"><div class="truck"><span class="vehicle">{{ icon('foodtruck') }}</span><div><a href="/products/{{ p.code }}">{{ p.code }}</a><small>Model {{ p.model or '—' }}</small></div></div><div><span class="spec">{{ (p.size_m ~ ' metr') if p.size_m else '—' }}</span><div class="muted" style="font-size:10px;margin-top:2px">Liniya {{ p.current_stage_order }}</div></div><span class="color" data-color="{{ (p.color or '')|lower }}"><i></i>{{ p.color or 'Belgilanmagan' }}</span><div><div class="stage-top"><span>{{ p.current_stage_order }}-bosqich</span><b>{{ ((p.current_stage_order / stage_total) * 100)|round|int }}%</b></div><div class="stage-bar"><i style="width:{{ ((p.current_stage_order / stage_total) * 100)|round|int }}%"></i></div></div><span class="badge b-{{ p.status.value }}">{{ PRODUCT_STATUS_LABEL[p.status] }}</span><div><span class="date">{{ p.created_at|dt }}</span>{% if p.finished_at %}<br><span class="date" style="color:var(--c-green)">Tayyor: {{ p.finished_at|dt }}</span>{% endif %}</div><a href="/products/{{ p.code }}" class="go"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>{% else %}<div class="empty">Bu filter bo‘yicha truck topilmadi</div>{% endfor %}</div></div>
+  </section>
 </div>
 {% endblock %}

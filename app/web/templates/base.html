@@ -235,6 +235,97 @@
   .c-axis{font-size:9.5px;fill:var(--faint)} .c-value-label{font-size:10px;font-weight:750;fill:var(--c-blue)} .c-value-green{fill:var(--c-green)} .c-grid{stroke:var(--c-grid);stroke-width:1}
   .c-area{width:100%;display:block} .c-spark{display:block}
 
+  /* sidebar bugungi umumiy */
+  aside .sidesum{margin:6px 12px;padding:12px;border-radius:12px;background:var(--side-2);z-index:1}
+  aside .sidesum .ss-h{font-size:11px;font-weight:700;color:#e4e7ef;display:flex;justify-content:space-between;
+    margin-bottom:9px}
+  aside .sidesum .ss-h span{color:var(--side-ink);font-weight:500}
+  aside .sidesum .ss-r{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--side-ink);padding:3px 0}
+  aside .sidesum .ss-r i{width:8px;height:8px;border-radius:50%;flex:none}
+  aside .sidesum .ss-r b{margin-left:auto;color:#fff;font-weight:700}
+
+  /* ===== Boshqaruv paneli (master-detail) ===== */
+  .home5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:16px}
+  @media(max-width:1400px){.home5{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:760px){.home5{grid-template-columns:repeat(2,1fr)}}
+  .h5{padding:15px 16px 8px;position:relative;overflow:hidden}
+  .h5 .r1{display:flex;align-items:center;gap:10px}
+  .h5 .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none}
+  .h5 .ic svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2}
+  .h5 .lbl{font-size:10px;font-weight:800;color:var(--faint);letter-spacing:.05em;text-transform:uppercase}
+  .h5 .val{font-size:23px;font-weight:800;letter-spacing:-.03em;margin-top:2px}
+  .h5 .sub{font-size:10.5px;color:var(--faint);margin-top:1px}
+  .h5 .sp{margin:6px -6px -6px}
+
+  .homegrid{display:grid;grid-template-columns:308px minmax(0,1fr) 340px;gap:16px}
+  @media(max-width:1500px){.homegrid{grid-template-columns:280px minmax(0,1fr)}.homegrid .col3{grid-column:1/-1;
+    display:grid;grid-template-columns:1fr 1fr;gap:16px}}
+  @media(max-width:1100px){.homegrid{grid-template-columns:1fr}.homegrid .col3{grid-template-columns:1fr}}
+  .homegrid .col2,.homegrid .col3{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+  /* truck ro'yxati */
+  .tlist .hd{padding:15px 16px;border-bottom:1px solid var(--line-2)}
+  .tlist .rows{max-height:640px;overflow-y:auto}
+  .trow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line-2);cursor:pointer}
+  .trow:hover{background:var(--panel-2)}
+  .trow.on{background:var(--brand-soft);box-shadow:inset 3px 0 0 var(--brand)}
+  .trow .van{width:44px;height:30px;border-radius:7px;flex:none;display:grid;place-items:center;background:#f2f3f7}
+  .trow .van svg{width:34px;height:22px}
+  .trow .mid{flex:1;min-width:0}
+  .trow .mid b{font-size:12.5px;font-weight:800;color:var(--brand);display:block}
+  .trow .mid small{display:block;color:var(--muted);font-size:10.5px;margin-top:1px}
+  .trow .rt{text-align:right;flex:none}
+  .trow .rt .fr{font-size:12px;font-weight:700;display:block}
+  .trow .rt .pc{font-size:10.5px;font-weight:700;margin-top:1px;display:block}
+  .tlist .ft{padding:11px 14px;border-top:1px solid var(--line-2);display:flex;align-items:center;
+    justify-content:space-between;font-size:11px;color:var(--muted)}
+  .tlist .ft .pg{display:inline-flex;gap:4px}
+  .tlist .ft .pg a{width:24px;height:24px;border:1px solid var(--line);border-radius:7px;display:grid;
+    place-items:center;font-weight:700;font-size:11px;color:var(--muted)}
+  .tlist .ft .pg a.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+  /* tanlangan truck */
+  .selhead{display:flex;gap:16px;align-items:flex-start}
+  .selhead .photo{width:170px;height:110px;border-radius:12px;background:var(--panel-2);display:grid;place-items:center;flex:none}
+  .selhead .photo svg{width:130px;height:80px}
+  .selhead .h1{font-size:21px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+  .selhead .spec{margin-top:6px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:14px}
+  .selhead .spec .dot{display:inline-flex;align-items:center;gap:6px}
+  .selhead .spec .dot i{width:9px;height:9px;border-radius:50%}
+  .selmeta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+  .selmeta .m .k{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+  .selmeta .m .v{font-size:13px;font-weight:700;margin-top:3px}
+
+  /* vertical stepper */
+  .vstep{position:relative;margin-top:6px}
+  .vrow{display:grid;grid-template-columns:30px 26px 1fr auto auto auto;gap:12px;align-items:center;
+    padding:11px 0;border-bottom:1px solid var(--line-2)}
+  .vrow:last-child{border:none}
+  .vrow .num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;
+    border:2px solid var(--line);color:var(--faint);background:var(--panel)}
+  .vrow.done .num{background:var(--c-green);border-color:var(--c-green);color:#fff}
+  .vrow.current .num{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 0 0 4px var(--brand-soft)}
+  .vrow .sic{color:var(--faint)} .vrow.done .sic{color:var(--c-green)} .vrow.current .sic{color:var(--brand)}
+  .vrow .sic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9}
+  .vrow .nm{font-size:13px;font-weight:700}
+  .vrow .nm small{display:block;color:var(--muted);font-size:10.5px;font-weight:500;margin-top:1px}
+  .vrow .fr{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .vrow .pc{font-size:12px;font-weight:700}
+  .vrow .cur-wrap{grid-column:3/-1;margin-top:6px}
+  .vrow .cur-bar{height:6px;border-radius:99px;background:var(--c-track);overflow:hidden;margin-top:5px}
+  .vrow .cur-bar>i{display:block;height:100%;border-radius:99px;background:var(--brand)}
+
+  /* upcoming */
+  .upc .it{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line-2)}
+  .upc .it:last-child{border:none}
+  .upc .it .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;background:var(--panel-2);color:var(--muted)}
+  .upc .it .ic svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9}
+  .upc .it .bd{flex:1;min-width:0}
+  .upc .it .bd b{font-size:12px}
+  .upc .it .bd small{display:block;color:var(--faint);font-size:10.5px;margin-top:1px}
+  .upc .it .rel{font-size:11px;font-weight:800;white-space:nowrap}
+  .rel-amber{color:var(--c-amber)} .rel-blue{color:var(--c-blue)} .rel-red{color:var(--c-red)} .rel-slate{color:var(--muted)}
+
   /* liniyalar jonli taxta */
   .board{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
   @media(max-width:1300px){.board{grid-template-columns:repeat(4,1fr)}}
@@ -351,7 +442,7 @@
 					c0-19.013,17.688-35.668,37.847-35.668c13.9,0,22.882,7.145,27.97,13.152c7.503,8.876,11.502,21.086,9.941,30.401
 					L427.822,272.047z M172.91,186.03H51.274l18.85-8.836c0.415-0.179,41.464-19.135,97.283-29.881l5.511-1.065v39.781H172.91z
 					 M184.501,186.03v-41.651l3.975-0.545c9.12-1.349,18.484-2.008,27.865-2.008c68.069,0,118.864,35.432,119.376,35.782
-					l11.933,8.429H184.501V186.03z"/></symbol><symbol id="i-spray" viewBox="0 0 512 512"><path fill="currentColor" d="M265.174 45.484c-.776-.007-1.267.05-1.65.112l-27.59 47.79c.304.79 1.13 2.36 2.693 4.268 3.39 4.134 9.688 9.436 17.47 13.928 7.78 4.492 15.52 7.296 20.796 8.164 2.432.4 4.205.33 5.043.197l6.99-12.105c-.318-.153-.635-.305-.946-.484-6.76-3.903-9.076-12.55-5.173-19.31 3.902-6.76 12.546-9.074 19.306-5.17.31.178.6.378.893.577l6.52-11.294c-.303-.79-1.13-2.362-2.694-4.27-3.39-4.133-9.688-9.435-17.47-13.927-7.78-4.494-15.52-7.297-20.794-8.165-1.318-.217-2.477-.3-3.394-.31zm-60.7 48.536c-1.037-.014-2.06-.004-3.068.03-16.13.52-27.71 6.237-34.203 17.483-.276.478-.728 1.883.668 5.627 1.397 3.744 4.64 9.01 9.558 14.72 9.837 11.42 26.167 24.707 46.054 36.188 19.888 11.482 39.56 18.98 54.368 21.79 7.404 1.407 13.587 1.58 17.527.917 3.94-.663 4.93-1.755 5.205-2.232v-.002c5.958-10.316 5.226-23.413-2.328-37.88-2.336-4.474-5.336-8.993-8.932-13.43-1.055.42-2.117.74-3.146.96-4.08.88-8.104.69-12.32-.004-8.427-1.388-17.713-4.997-27.104-10.418-9.392-5.422-17.16-11.66-22.576-18.266-2.708-3.303-4.888-6.693-6.166-10.666-.36-1.116-.622-2.332-.778-3.596-4.423-.757-8.7-1.168-12.757-1.22zm97.23 4.818l193.605 255.916v-231.73L301.702 98.837zM154.91 132.822L42.62 327.316l-.007.012c-.51.892-.9 2.505.434 6.313 1.34 3.824 4.512 9.13 9.385 14.872 9.744 11.483 26.056 24.766 45.943 36.248 19.887 11.48 39.55 18.966 54.365 21.664 7.41 1.35 13.59 1.442 17.57.69 3.98-.75 5.176-1.9 5.69-2.79l.002.002L288.295 209.83c-4.396-.122-9.03-.68-13.93-1.61-17.716-3.36-38.812-11.603-60.226-23.966-21.416-12.363-39.1-26.512-50.87-40.174-3.255-3.778-6.055-7.512-8.358-11.258zm33.48 64.776c5.008.09 9.662 1.28 13.788 3.662v-.008c14.67 8.47 19.61 30.27 14.66 56.482-2.465-16.616-10.93-31.077-24.73-39.04-13.8-7.96-30.553-8.064-46.174-1.89 14.537-12.503 29.654-19.44 42.455-19.206zM94.45 303.38c2.02 17.568 10.47 33.054 24.882 41.378 14.65 8.45 32.714 7.993 49.16.617v.006c-21.552 20.4-45.073 28.748-60.855 19.636-15.65-9.034-19.83-33.092-13.187-61.635zm-64.513 45.9l-8.1 14.03c-.513.887-.91 2.498.43 6.32 1.34 3.824 4.51 9.13 9.382 14.872 9.74 11.478 26.044 24.757 45.92 36.236l.024.014h.002c19.887 11.48 39.548 18.965 54.365 21.662 7.408 1.35 13.59 1.442 17.57.69 3.98-.75 5.177-1.9 5.69-2.788l8.1-14.03c-4.408-.072-9.045-.586-13.93-1.475-17.84-3.247-38.947-11.503-60.362-23.867-21.413-12.363-39.116-26.514-50.848-40.34-3.213-3.785-5.977-7.542-8.243-11.324z"/></symbol></svg>
+					l11.933,8.429H184.501V186.03z"/></symbol><symbol id="i-spray" viewBox="0 0 512 512"><path fill="currentColor" d="M265.174 45.484c-.776-.007-1.267.05-1.65.112l-27.59 47.79c.304.79 1.13 2.36 2.693 4.268 3.39 4.134 9.688 9.436 17.47 13.928 7.78 4.492 15.52 7.296 20.796 8.164 2.432.4 4.205.33 5.043.197l6.99-12.105c-.318-.153-.635-.305-.946-.484-6.76-3.903-9.076-12.55-5.173-19.31 3.902-6.76 12.546-9.074 19.306-5.17.31.178.6.378.893.577l6.52-11.294c-.303-.79-1.13-2.362-2.694-4.27-3.39-4.133-9.688-9.435-17.47-13.927-7.78-4.494-15.52-7.297-20.794-8.165-1.318-.217-2.477-.3-3.394-.31zm-60.7 48.536c-1.037-.014-2.06-.004-3.068.03-16.13.52-27.71 6.237-34.203 17.483-.276.478-.728 1.883.668 5.627 1.397 3.744 4.64 9.01 9.558 14.72 9.837 11.42 26.167 24.707 46.054 36.188 19.888 11.482 39.56 18.98 54.368 21.79 7.404 1.407 13.587 1.58 17.527.917 3.94-.663 4.93-1.755 5.205-2.232v-.002c5.958-10.316 5.226-23.413-2.328-37.88-2.336-4.474-5.336-8.993-8.932-13.43-1.055.42-2.117.74-3.146.96-4.08.88-8.104.69-12.32-.004-8.427-1.388-17.713-4.997-27.104-10.418-9.392-5.422-17.16-11.66-22.576-18.266-2.708-3.303-4.888-6.693-6.166-10.666-.36-1.116-.622-2.332-.778-3.596-4.423-.757-8.7-1.168-12.757-1.22zm97.23 4.818l193.605 255.916v-231.73L301.702 98.837zM154.91 132.822L42.62 327.316l-.007.012c-.51.892-.9 2.505.434 6.313 1.34 3.824 4.512 9.13 9.385 14.872 9.744 11.483 26.056 24.766 45.943 36.248 19.887 11.48 39.55 18.966 54.365 21.664 7.41 1.35 13.59 1.442 17.57.69 3.98-.75 5.176-1.9 5.69-2.79l.002.002L288.295 209.83c-4.396-.122-9.03-.68-13.93-1.61-17.716-3.36-38.812-11.603-60.226-23.966-21.416-12.363-39.1-26.512-50.87-40.174-3.255-3.778-6.055-7.512-8.358-11.258zm33.48 64.776c5.008.09 9.662 1.28 13.788 3.662v-.008c14.67 8.47 19.61 30.27 14.66 56.482-2.465-16.616-10.93-31.077-24.73-39.04-13.8-7.96-30.553-8.064-46.174-1.89 14.537-12.503 29.654-19.44 42.455-19.206zM94.45 303.38c2.02 17.568 10.47 33.054 24.882 41.378 14.65 8.45 32.714 7.993 49.16.617v.006c-21.552 20.4-45.073 28.748-60.855 19.636-15.65-9.034-19.83-33.092-13.187-61.635zm-64.513 45.9l-8.1 14.03c-.513.887-.91 2.498.43 6.32 1.34 3.824 4.51 9.13 9.382 14.872 9.74 11.478 26.044 24.757 45.92 36.236l.024.014h.002c19.887 11.48 39.548 18.965 54.365 21.662 7.408 1.35 13.59 1.442 17.57.69 3.98-.75 5.177-1.9 5.69-2.788l8.1-14.03c-4.408-.072-9.045-.586-13.93-1.475-17.84-3.247-38.947-11.503-60.362-23.867-21.413-12.363-39.116-26.514-50.848-40.34-3.213-3.785-5.977-7.542-8.243-11.324z"/></symbol><symbol id="i-van" viewBox="0 0 64 40"><path fill="currentColor" d="M4 10h30l10 8h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V12a2 2 0 0 1 2-2z"/><rect x="8" y="14" width="12" height="9" rx="1.5" fill="#ffffff" opacity=".55"/><rect x="24" y="14" width="9" height="9" rx="1.5" fill="#ffffff" opacity=".45"/><circle cx="17" cy="33" r="5" fill="#1c2230"/><circle cx="17" cy="33" r="2" fill="#5a6272"/><circle cx="46" cy="33" r="5" fill="#1c2230"/><circle cx="46" cy="33" r="2" fill="#5a6272"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></symbol></svg>
 {%- macro icon(name) -%}
 {%- if name in ['corpus', 'gas', 'power', 'fork'] -%}
 <span class="asset-icon asset-{{ name }}" aria-hidden="true"></span>
@@ -367,20 +458,18 @@
   <aside>
     <div class="brand">
       <span class="mk">{{ icon('foodtruck') }}</span>
-      <div><b>Baaz</b><span>Ishlab chiqarish nazorati</span></div>
+      <div><b>Trucklar Parki</b><span>Food Truck Production</span></div>
     </div>
     <nav>
       {% set nav = [
         ('dash','/','Boshqaruv paneli','home'),
-        ('products','/products','Mahsulotlar','box'),
+        ('products','/products','Trucklar','box'),
         ('stages','/stages','Bosqichlar','layers'),
         ('workers','/workers','Ishchilar','users'),
-        ('qc','/qc','Sifat nazorati','shield'),
-        ('analytics','/analytics','KPI va tahlillar','trend'),
+        ('qc','/qc','QC nazorati','shield'),
         ('reports','/reports','Hisobotlar','report'),
         ('alerts','/alerts','Ogohlantirishlar','bell'),
         ('calendar','/calendar','Kalendar','cal'),
-        ('files','/files','Fayllar','file'),
         ('settings','/settings','Sozlamalar','gear'),
       ] %}
       {% for key,href,label,ic in nav %}
@@ -390,18 +479,19 @@
       </a>
       {% endfor %}
     </nav>
-    <div class="art">
-      <svg viewBox="0 0 240 150" preserveAspectRatio="none">
-        <path d="M10 140h220M20 140V70l30-18 30 18v70M50 52V34M44 34h12M80 140V84l40-20 40 20v56"/>
-        <path d="M120 64V30h60M180 30v18M150 84v56M120 100h60M120 120h60"/>
-        <path d="M180 140V96l24-12 24 12v44M204 84V60h-30"/>
-        <circle cx="50" cy="70" r="3"/><circle cx="120" cy="64" r="3"/><circle cx="204" cy="84" r="3"/>
-      </svg>
+    {% if side_counts %}
+    <div class="sidesum">
+      <div class="ss-h">Bugungi umumiy<span>{{ now_str }}</span></div>
+      <div class="ss-r"><i style="background:var(--c-blue)"></i>Ishlab chiqarishda<b>{{ side_counts.in_production }}</b></div>
+      <div class="ss-r"><i style="background:var(--c-amber)"></i>QC kutmoqda<b>{{ side_counts.qc_pending }}</b></div>
+      <div class="ss-r"><i style="background:var(--c-red)"></i>Qaytarilgan<b>{{ side_counts.returned }}</b></div>
+      <div class="ss-r"><i style="background:var(--c-green)"></i>Tayyor<b>{{ side_counts.done }}</b></div>
     </div>
+    {% endif %}
     <div class="user">
       <span class="av">{{ icon('user') }}</span>
-      <div><b>Admin</b><span>Rahbar</span></div>
-      <span class="cv">▾</span>
+      <div><b>Admin</b><span>Administrator</span></div>
+      <span class="cv">›</span>
     </div>
     <a href="/logout" class="logout">{{ icon('logout') }} Chiqish</a>
   </aside>

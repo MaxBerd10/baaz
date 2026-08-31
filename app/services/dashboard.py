@@ -4,8 +4,10 @@ from __future__ import annotations
 import datetime as dt
 
 from sqlalchemy import func, select
-from app.db import day
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.db import day
 
 from app.enums import ProductStatus, StageRunStatus
 from app.models import (
@@ -670,3 +672,225 @@ async def kpi_summary(session: AsyncSession) -> list[dict]:
         {"label": "Sifat koeffitsienti", "value": f"{sifat_k}%",
          "delta": _delta_str(3.6), "delta_tone": "good", "spark": sp_a, "color": "var(--c-green)"},
     ]
+
+
+# =========================================================================== #
+# Boshqaruv paneli (master-detail: truck ro'yxati + tanlangan truck + KPI)
+# =========================================================================== #
+_COLOR_HEX = {
+    "oq": "#eef1f5", "oppoq": "#eef1f5", "qora": "#2a3040", "qizil": "#ee625b",
+    "ko'k": "#478fe5", "kok": "#478fe5", "yashil": "#20ad73", "sariq": "#f5c542",
+    "kulrang": "#9aa3b4", "kumush": "#c8ccd4", "kumushrang": "#c8ccd4",
+    "oq rang": "#eef1f5",
+}
+
+
+def color_hex(c: str | None) -> str:
+    return _COLOR_HEX.get((c or "").strip().lower(), "#9aa3b4")
+
+
+_ST_UI = {
+    "in_production": ("Ishlab chiqarishda", "blue"),
+    "qc_pending": ("QC kutmoqda", "amber"),
+    "returned": ("Qaytarilgan", "red"),
+    "done": ("Tayyor", "green"),
+}
+
+
+def _rel_day(target: dt.date) -> tuple[str, str]:
+    d = (target - dt.datetime.now(dt.timezone.utc).date()).days
+    if d < 0:
+        return f"{-d} kun oldin", "red"
+    if d == 0:
+        return "Bugun", "amber"
+    if d == 1:
+        return "Ertaga", "blue"
+    return f"{d} kundan keyin", "red" if d <= 2 else "slate"
+
+
+async def home(session: AsyncSession, sel_code: str | None = None) -> dict:
+    stages = await stages_svc.list_stages(session)
+    n = len(stages) or 1
+    stage_names = {s.order_no: s.name for s in stages}
+    icons = ["chassiscar", "truckbody", "layers", "spray", "window", "wrench",
+             "shield", "gauge", "hammer"]
+
+    # ---- status sanoqlari ----
+    by_status = {s: 0 for s in ProductStatus}
+    for st, c in (await session.execute(
+        select(Product.status, func.count()).group_by(Product.status)
+    )):
+        by_status[st] = c
+    total = sum(by_status.values()) or 0
+
+    def pct(x):
+        return round(x / total * 100) if total else 0
+
+    _, sp_all = await _daily(session, Product.created_at, 14)
+    _, sp_ap = await _daily(session, StageRun.decided_at, 14, StageRun.status == StageRunStatus.approved)
+    _, sp_fi = await _daily(session, Product.finished_at, 14)
+    _, sp_re = await _daily(session, StageRun.decided_at, 14, StageRun.status == StageRunStatus.returned)
+
+    kpi5 = [
+        {"label": "Jami trucklar", "value": total, "sub": "100% jami",
+         "tone": "violet", "icon": "foodtruck", "spark": sp_all},
+        {"label": "Ishlab chiqarishda", "value": by_status[ProductStatus.in_production],
+         "sub": f"{pct(by_status[ProductStatus.in_production])}% jami",
+         "tone": "blue", "icon": "gear", "spark": sp_ap},
+        {"label": "QC kutmoqda", "value": by_status[ProductStatus.qc_pending],
+         "sub": f"{pct(by_status[ProductStatus.qc_pending])}% jami",
+         "tone": "amber", "icon": "shield", "spark": sp_re},
+        {"label": "Qaytarilgan", "value": by_status[ProductStatus.returned],
+         "sub": f"{pct(by_status[ProductStatus.returned])}% jami",
+         "tone": "red", "icon": "back", "spark": sp_re},
+        {"label": "Tayyor", "value": by_status[ProductStatus.done],
+         "sub": f"{pct(by_status[ProductStatus.done])}% jami",
+         "tone": "green", "icon": "check", "spark": sp_fi},
+    ]
+
+    # ---- truck ro'yxati ----
+    prods = list((await session.scalars(select(Product).order_by(Product.id.desc()))).all())
+    passed_by = {}
+    for pid, so, c in (await session.execute(
+        select(StageRun.product_id, StageRun.stage_order, func.count())
+        .where(StageRun.status == StageRunStatus.approved)
+        .group_by(StageRun.product_id, StageRun.stage_order)
+    )):
+        passed_by.setdefault(pid, set()).add(so)
+
+    trucks = []
+    for p in prods:
+        done_cnt = n if p.status == ProductStatus.done else len(passed_by.get(p.id, set()))
+        lbl, tone = _ST_UI.get(p.status.value, ("—", "slate"))
+        trucks.append({
+            "code": p.code, "model": p.model or "—", "size": p.size_m,
+            "color": p.color or "—", "hex": color_hex(p.color),
+            "done": done_cnt, "total": n,
+            "pct": round(done_cnt / n * 100),
+            "status": p.status.value, "status_label": lbl, "tone": tone,
+        })
+
+    # ---- tanlangan truck ----
+    sel_p = None
+    if sel_code:
+        sel_p = next((p for p in prods if p.code == sel_code), None)
+    if sel_p is None:
+        wip = [p for p in prods if p.status == ProductStatus.in_production]
+        sel_p = (max(wip, key=lambda p: p.current_stage_order) if wip
+                 else (prods[0] if prods else None))
+
+    sel = None
+    if sel_p is not None:
+        runs = list((await session.scalars(
+            select(StageRun).where(StageRun.product_id == sel_p.id).order_by(StageRun.id)
+            .options(
+                selectinload(StageRun.checks),
+                selectinload(StageRun.worker),
+            )
+        )).all())
+        by_order: dict[int, list] = {}
+        for r in runs:
+            by_order.setdefault(r.stage_order, []).append(r)
+
+        tl = []
+        for s in stages:
+            rs = by_order.get(s.order_no, [])
+            appr = next((r for r in rs if r.status == StageRunStatus.approved), None)
+            act = next((r for r in rs if r.status in (StageRunStatus.in_progress, StageRunStatus.qc_pending)), None)
+            if appr or sel_p.status == ProductStatus.done:
+                state, ref = "done", appr
+            elif sel_p.current_stage_order == s.order_no:
+                state, ref = "current", act
+            else:
+                state, ref = "todo", None
+            chk_total = int(await session.scalar(
+                select(func.count()).select_from(StageCheckItem)
+                .where(StageCheckItem.stage_id == s.id, StageCheckItem.is_active.is_(True))
+            ) or 0)
+            chk_ok = len([c for c in (ref.checks if ref else []) if c.ok]) if ref else (chk_total if state == "done" else 0)
+            frac_t = chk_total or 1
+            frac_n = chk_total if state == "done" else chk_ok
+            date = None
+            if state == "done" and ref:
+                date = ref.decided_at
+            elif state == "current" and ref:
+                date = ref.started_at
+            tl.append({
+                "order": s.order_no, "name": s.name,
+                "icon": icons[(s.order_no - 1) % len(icons)],
+                "state": state,
+                "date": date,
+                "frac": f"{frac_n}/{frac_t}",
+                "pct": round(frac_n / frac_t * 100),
+                "status_label": {"done": "Tugallangan", "current": "Ishlab chiqarishda",
+                                 "todo": "Kutilmoqda"}[state],
+                "started": ref.started_at if (state == "current" and ref) else None,
+            })
+
+        workers = {r.worker.full_name for r in runs if r.worker}
+        last_up = max([r.decided_at or r.submitted_at or r.started_at for r in runs] or [sel_p.created_at])
+        lbl, tone = _ST_UI.get(sel_p.status.value, ("—", "slate"))
+        cur = sel_p.current_stage_order
+        prog = 100 if sel_p.status == ProductStatus.done else round((cur - 1) / n * 100)
+        sel = {
+            "code": sel_p.code, "model": sel_p.model or "—", "size": sel_p.size_m,
+            "color": sel_p.color or "—", "hex": color_hex(sel_p.color),
+            "status": sel_p.status.value, "status_label": lbl, "tone": tone,
+            "started": sel_p.created_at,
+            "due": (sel_p.created_at + dt.timedelta(days=int(n * 1.6))) if sel_p.created_at else None,
+            "cur": cur, "cur_name": stage_names.get(cur, "—"),
+            "progress": prog,
+            "workers": sorted(workers), "worker_extra": max(0, len(workers) - 3),
+            "line": sel_p.line or "Liniya 1",
+            "last_update": last_up,
+            "next_plan": (last_up + dt.timedelta(days=1)) if last_up else None,
+            "n_stages": n,
+            "timeline": tl,
+        }
+
+    # ---- Umumiy KPI (4 mini) ----
+    summary4 = (await kpi_summary(session))[:4]
+
+    # ---- donut ----
+    dn = {
+        "pct": (round(sum(
+            (1.0 if s == ProductStatus.done else max(0.0, (co - 1) / n))
+            for s, co in (await session.execute(
+                select(Product.status, Product.current_stage_order)
+            )).all()
+        ) / total * 100) if total else 0),
+        "segments": [
+            {"label": "Tugallangan", "value": by_status[ProductStatus.done],
+             "share": _pct(by_status[ProductStatus.done], total), "color": "var(--c-green)"},
+            {"label": "Jarayonda", "value": by_status[ProductStatus.in_production],
+             "share": _pct(by_status[ProductStatus.in_production], total), "color": "var(--c-blue)"},
+            {"label": "QC kutmoqda", "value": by_status[ProductStatus.qc_pending],
+             "share": _pct(by_status[ProductStatus.qc_pending], total), "color": "var(--c-amber)"},
+            {"label": "Qaytarilgan", "value": by_status[ProductStatus.returned],
+             "share": _pct(by_status[ProductStatus.returned], total), "color": "var(--c-red)"},
+        ],
+    }
+
+    # ---- Yaqinlashayotgan muddatlar ----
+    upcoming = []
+    for p in prods:
+        if p.status == ProductStatus.done:
+            continue
+        base = p.created_at or _day0()
+        target = (base + dt.timedelta(days=int(p.current_stage_order * 1.8))).date()
+        rel, tone = _rel_day(target)
+        upcoming.append({
+            "code": p.code,
+            "stage": stage_names.get(p.current_stage_order, "—"),
+            "icon": icons[(p.current_stage_order - 1) % len(icons)],
+            "date": dt.datetime.combine(target, dt.time(9, 0)),
+            "rel": rel, "tone": tone, "sort": target,
+        })
+    upcoming.sort(key=lambda x: x["sort"])
+    upcoming = upcoming[:4]
+
+    return {
+        "kpi5": kpi5, "trucks": trucks, "sel": sel,
+        "summary4": summary4, "donut": dn, "upcoming": upcoming,
+        "total_count": total,
+    }

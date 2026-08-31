@@ -1,211 +1,161 @@
 {% extends "base.html" %}
 {% block title %}Boshqaruv paneli — Baaz{% endblock %}
 {% block heading %}Boshqaruv paneli{% endblock %}
-{% block sub %}Ishlab chiqarish jarayonining umumiy holati{% endblock %}
-{% block topctl %}
-<form method="get" action="/" style="margin:0">
-  <select name="line" class="ctl" onchange="this.form.submit()" style="appearance:none;cursor:pointer;padding-right:26px">
-    <option value="">Barcha modellar</option>
-    {% for l in d.line_opts %}<option value="{{ l }}" {{ 'selected' if d.cur_line==l }}>{{ l }}</option>{% endfor %}
-  </select>
-</form>
-{% endblock %}
+{% block sub %}Har bir food trucking ishlab chiqarish holatini boshqarish{% endblock %}
 {% block body %}
 
-{%- macro fic(name) -%}
-{%- if name=='check' -%}<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
-{%- elif name=='back' -%}<svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-2"/></svg>
-{%- elif name=='send' -%}<svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>
-{%- elif name=='arrow' -%}<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-{%- elif name=='flag' -%}<svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>
-{%- else -%}<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg>
-{%- endif -%}
-{%- endmacro -%}
+{%- macro sic(name) -%}<span class="sic">{{ icon(name) }}</span>{%- endmacro -%}
 
-<!-- ============ KPI cards ============ -->
-<div class="row kpis">
-  {% for c in d.kpi_cards %}
-  <div class="card kpi">
-    <div class="top">
+<!-- ===== 5 KPI ===== -->
+<div class="home5">
+  {% for c in d.kpi5 %}
+  <div class="card h5">
+    <div class="r1">
       <span class="ic tint-{{ c.tone }}">{{ icon(c.icon) }}</span>
       <div style="min-width:0">
         <div class="lbl">{{ c.label }}</div>
         <div class="val num">{{ c.value }}</div>
-        <div class="sub {{ c.sub_tone or '' }}">{{ c.sub }}</div>
       </div>
     </div>
-    <div class="spark">{{ c.spark_svg }}</div>
+    <div class="sub">{{ c.sub }}</div>
+    <div class="sp">{{ c.spark_svg }}</div>
   </div>
   {% endfor %}
 </div>
 
-<!-- ============ process + donut ============ -->
-<div class="row c2">
+<div class="homegrid">
+
+  <!-- ===== 1: truck ro'yxati ===== -->
+  <div class="card tlist" style="align-self:start">
+    <div class="hd" style="display:flex;align-items:center;gap:10px">
+      <b style="font-size:13px">Trucklar ro'yxati</b>
+      <span style="margin-left:auto;color:var(--faint);font-size:14px">⌕</span>
+    </div>
+    <div class="rows">
+      {% for t in d.trucks %}
+      <a href="/?sel={{ t.code }}" class="trow {{ 'on' if d.sel and d.sel.code==t.code }}">
+        <span class="van" style="color:{{ t.hex }}">{{ icon('van') }}</span>
+        <span class="mid">
+          <b>{{ t.code }}</b>
+          <small>Model {{ t.model }} · {{ t.size or '—' }} metr</small>
+        </span>
+        <span class="rt">
+          <span class="fr num">{{ t.done }}/{{ t.total }}</span>
+          <span class="pc" style="color:{{ 'var(--c-green)' if t.pct>=100 else 'var(--brand)' }}">{{ t.pct }}%</span>
+        </span>
+      </a>
+      {% else %}<div class="empty">Truck yo'q</div>{% endfor %}
+    </div>
+    <div class="ft">
+      <span>Jami {{ d.total_count }} ta truck</span>
+      <span class="pg"><a>‹</a><a class="on">1</a><a>›</a></span>
+    </div>
+  </div>
+
+  <!-- ===== 2: tanlangan truck ===== -->
+  <div class="col2">
+  {% if d.sel %}
+  {% set s = d.sel %}
   <div class="card pad">
-    <div class="hd"><h2>{{ d.steps|length }} liniyali ishlab chiqarish jarayoni</h2></div>
-    <div class="proc">
-      {% for s in d.steps %}
-      <div class="stp {{ s.state }}">
-        <div class="line"></div>
-        <div class="dot">{{ s.order }}</div>
-        {% if s.state=='done' %}<span class="chk">✓</span>{% endif %}
-        <span class="sic">{{ icon(s.icon) }}</span>
-        <span class="nm" title="{{ s.name }}">{{ s.name }}</span>
-        <span class="ct num">{{ s.passed }} / {{ s.entered }}</span>
-        <span class="pc" style="color:{{ 'var(--c-green)' if s.state=='done' else ('var(--brand)' if s.state=='current' else 'var(--faint)') }}">{{ s.pct }}%</span>
+    <div class="selhead">
+      <span class="photo" style="color:{{ s.hex }}">{{ icon('van') }}</span>
+      <div style="flex:1;min-width:0">
+        <div class="h1">{{ s.code }} <span class="badge b-{{ s.status }}">{{ s.status_label }}</span></div>
+        <div class="spec">
+          <span>Model <b style="color:var(--ink)">{{ s.model }}</b></span>
+          <span>{{ s.size or '—' }} metr</span>
+          <span class="dot"><i style="background:{{ s.hex }};border:1px solid var(--line)"></i>{{ s.color }} rang</span>
+        </div>
+        <div class="selmeta">
+          <div class="m"><div class="k">Boshlanish sanasi</div><div class="v num">📅 {{ s.started|dt }}</div></div>
+          <div class="m"><div class="k">Kutilgan tugash</div><div class="v num">📅 {{ s.due|dt }}</div></div>
+          <div class="m"><div class="k">Joriy bosqich</div><div class="v">{{ s.cur }}-bosqich · {{ s.cur_name }}</div></div>
+          <div class="m"><div class="k">Umumiy progress</div><div class="v">◔ {{ s.progress }}%</div></div>
+        </div>
       </div>
-      {% endfor %}
-      <div class="stp done">
-        <div class="dot">✓</div>
-        <span class="sic" style="color:var(--c-green)">{{ icon('check') }}</span>
-        <span class="nm">Tayyor</span>
-        <span class="ct num">{{ d.board.done }} ta</span>
-        <span class="pc" style="color:var(--c-green)">chiqarilgan</span>
-      </div>
-    </div>
-    <div class="proc-legend">
-      <span class="d"><i style="background:var(--c-green)"></i>Tugallangan</span>
-      <span class="d"><i style="background:var(--brand)"></i>Joriy liniya</span>
-      <span class="d"><i style="background:var(--c-amber)"></i>Kutilmoqda</span>
-      <span class="d"><i style="background:var(--c-red)"></i>Muammoli</span>
-      <a class="more" href="/analytics"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>Batafsil statistika</a>
     </div>
   </div>
 
   <div class="card pad">
-    <div class="hd"><h3>Jarayonga oid KPI lar</h3></div>
-    <div class="donut-box">
-      {{ donut_svg }}
-      <div class="lg">
-        {% for g in d.donut.segments %}
-        <div class="it"><i style="background:{{ g.color }}"></i><span class="nm">{{ g.label }}</span>
-          <span class="v num">{{ g.value }}</span><span class="s">({{ g.share }}%)</span></div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ table + right rail ============ -->
-<div class="row c2">
-  <div class="card pad table-card">
-    <div class="hd"><h3>Bosqichlar bo'yicha KPI performance</h3></div>
-    <div class="table-wrap">
-    <table>
-      <thead><tr>
-        <th>Bosqich</th><th>Reja (pcs)</th><th>Fakt (pcs)</th><th>Bajarilish %</th><th>O'rtacha vaqt</th>
-        <th>QC Pass Rate</th><th>Qaytarilish %</th><th>Kechikishlar</th><th>Trend (7 kun)</th><th>Status</th>
-      </tr></thead>
-      <tbody>
-      {% for r in d.kpi_rows %}
-      <tr>
-        <td><span class="idx">{{ r.order }}</span> <span class="rowic">{{ icon(r.icon) }}</span> {{ r.name }}</td>
-        <td class="num">{{ r.reja }}</td>
-        <td class="num">{{ r.fakt }}</td>
-        <td><span class="mbar"><span class="tk"><i style="width:{{ r.done_pct }}%"></i></span><b>{{ r.done_pct }}%</b></span></td>
-        <td class="num">{{ r.avg_h }} soat</td>
-        <td class="num pos">{{ r.qc_pass }}%</td>
-        <td class="num">{{ r.ret_pct }}%</td>
-        <td class="num {{ 'neg' if r.delays else '' }}">{{ r.delays }}</td>
-        <td>{{ r.trend_svg }}</td>
-        <td><span class="chip {{ r.status_tone }}">{{ r.status }}</span></td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    </div>
-  </div>
-
-  <div class="rrail">
-    <div class="card pad">
-      <div class="hd"><h3>Kunlik ishlab chiqarish dinamikasi</h3><a class="lnk" href="/analytics">Batafsil</a></div>
-      <div class="dyn-wrap">
-        {{ dyn_svg }}
-        {% if d.dyn.tip %}
-        <div class="dyn-tip">
-          <b>{{ d.dyn.tip.date }}.2026</b>
-          <div class="r"><i style="background:var(--c-violet)"></i>Reja: {{ d.dyn.tip.plan }}</div>
-          <div class="r"><i style="background:var(--c-violet)"></i>Fakt: {{ d.dyn.tip.fact }}</div>
-          <div class="r"><i style="background:var(--c-green)"></i>Tayyor: {{ d.dyn.tip.ready }}</div>
+    <div class="hd"><h2>Ishlab chiqarish jarayoni ({{ s.n_stages }} bosqich)</h2>
+      <a class="lnk" href="/products/{{ s.code }}">⟲ Jarayon tarixi</a></div>
+    <div class="vstep">
+      {% for r in s.timeline %}
+      <div class="vrow {{ r.state }}">
+        <span class="num">{{ '✓' if r.state=='done' else r.order }}</span>
+        {{ sic(r.icon) }}
+        <span class="nm">{{ r.name }}
+          {% if r.state=='current' %}<small>Jarayonda…</small>
+          {% elif r.date %}<small>{{ r.date|dt }}</small>{% endif %}
+        </span>
+        <span class="fr">{{ r.frac }}</span>
+        <span class="pc" style="color:{{ 'var(--c-green)' if r.state=='done' else ('var(--brand)' if r.state=='current' else 'var(--faint)') }}">{{ r.pct }}%</span>
+        <span class="badge b-{{ 'done' if r.state=='done' else ('in_production' if r.state=='current' else 'cancelled') }}">{{ r.status_label }}</span>
+        {% if r.state=='current' %}
+        <div class="cur-wrap">
+          <div style="font-size:10.5px;color:var(--faint)">Boshlangan: {{ r.started|dt }}</div>
+          <div class="cur-bar"><i style="width:{{ r.pct }}%"></i></div>
         </div>
         {% endif %}
       </div>
-      <div class="legend2">
-        <span><i style="border-top-style:dashed;border-color:var(--c-violet)"></i>Reja</span>
-        <span><i style="border-color:var(--c-violet)"></i>Fakt</span>
-        <span><i style="border-color:var(--c-green)"></i>Tayyor</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card pad">
+    <div class="selmeta" style="margin:0">
+      <div class="m"><div class="k">Mas'ul ishchi</div><div class="v">👷 {{ s.workers|join(', ') if s.workers else '—' }}{% if s.worker_extra %} +{{ s.worker_extra }}{% endif %}</div></div>
+      <div class="m"><div class="k">Liniya</div><div class="v">{{ s.line }}</div></div>
+      <div class="m"><div class="k">Oxirgi yangilanish</div><div class="v num">{{ s.last_update|dt }}</div></div>
+      <div class="m"><div class="k">Keyingi reja</div><div class="v num">{{ s.next_plan|dt }}</div></div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card pad"><div class="empty">Truck tanlang</div></div>
+  {% endif %}
+  </div>
+
+  <!-- ===== 3: KPI + donut + muddatlar ===== -->
+  <div class="col3">
+    <div class="card pad">
+      <div class="hd"><h3>Umumiy KPI</h3><span class="lnk">Bugun ▾</span></div>
+      <div class="mini">
+        {% for m in d.summary4 %}
+        <div class="m">
+          <div class="l">{{ m.label }}</div>
+          <div class="v num">{{ m.value }}</div>
+          <div class="d {{ m.delta_tone }}">{{ m.delta }}</div>
+          <div class="sp">{{ m.spark_svg }}</div>
+        </div>
+        {% endfor %}
       </div>
     </div>
 
     <div class="card pad">
-      <div class="hd"><h3>Ko'proq qaytarilgan sabablar (Top 5)</h3><a class="lnk" href="/reports">Batafsil</a></div>
-      {% for x in d.reasons %}
-      <div class="rsn">
-        <span class="ic">{{ fic('check') }}</span>
-        <span class="tx" title="{{ x.text }}">{{ x.text }}</span>
-        <span class="ct num">{{ x.count }} ta</span>
-        <span class="tk"><i style="width:{{ x.share }}%;background:{{ x.color }}"></i></span>
-        <span class="pc" style="color:{{ x.color }}">{{ x.share }}%</span>
+      <div class="hd"><h3>Jarayonga oid KPI lar</h3></div>
+      <div class="donut-box">
+        {{ donut_svg }}
+        <div class="lg">
+          {% for g in d.donut.segments %}
+          <div class="it"><i style="background:{{ g.color }}"></i><span class="nm">{{ g.label }}</span>
+            <span class="v num">{{ g.value }}</span><span class="s">({{ g.share }}%)</span></div>
+          {% endfor %}
+        </div>
       </div>
-      {% else %}<div class="empty">Ma'lumot yo'q</div>{% endfor %}
     </div>
-  </div>
-</div>
 
-<!-- ============ liniyalar — jonli holat ============ -->
-<div class="card pad" style="margin-bottom:18px">
-  <div class="hd"><h3>Liniyalar — jonli holat</h3><a class="lnk" href="/products">Barcha trucklar</a></div>
-  <div class="board">
-    {% for ln in d.board.lines %}
-    <div class="bcol">
-      <div class="bhead"><span class="bno">{{ ln.order }}</span> {{ ln.name }}<span class="bcnt">{{ ln.count }}</span></div>
-      {% for t in ln.trucks %}
-      <div class="btruck">
-        <div class="bt1"><b>{{ t.model }}</b> · {{ t.size or '—' }} m
-          <span class="bt-dot bt-{{ t.tone }}" title="{{ t.status }}"></span></div>
-        <div class="bt2">{{ t.color }} · <a href="/products/{{ t.code }}">{{ t.code }}</a></div>
-        <div class="bt3">👷 {{ t.worker }}</div>
-      </div>
-      {% else %}
-      <div class="bempty">— bo'sh —</div>
-      {% endfor %}
-    </div>
-    {% endfor %}
-    <div class="bcol bdone">
-      <div class="bhead"><span class="bno">✓</span> Tayyor<span class="bcnt">{{ d.board.done }}</span></div>
-      <div class="bempty" style="color:var(--c-green)">chiqarilgan trucklar</div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ bottom 2 ============ -->
-<div class="row c2">
-  <div class="card pad">
-    <div class="hd"><h3>KPI summary</h3><a class="lnk" href="/analytics">Batafsil</a></div>
-    <div class="mini">
-      {% for m in d.summary %}
-      <div class="m">
-        <div class="l">{{ m.label }}</div>
-        <div class="v num">{{ m.value }}</div>
-        <div class="d {{ m.delta_tone }}">{{ m.delta }}</div>
-        <div class="sp">{{ m.spark_svg }}</div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="card pad">
-    <div class="hd"><h3>Real time faollik</h3><a class="lnk" href="/reports">Batafsil</a></div>
-    <div class="feed">
-      {% for f in d.feed %}
+    <div class="card pad upc">
+      <div class="hd"><h3>Yaqinlashayotgan muddatlar</h3><a class="lnk" href="/calendar">Barchasi</a></div>
+      {% for u in d.upcoming %}
       <div class="it">
-        <span class="ic tint-{{ f.tone }}">{{ fic(f.icon) }}</span>
-        <div class="bd"><div class="t1">{{ f.text }}</div>
-          {% if f.meta %}<div class="t2">Xodim: {{ f.meta }}</div>{% endif %}</div>
-        <span class="tm">{{ f.time|tm }}</span>
+        <span class="ic">{{ icon(u.icon) }}</span>
+        <div class="bd"><b>{{ u.code }} — {{ u.stage }} bosqichi</b><small>{{ u.date|dt }}</small></div>
+        <span class="rel rel-{{ u.tone }}">{{ u.rel }}</span>
       </div>
-      {% else %}<div class="empty">Harakat yo'q</div>{% endfor %}
+      {% else %}<div class="empty">Muddat yo'q</div>{% endfor %}
+      <a class="lnk" href="/calendar" style="display:block;text-align:center;margin-top:10px">Barchasini ko'rish →</a>
     </div>
   </div>
+
 </div>
 {% endblock %}

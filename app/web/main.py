@@ -7,13 +7,13 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db import SessionLocal, init_db
 from app.enums import PRODUCT_STATUS_LABEL, ROLE_LABEL, ProductStatus
-from app.models import AuditLog, Media
+from app.models import AuditLog, Media, Product
 from app.services import dashboard as dash_svc
 from app.services import products as products_svc
 from app.services import stages as stages_svc
@@ -153,9 +153,21 @@ async def get_session() -> AsyncSession:
         yield session
 
 
+async def _side_counts(session: AsyncSession) -> dict:
+    rows = dict(
+        (
+            await session.execute(
+                select(Product.status, func.count()).group_by(Product.status)
+            )
+        ).all()
+    )
+    return {s.value: int(rows.get(s, 0)) for s in ProductStatus}
+
+
 async def page(name: str, request: Request, session: AsyncSession, **ctx):
     ctx.setdefault("now_str", dt.datetime.now(_TZ).strftime("%d.%m.%Y"))
     ctx.setdefault("alerts_count", await dash_svc.alerts_count(session))
+    ctx.setdefault("side_counts", await _side_counts(session))
     return templates.TemplateResponse(name, {"request": request, **ctx})
 
 
@@ -204,35 +216,22 @@ _KPI_SPARK_COLOR = {
 
 @app.get("/", response_class=HTMLResponse)
 async def overview(
-    request: Request, line: str | None = None,
+    request: Request, sel: str | None = None,
     session: AsyncSession = Depends(get_session), _=Depends(require_login),
 ):
-    d = await dash_svc.build(session, line=line or None)
+    d = await dash_svc.home(session, sel_code=sel or None)
 
-    for c in d["kpi_cards"]:
+    for c in d["kpi5"]:
         col = _KPI_SPARK_COLOR.get(c["tone"], "var(--brand)")
-        c["spark_svg"] = Markup(
-            charts.sparkline(c["spark"], color=col, fill=c["tone"] in ("green", "teal"))
-        )
-    for r in d["kpi_rows"]:
-        tone = "var(--c-green)" if r["status_tone"] == "good" else (
-            "var(--c-amber)" if r["status_tone"] == "warn" else "var(--c-blue)"
-        )
-        r["trend_svg"] = Markup(charts.sparkline(r["trend"], width=92, height=26, color=tone))
-    for m in d["summary"]:
-        m["spark_svg"] = Markup(charts.sparkline(m["spark"], width=150, height=30, color=m["color"], fill=True))
+        c["spark_svg"] = Markup(charts.sparkline(c["spark"], width=140, height=44, color=col, fill=True))
+    for m in d["summary4"]:
+        m["spark_svg"] = Markup(charts.sparkline(m["spark"], width=150, height=28, color=m["color"], fill=True))
 
     donut_svg = Markup(charts.donut(
         [(g["color"], g["value"]) for g in d["donut"]["segments"]],
         center_top=f"{d['donut']['pct']}%", center_bottom="Umumiy progress",
     ))
-    dy = d["dyn"]
-    dyn_svg = Markup(charts.dynamics(dy["labels"], dy["plan"], dy["fact"], dy["ready"]))
-
-    return await page(
-        "index.html", request, session,
-        active="dash", d=d, donut_svg=donut_svg, dyn_svg=dyn_svg,
-    )
+    return await page("index.html", request, session, active="dash", d=d, donut_svg=donut_svg)
 
 
 # --------------------------------------------------------------------------- #
@@ -240,7 +239,7 @@ async def overview(
 # --------------------------------------------------------------------------- #
 @app.get("/products", response_class=HTMLResponse)
 async def products_page(
-    request: Request, status: str | None = None, stage: int | None = None,
+    request: Request, status: str | None = None, stage: int | None = None, q: str | None = None,
     session: AsyncSession = Depends(get_session), _=Depends(require_login),
 ):
     status_enum = None
@@ -249,10 +248,19 @@ async def products_page(
             status_enum = ProductStatus(status)
         except ValueError:
             status_enum = None
-    items = await products_svc.list_products(session, status=status_enum, stage_order=stage, limit=300)
+    all_items = await products_svc.list_products(session, limit=300)
+    items = [
+        item for item in all_items
+        if (status_enum is None or item.status == status_enum)
+        and (stage is None or item.current_stage_order == stage)
+        and (not q or q.lower() in " ".join(filter(None, [item.code, item.model, item.color])).lower())
+    ]
+    status_counts = {s.value: sum(item.status == s for item in all_items) for s in ProductStatus}
+    stage_total = await stages_svc.active_count(session)
     return await page(
         "products.html", request, session,
-        active="products", items=items, cur_status=status or "", cur_stage=stage or "",
+        active="products", items=items, cur_status=status or "", cur_stage=stage or "", query=q or "",
+        status_counts=status_counts, total_count=len(all_items), stage_total=stage_total or 1,
     )
 
 
