@@ -37,14 +37,24 @@ async def seed_demo(session: AsyncSession) -> None:
     stage_list = await stages_svc.list_stages(session)
     N = len(stage_list)
 
-    admin = User(telegram_id=900001, full_name="Rahbar Aliyev", role=Role.admin)
-    qc = User(telegram_id=900002, full_name="Sifat Karimov", role=Role.qc)
+    admin = User(telegram_id=900001, full_name="Jasur Rahimov", role=Role.admin)
+    qc = User(telegram_id=900002, full_name="Bekzod Yo'ldoshev", role=Role.qc)
     session.add_all([admin, qc])
     await session.flush()
+
+    _WORKER_NAMES = [
+        "Aziz Tursunov", "Sardor Qodirov", "Doston Ismoilov",
+        "Rustam Ergashev", "Jahongir Sobirov", "Otabek Nazarov",
+        "Umid Xolmatov", "Shohruh Berdiyev",
+    ]
     workers = []
-    for st in stage_list:
-        w = User(telegram_id=900100 + st.order_no, full_name=f"Ishchi {st.order_no}",
-                 role=Role.worker, stage_id=st.id)
+    for i, st in enumerate(stage_list):
+        w = User(
+            telegram_id=900100 + st.order_no,
+            full_name=_WORKER_NAMES[i % len(_WORKER_NAMES)],
+            role=Role.worker,
+            stage_id=st.id,
+        )
         session.add(w)
         workers.append(w)
     await session.flush()
