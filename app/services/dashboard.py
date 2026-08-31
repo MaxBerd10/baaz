@@ -189,7 +189,7 @@ async def build(session: AsyncSession, *, line: str | None = None) -> dict:
     # oldingisidan oldin "bajarilgan" bo'lib qolmaydi.
     _PROGRESS_DONE = 0.6
     # 6 liniya: Karkas, Kuzov, Ichki addelka, Bo'yash, Eshik-deraza, Zborka
-    _STAGE_ICONS = ["weld", "truckbody", "layers", "paintroller", "window", "wrench"]
+    _STAGE_ICONS = ["chassiscar", "truckbody", "layers", "spray", "window", "wrench"]
     frontier_found = False
     steps = []
     kpi_rows = []
