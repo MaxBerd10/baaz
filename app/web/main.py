@@ -83,21 +83,69 @@ except OSError:  # read-only FS (Vercel)
 if _static.is_dir():
     app.mount("/static", StaticFiles(directory=str(_static)), name="static")
 
-# Vercel'da jadvallar bir marta seed qilingani uchun har cold-start'da
-# init_db chaqirmaslik mumkin: SKIP_INIT_DB=1
 _SKIP_INIT = os.getenv("SKIP_INIT_DB", "").lower() in ("1", "true", "yes")
+_AUTO_SEED = os.getenv("AUTO_SEED", "").lower() in ("1", "true", "yes")
+_log = __import__("logging").getLogger("web")
+
+_BOOTSTRAPPED = False
 
 
-@app.on_event("startup")
-async def _startup() -> None:
+async def _bootstrap_once() -> None:
+    """Birinchi so'rovda: jadvallarni yaratish va (AUTO_SEED bo'lsa) demo to'ldirish.
+    Xatolar sahifani buzmasligi uchun yutib yuboriladi."""
+    global _BOOTSTRAPPED
+    if _BOOTSTRAPPED:
+        return
+    _BOOTSTRAPPED = True
+    try:
+        ensure_root()
+    except Exception:  # pragma: no cover
+        pass
     if not _SKIP_INIT:
         try:
             await init_db()
         except Exception as exc:  # pragma: no cover
-            import logging
+            _log.warning("init_db: %s", exc)
+    if _AUTO_SEED:
+        try:
+            from app.demo import is_empty, seed_demo
 
-            logging.getLogger("web").warning("init_db skipped: %s", exc)
-    ensure_root()
+            async with SessionLocal() as s:
+                if await is_empty(s):
+                    await seed_demo(s)
+                    await s.commit()
+                    _log.info("demo seeded")
+        except Exception as exc:  # pragma: no cover
+            _log.warning("seed_demo: %s", exc)
+
+
+@app.on_event("startup")
+async def _startup() -> None:
+    try:
+        await _bootstrap_once()
+    except Exception as exc:  # pragma: no cover
+        _log.warning("startup: %s", exc)
+
+
+_SHOW_ERRORS = os.getenv("SHOW_ERRORS", "1").lower() in ("1", "true", "yes")
+
+
+@app.middleware("http")
+async def _ensure_bootstrap(request: Request, call_next):
+    # Lifespan startup Vercel'da ishlamasligi mumkin — birinchi so'rovda ham urinamiz.
+    if not _BOOTSTRAPPED:
+        await _bootstrap_once()
+    try:
+        return await call_next(request)
+    except Exception:  # pragma: no cover
+        import traceback
+
+        tb = traceback.format_exc()
+        _log.error("request failed: %s", tb)
+        if _SHOW_ERRORS:
+            return Response("REQUEST ERROR\n\n" + tb, status_code=500,
+                            media_type="text/plain; charset=utf-8")
+        raise
 
 
 async def get_session() -> AsyncSession:
