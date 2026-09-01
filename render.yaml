@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: baaz-web
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.web.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /login
+    autoDeploy: true
+    envVars:
+      - key: AUTO_SEED
+        value: "1"
+      - key: WEB_PASSWORD
+        value: admin
+      - key: SECRET_KEY
+        generateValue: true
+      - key: TZ
+        value: Asia/Tashkent
