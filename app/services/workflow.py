@@ -100,7 +100,7 @@ async def create_product(
         action="product_created",
         product_id=product.id,
         stage_run_id=run.id,
-        details=f"{product.code} — {product.name}",
+        details=product.name,
     )
     return product
 
@@ -307,7 +307,7 @@ async def qc_approve(
         action="product_finished",
         product_id=product.id,
         stage_run_id=run.id,
-        details=product.code,
+        details=product.name,
     )
     return AdvanceResult(finished=True, next_stage_order=None, product=product)
 

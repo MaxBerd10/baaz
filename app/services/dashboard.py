@@ -344,7 +344,8 @@ async def alerts(session: AsyncSession) -> list[dict]:
         ).all()
     )
     out = [
-        {"code": p.code, "name": p.name, "line": p.line, "stage": p.current_stage_order,
+        {"code": p.code, "name": p.name, "model": p.model or "—", "size": p.size_m,
+         "line": p.line, "stage": p.current_stage_order,
          "kind": "Ko'p marta qaytarilgan", "tone": "red"}
         for p in rows
     ]
@@ -367,8 +368,9 @@ async def alerts(session: AsyncSession) -> list[dict]:
     )
     for p in stale:
         if not any(o["code"] == p.code for o in out):
-            out.append({"code": p.code, "name": p.name, "line": p.line,
-                        "stage": p.current_stage_order, "kind": "QC 2+ kun kutmoqda", "tone": "amber"})
+            out.append({"code": p.code, "name": p.name, "model": p.model or "—", "size": p.size_m,
+                        "line": p.line, "stage": p.current_stage_order,
+                        "kind": "QC 2+ kun kutmoqda", "tone": "amber"})
     return out
 
 
@@ -881,6 +883,7 @@ async def home(session: AsyncSession, sel_code: str | None = None) -> dict:
         rel, tone = _rel_day(target)
         upcoming.append({
             "code": p.code,
+            "model": p.model or "—",
             "stage": stage_names.get(p.current_stage_order, "—"),
             "icon": icons[(p.current_stage_order - 1) % len(icons)],
             "date": dt.datetime.combine(target, dt.time(9, 0)),

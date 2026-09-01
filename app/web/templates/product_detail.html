@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{{ product.code }} — Baaz{% endblock %}
-{% block heading %}{{ product.code }}{% endblock %}
-{% block sub %}🚚 {{ product.model or '—' }} · {{ (product.size_m ~ ' m') if product.size_m else '—' }} · {{ product.color or '—' }}{% endblock %}
+{% block title %}Model {{ product.model or '—' }} — Baaz{% endblock %}
+{% block heading %}Model {{ product.model or '—' }}{% endblock %}
+{% block sub %}🚚 {{ (product.size_m ~ ' metr') if product.size_m else '—' }} · {{ product.color or '—' }} rang{% endblock %}
 {% block body %}
 
 <p class="muted" style="margin-top:-4px"><a href="/products">← Trucklar ro'yxati</a></p>

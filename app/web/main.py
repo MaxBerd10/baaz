@@ -12,8 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db import SessionLocal, init_db
-from app.enums import PRODUCT_STATUS_LABEL, ROLE_LABEL, ProductStatus
-from app.models import AuditLog, Media, Product
+from app.enums import PRODUCT_STATUS_LABEL, ROLE_LABEL, ProductStatus, StageRunStatus
+from app.models import AuditLog, Media, Product, StageRun, User
 from app.services import dashboard as dash_svc
 from app.services import products as products_svc
 from app.services import stages as stages_svc
@@ -65,8 +65,91 @@ def _fmt_time(value):
     return value.astimezone(_TZ).strftime("%d.%m %H:%M")
 
 
+def _avatar_seed(name: str | None) -> int:
+    import hashlib
+
+    return int.from_bytes(hashlib.md5((name or "?").strip().encode("utf-8")).digest()[:4], "big")
+
+
+_AV_SKIN = ["#f3c9a3", "#eab98b", "#dda06f", "#c98b52", "#a9713f", "#8a5a34"]
+_AV_HAIR = ["#2b2b2b", "#1c1c1c", "#3b2a1c", "#4a3626", "#5a4433", "#6b4f3a"]
+_AV_SHIRT = ["#4f6b8a", "#5a7d5a", "#7a5c8a", "#8a6a4a", "#6a6f7a", "#8a5a5a"]
+
+
+def _avatar_svg(name: str | None) -> str:
+    """Ishchi uchun barqaror, erkak ko'rinishidagi avatar — to'liq offline (data URI)."""
+    import base64
+
+    s = _avatar_seed(name)
+    hue = s % 360
+    bg = f"hsl({hue},42%,90%)"
+    skin = _AV_SKIN[(s >> 3) % len(_AV_SKIN)]
+    hair = _AV_HAIR[(s >> 7) % len(_AV_HAIR)]
+    shirt = _AV_SHIRT[(s >> 11) % len(_AV_SHIRT)]
+    style = (s >> 15) % 3          # soqol turi
+    hard_hat = (s >> 18) % 5 == 0  # ba'zida kaska
+
+    p = [f'<rect width="64" height="64" fill="{bg}"/>']
+    # yelka / ko'ylak
+    p.append(f'<path d="M12 64c0-13 9-21 20-21s20 8 20 21z" fill="{shirt}"/>')
+    p.append(f'<rect x="27" y="37" width="10" height="10" fill="{skin}"/>')
+    # soqol asosi (yuzdan bir oz pastroq, keyin yuz ustiga chiziladi -> soqol jiyagi)
+    p.append(f'<circle cx="32" cy="30" r="14" fill="{hair}"/>')
+    p.append(f'<circle cx="32" cy="27" r="14" fill="{skin}"/>')
+    if style == 0:      # to'liq soqol
+        p.append(f'<path d="M19 30c2 9 7 15 13 15s11-6 13-15c-3 4-8 6-13 6s-10-2-13-6z" fill="{hair}"/>')
+        p.append(f'<rect x="26" y="31" width="12" height="3" rx="1.5" fill="{hair}"/>')
+    elif style == 1:    # echki soqol + mo'ylov
+        p.append(f'<path d="M28 39h8c0 4-2 7-4 7s-4-3-4-7z" fill="{hair}"/>')
+        p.append(f'<rect x="26" y="31" width="12" height="3" rx="1.5" fill="{hair}"/>')
+    else:               # qisqa soqol (stubble) + mo'ylov
+        p.append(f'<path d="M20 32c2 7 6 12 12 12s10-5 12-12c-3 3-7 4-12 4s-9-1-12-4z" fill="{hair}" opacity=".45"/>')
+        p.append(f'<rect x="26" y="31" width="12" height="2.6" rx="1.3" fill="{hair}"/>')
+    # ko'zlar + qosh
+    p.append('<rect x="24.5" y="24" width="6" height="1.8" rx=".9" fill="#4a4a4a"/>')
+    p.append('<rect x="33.5" y="24" width="6" height="1.8" rx=".9" fill="#4a4a4a"/>')
+    p.append('<circle cx="27.5" cy="27" r="1.7" fill="#37474f"/><circle cx="36.5" cy="27" r="1.7" fill="#37474f"/>')
+    # soch yoki kaska
+    if hard_hat:
+        p.append('<path d="M16 24a16 16 0 0 1 32 0v2H16z" fill="#f5a623"/>')
+        p.append('<rect x="30" y="8" width="4" height="8" rx="2" fill="#f5a623"/>')
+        p.append('<rect x="13" y="24" width="38" height="4" rx="2" fill="#e0951a"/>')
+    else:
+        p.append(f'<path d="M18 25c0-10 6-16 14-16s14 6 14 16c-2-5-6-8-9-8 0-3-3-4-5-3-2-2-6-2-9 1-3 0-5 4-5 10z" fill="{hair}"/>')
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">{"".join(p)}</svg>'
+    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode("utf-8")).decode("ascii")
+
+
+_AVATAR_DIR = BASE_DIR / "static" / "avatars"
+
+
+def _avatar_url(name: str | None) -> str:
+    """Ishchi surati: static/avatars/1..N.(jpg|png|webp) fayllardan biri (ism bo'yicha barqaror).
+    Fayllar bo'lmasa — offline generatsiya qilingan SVG avatar."""
+    files = sorted(
+        f.name for f in _AVATAR_DIR.glob("*")
+        if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")
+    ) if _AVATAR_DIR.is_dir() else []
+    if not files:
+        return _avatar_svg(name)
+    return "/static/avatars/" + files[_avatar_seed(name) % len(files)]
+
+
+import re as _re
+
+_PR_RE = _re.compile(r"\bPR-\d{4,}\s*(?:[—–-]\s*)?")
+
+
+def _nopr(text):
+    """Matndan 'PR-000123 —' kabi ichki kodlarni olib tashlaydi."""
+    return _PR_RE.sub("", text or "")
+
+
 templates.env.filters["dt"] = _fmt_dt
 templates.env.filters["tm"] = _fmt_time
+templates.env.filters["nopr"] = _nopr
+templates.env.globals["avatar_url"] = _avatar_url
+templates.env.globals["avatar_svg"] = _avatar_svg
 templates.env.globals["PRODUCT_STATUS_LABEL"] = PRODUCT_STATUS_LABEL
 templates.env.globals["ROLE_LABEL"] = ROLE_LABEL
 templates.env.globals["ProductStatus"] = ProductStatus
@@ -166,7 +249,10 @@ async def _side_counts(session: AsyncSession) -> dict:
 
 async def page(name: str, request: Request, session: AsyncSession, **ctx):
     ctx.setdefault("now_str", dt.datetime.now(_TZ).strftime("%d.%m.%Y"))
-    ctx.setdefault("alerts_count", await dash_svc.alerts_count(session))
+    if "alerts_list" not in ctx or "alerts_count" not in ctx:
+        _al = await dash_svc.alerts(session)
+        ctx.setdefault("alerts_count", len(_al))
+        ctx.setdefault("alerts_list", _al[:6])
     ctx.setdefault("side_counts", await _side_counts(session))
     return templates.TemplateResponse(name, {"request": request, **ctx})
 
@@ -174,6 +260,7 @@ async def page(name: str, request: Request, session: AsyncSession, **ctx):
 def render(name: str, request: Request, **ctx):
     ctx.setdefault("now_str", dt.datetime.now(_TZ).strftime("%d.%m.%Y"))
     ctx.setdefault("alerts_count", 0)
+    ctx.setdefault("alerts_list", [])
     return templates.TemplateResponse(name, {"request": request, **ctx})
 
 
@@ -220,16 +307,31 @@ async def overview(
     session: AsyncSession = Depends(get_session), _=Depends(require_login),
 ):
     d = await dash_svc.home(session, sel_code=sel or None)
+    truck_images = [
+        "/static/trucks/trailer-orange.png",
+        "/static/trucks/trailer-blue.png",
+        "/static/trucks/trailer-green.png",
+        "/static/trucks/trailer-cream.png",
+    ]
+    image_by_code = {
+        truck["code"]: truck_images[index % len(truck_images)]
+        for index, truck in enumerate(d["trucks"])
+    }
+    for truck in d["trucks"]:
+        truck["image"] = image_by_code[truck["code"]]
+    if d["sel"]:
+        d["sel"]["image"] = image_by_code.get(d["sel"]["code"], truck_images[0])
 
     for c in d["kpi5"]:
         col = _KPI_SPARK_COLOR.get(c["tone"], "var(--brand)")
-        c["spark_svg"] = Markup(charts.sparkline(c["spark"], width=140, height=44, color=col, fill=True))
+        c["spark_svg"] = Markup(charts.sparkline(c["spark"], width=240, height=40, color=col, fill=True))
     for m in d["summary4"]:
         m["spark_svg"] = Markup(charts.sparkline(m["spark"], width=150, height=28, color=m["color"], fill=True))
 
     donut_svg = Markup(charts.donut(
         [(g["color"], g["value"]) for g in d["donut"]["segments"]],
-        center_top=f"{d['donut']['pct']}%", center_bottom="Umumiy progress",
+        center_top=f"{d['donut']['pct']}%", center_bottom="progress",
+        size=108, stroke=14,
     ))
     return await page("index.html", request, session, active="dash", d=d, donut_svg=donut_svg)
 
@@ -237,30 +339,129 @@ async def overview(
 # --------------------------------------------------------------------------- #
 # Products
 # --------------------------------------------------------------------------- #
+_TRUCK_IMAGES = [
+    "/static/trucks/trailer-orange.png",
+    "/static/trucks/trailer-blue.png",
+    "/static/trucks/trailer-green.png",
+    "/static/trucks/trailer-cream.png",
+]
+_FLEET_ST = {
+    "in_production": "Ishlab chiqarishda",
+    "qc_pending": "QC kutmoqda",
+    "returned": "Qaytarilgan",
+    "done": "Tayyor",
+    "cancelled": "Bekor qilingan",
+}
+
+
 @app.get("/products", response_class=HTMLResponse)
 async def products_page(
-    request: Request, status: str | None = None, stage: int | None = None, q: str | None = None,
+    request: Request, status: str | None = None, q: str | None = None, view: str | None = None,
     session: AsyncSession = Depends(get_session), _=Depends(require_login),
 ):
+    view = "list" if view == "list" else "line"
     status_enum = None
     if status:
         try:
             status_enum = ProductStatus(status)
         except ValueError:
             status_enum = None
+
     all_items = await products_svc.list_products(session, limit=300)
-    items = [
-        item for item in all_items
-        if (status_enum is None or item.status == status_enum)
-        and (stage is None or item.current_stage_order == stage)
-        and (not q or q.lower() in " ".join(filter(None, [item.code, item.model, item.color])).lower())
+    stages = await stages_svc.list_stages(session)
+    stage_total = len(stages) or 1
+    stage_names = {s.order_no: s.name for s in stages}
+
+    # approved bosqichlar soni — har bir truck uchun
+    done_by_id: dict[int, int] = {}
+    for pid, cnt in await session.execute(
+        select(StageRun.product_id, func.count(func.distinct(StageRun.stage_order)))
+        .where(StageRun.status == StageRunStatus.approved)
+        .group_by(StageRun.product_id)
+    ):
+        done_by_id[pid] = cnt
+
+    # mas'ul ishchi — eng oxirgi bosqich yozuvi bo'yicha
+    worker_by_id: dict[int, str] = {}
+    for pid, name in await session.execute(
+        select(StageRun.product_id, User.full_name)
+        .join(User, User.id == StageRun.worker_id)
+        .order_by(StageRun.id.desc())
+    ):
+        worker_by_id.setdefault(pid, name)
+
+    today = dt.datetime.now(_TZ).date()
+    rows = []
+    for idx, p in enumerate(all_items):
+        done = stage_total if p.status == ProductStatus.done else done_by_id.get(p.id, 0)
+        due = p.created_at + dt.timedelta(days=int(stage_total * 1.6)) if p.created_at else None
+        overdue = bool(
+            due and due.date() < today
+            and p.status not in (ProductStatus.done, ProductStatus.cancelled)
+        )
+        rows.append({
+            "overdue": overdue,
+            "code": p.code, "model": p.model or "—", "size": p.size_m,
+            "color": p.color or "—", "hex": dash_svc.color_hex(p.color),
+            "image": _TRUCK_IMAGES[idx % len(_TRUCK_IMAGES)],
+            "status": p.status.value, "status_label": _FLEET_ST.get(p.status.value, p.status.value),
+            "cur": p.current_stage_order,
+            "cur_name": "Yakunlandi" if p.status == ProductStatus.done
+                        else stage_names.get(p.current_stage_order, "—"),
+            "done": done, "pct": round(done / stage_total * 100),
+            "worker": worker_by_id.get(p.id, "—"),
+            "due": due, "created": p.created_at,
+        })
+
+    ql = (q or "").lower().strip()
+    filtered = [
+        r for r in rows
+        if (status_enum is None or r["status"] == status_enum.value)
+        and (not ql or ql in f'{r["code"]} {r["model"]} {r["color"]}'.lower())
     ]
-    status_counts = {s.value: sum(item.status == s for item in all_items) for s in ProductStatus}
-    stage_total = await stages_svc.active_count(session)
+    status_counts = {s.value: sum(r["status"] == s.value for r in rows) for s in ProductStatus}
+
+    # ---- liniya kanban ustunlari ----
+    _stage_icons = ["chassiscar", "truckbody", "layers", "spray", "window", "wrench",
+                    "gauge", "hammer", "shieldcheck"]
+    cycle_by_stage = {r["order_no"]: r["hours"] for r in await stats_svc.stage_cycle_times(session)}
+    board = []
+    for s in stages:
+        board.append({
+            "order": s.order_no,
+            "name": s.name,
+            "icon": _stage_icons[(s.order_no - 1) % len(_stage_icons)],
+            "avg_h": cycle_by_stage.get(s.order_no, 0),
+            "cards": [r for r in filtered
+                      if r["cur"] == s.order_no and r["status"] in ("in_production", "qc_pending", "returned")],
+        })
+    done_cards = [r for r in filtered if r["status"] == "done"]
+
+    def _pct(x: int) -> int:
+        return round(x / len(rows) * 100) if rows else 0
+
+    kpi5 = [
+        {"label": "Jami trucklar", "value": len(rows), "sub": "100% jami", "icon": "foodtruck", "tone": "violet"},
+        {"label": "Ishlab chiqarishda", "value": status_counts["in_production"],
+         "sub": f"{_pct(status_counts['in_production'])}% jami", "icon": "gear", "tone": "blue"},
+        {"label": "QC kutmoqda", "value": status_counts["qc_pending"],
+         "sub": f"{_pct(status_counts['qc_pending'])}% jami", "icon": "shield", "tone": "amber"},
+        {"label": "Qaytarilgan", "value": status_counts["returned"],
+         "sub": f"{_pct(status_counts['returned'])}% jami", "icon": "back", "tone": "red"},
+        {"label": "Tayyor", "value": status_counts["done"],
+         "sub": f"{_pct(status_counts['done'])}% jami", "icon": "check", "tone": "green"},
+    ]
+    fleet_kpis = await stats_svc.extra_kpis(session)
+
+    list_rows = sorted(filtered, key=lambda r: (r["status"] == "done", r["cur"], r["code"]))
+
     return await page(
         "products.html", request, session,
-        active="products", items=items, cur_status=status or "", cur_stage=stage or "", query=q or "",
-        status_counts=status_counts, total_count=len(all_items), stage_total=stage_total or 1,
+        active="products", view=view, board=board, done_cards=done_cards, kpi5=kpi5,
+        rows=list_rows, stage_total=stage_total,
+        total_count=len(rows), shown=len(filtered),
+        status_counts=status_counts, cur_status=status or "", query=q or "",
+        fleet_kpis=fleet_kpis,
     )
 
 

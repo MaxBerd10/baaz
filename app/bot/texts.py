@@ -25,6 +25,11 @@ def truck_line(p: Product) -> str:
     return " · ".join(e(x) for x in parts if x) or "—"
 
 
+def truck_name(p: Product) -> str:
+    """Model T1 · 5 m · Oq  (ichki PR-kod o'rniga)"""
+    return f"Model {truck_line(p)}" if p.model else e(p.name)
+
+
 def fmt_dt(value: dt.datetime | None) -> str:
     if not value:
         return "—"
@@ -61,8 +66,7 @@ def worker_card(
     media_photos = sum(1 for m in run.media if m.type.value == "photo")
     media_videos = sum(1 for m in run.media if m.type.value == "video")
     lines = [
-        f"📦 <b>{e(product.code)}</b> — {e(product.name)}"
-        + f"\n🚚 {truck_line(product)}",
+        f"📦 <b>{truck_name(product)}</b>",
         f"Liniya {run.stage_order}/{total_stages}: {e(run.stage.name)}",
         f"Urinish: #{run.attempt_no}   Holat: {PRODUCT_STATUS_LABEL[product.status]}",
         f"Media: 📸 {media_photos} · 🎥 {media_videos}",
@@ -95,8 +99,7 @@ def qc_card(run: StageRun, total_stages: int) -> str:
     media_videos = sum(1 for m in run.media if m.type.value == "video")
     lines = [
         "🔍 <b>SIFAT TEKSHIRUVI</b>",
-        f"📦 {e(product.code)} — {e(product.name)}"
-        + f"\n🚚 {truck_line(product)}",
+        f"📦 {truck_name(product)}",
         f"Liniya {run.stage_order}/{total_stages}: {e(run.stage.name)}",
         f"Urinish: #{run.attempt_no}   👷 {e(run.worker.full_name) if run.worker else '—'}",
         f"Yuborilgan: {fmt_dt(run.submitted_at)}",
@@ -111,8 +114,7 @@ def qc_card(run: StageRun, total_stages: int) -> str:
 
 def product_timeline(product: Product, runs: list[StageRun], total_stages: int) -> str:
     lines = [
-        f"📦 <b>{e(product.code)}</b> — {e(product.name)}",
-        f"🚚 {truck_line(product)}",
+        f"📦 <b>{truck_name(product)}</b>",
         f"Holat: {PRODUCT_STATUS_LABEL[product.status]}",
         f"Joriy liniya: {product.current_stage_order}/{total_stages}",
         f"Yaratilgan: {fmt_dt(product.created_at)}"

@@ -13,7 +13,7 @@
       <tbody>
       {% for r in queue %}
       <tr>
-        <td><a href="/products/{{ r.product.code }}" style="color:var(--brand);font-weight:700">{{ r.product.code }}</a></td>
+        <td><a href="/products/{{ r.product.code }}" style="color:var(--brand);font-weight:700">Model {{ r.product.model or "—" }}</a> <span class="muted">{{ r.product.size_m or "—" }} m · {{ r.product.color or "—" }}</span></td>
         <td>{{ r.stage_order }} — {{ r.stage.name }}</td>
         <td class="muted">{{ r.worker.full_name if r.worker else '—' }}</td>
         <td class="num">{{ r.media|length }}</td>
@@ -33,7 +33,7 @@
       <tbody>
       {% for r in recent %}
       <tr>
-        <td><a href="/products/{{ r.product.code }}" style="color:var(--brand);font-weight:700">{{ r.product.code }}</a></td>
+        <td><a href="/products/{{ r.product.code }}" style="color:var(--brand);font-weight:700">Model {{ r.product.model or "—" }}</a> <span class="muted">{{ r.product.size_m or "—" }} m · {{ r.product.color or "—" }}</span></td>
         <td>{{ r.stage_order }}</td>
         <td>{% if r.status.value=='approved' %}<span class="chip good">Tasdiqlangan</span>{% else %}<span class="chip warn">Qaytarilgan</span>{% endif %}</td>
         <td class="muted num">{{ r.decided_at|tm }}</td>

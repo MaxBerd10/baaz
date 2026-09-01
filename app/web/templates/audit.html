@@ -14,7 +14,7 @@
       <td style="font-weight:600">{{ r.actor_name or '—' }}</td>
       <td><span class="act">{{ ACTION_LABEL.get(r.action, r.action) }}</span></td>
       <td class="num">{{ r.product_id or '' }}</td>
-      <td class="muted">{{ r.details or '' }}</td>
+      <td class="muted">{{ (r.details or '')|nopr }}</td>
     </tr>
     {% else %}
     <tr><td colspan="5"><div class="empty">Bo'sh</div></td></tr>

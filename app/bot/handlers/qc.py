@@ -65,7 +65,7 @@ async def recent(message: Message, session: AsyncSession) -> None:
     lines = []
     for r in runs:
         mark = "🟢" if r.status == StageRunStatus.approved else "🔴"
-        line = f"{mark} <b>{r.product.code}</b> · {r.stage_order}-bosqich · {texts.fmt_dt(r.decided_at)}"
+        line = f"{mark} <b>{texts.truck_name(r.product)}</b> · {r.stage_order}-bosqich · {texts.fmt_dt(r.decided_at)}"
         if r.qc_comment:
             line += f"\n    💬 {texts.e(r.qc_comment)}"
         lines.append(line)
@@ -146,20 +146,20 @@ async def approve(cb: CallbackQuery, session: AsyncSession, user: User, bot: Bot
         await send_many(
             bot,
             await users_svc.admin_recipients(session),
-            f"🟢 <b>{product.code} — {product.name}</b> barcha bosqichlardan o'tdi.\n<b>MAHSULOT TAYYOR.</b>",
+            f"🟢 <b>{texts.truck_name(product)}</b> barcha bosqichlardan o'tdi.\n<b>MAHSULOT TAYYOR.</b>",
         )
-        await render(cb, f"✅ <b>{product.code}</b> · {run.stage_order}-bosqich tasdiqlandi.\n🟢 Mahsulot TAYYOR.", None)
+        await render(cb, f"✅ <b>{texts.truck_name(product)}</b> · {run.stage_order}-bosqich tasdiqlandi.\n🟢 Mahsulot TAYYOR.", None)
     else:
         nxt = result.next_stage_order
         await send_many(
             bot,
             await users_svc.workers_at_stage(session, nxt),
-            f"🔔 <b>Yangi ish</b>\n📦 {product.code} — {product.name}"
+            f"🔔 <b>Yangi ish</b>\n📦 {texts.truck_name(product)}"
             + (f"  ·  {product.line}" if product.line else "")
             + f"\n{nxt}-bosqich sizga keldi.",
             markup=kb.open_button("w", product.id, "Ochish"),
         )
-        await render(cb, f"✅ <b>{product.code}</b> · {run.stage_order}-bosqich tasdiqlandi → {nxt}-bosqichga o'tkazildi.", None)
+        await render(cb, f"✅ <b>{texts.truck_name(product)}</b> · {run.stage_order}-bosqich tasdiqlandi → {nxt}-bosqichga o'tkazildi.", None)
     await cb.answer("Tasdiqlandi ✅")
 
 

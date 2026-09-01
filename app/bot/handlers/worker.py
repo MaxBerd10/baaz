@@ -83,7 +83,7 @@ async def my_returned(message: Message, session: AsyncSession, user: User, state
 @router.message(F.text == "✅ Tugatganlarim")
 async def my_done(message: Message, session: AsyncSession, user: User) -> None:
     items = await products_svc.worker_done(session, user)
-    lines = [f"• <b>{p.code}</b> — {texts.e(p.name)}" for p in items] or ["— hali yo'q —"]
+    lines = [f"• <b>{texts.truck_name(p)}</b>" for p in items] or ["— hali yo'q —"]
     await message.answer("✅ <b>Tugatganlarim</b>\n" + "\n".join(lines))
 
 
@@ -264,7 +264,7 @@ async def submit(cb: CallbackQuery, session: AsyncSession, user: User, state: FS
         bot,
         await users_svc.qc_recipients(session),
         "🔔 <b>Yangi tekshiruv</b>\n"
-        f"📦 {run.product.code} — {run.product.name}"
+        f"📦 {texts.truck_name(run.product)}"
         + (f"  ·  {run.product.line}" if run.product.line else "")
         + f"\nBosqich {run.stage_order}/{total} · {run.stage.name}\n"
         f"👷 {user.full_name}",
@@ -272,7 +272,7 @@ async def submit(cb: CallbackQuery, session: AsyncSession, user: User, state: FS
     )
     await render(
         cb,
-        f"🚀 <b>{run.product.code}</b> — {run.stage_order}-bosqich sifat nazoratiga yuborildi.\n"
+        f"🚀 <b>{texts.truck_name(run.product)}</b> — {run.stage_order}-bosqich sifat nazoratiga yuborildi.\n"
         "Natijani kuting — qaror kelganda xabar beramiz.",
         None,
     )

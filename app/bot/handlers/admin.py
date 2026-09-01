@@ -173,14 +173,14 @@ async def np_note(
     await session.flush()
     workers = await users_svc.workers_at_stage(session, 1)
     await message.answer(
-        f"✅ Yaratildi: <b>{product.code}</b>\n"
+        f"✅ Yaratildi: <b>{texts.truck_name(product)}</b>\n"
         f"🚚 {texts.e(product.model or '—')} · {product.size_m or '—'} m · {texts.e(product.color or '—')}\n"
         f"1-liniya ({texts.e((await stages_svc.get_by_order(session, 1)).name)}) ishchilariga xabar berildi ({len(workers)} ta)."
     )
     for w in workers:
         await send_one(
             bot, w,
-            f"🔔 <b>Yangi truck</b>\n{product.code} · {product.model or '—'} · {product.size_m or '—'} m · {product.color or '—'}\n"
+            f"🔔 <b>Yangi truck</b>\nModel {product.model or "—"} · {product.size_m or "—"} m · {product.color or "—"}\n"
             "1-liniyadan boshlanadi.",
             markup=kb.open_button("w", product.id, "Ochish"),
         )
@@ -517,7 +517,7 @@ async def report(message: Message, session: AsyncSession) -> None:
     if defects:
         for d in defects:
             lines.append(
-                f"• {d.product.code} · {d.stage_order}-bosqich · {texts.fmt_dt(d.decided_at)}"
+                f"• {texts.truck_name(d.product)} · {d.stage_order}-bosqich · {texts.fmt_dt(d.decided_at)}"
                 f"\n    💬 {texts.e(d.qc_comment)}"
             )
     else:

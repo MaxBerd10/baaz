@@ -8,6 +8,7 @@ from aiogram.types import (
 )
 
 from app.enums import Role
+from app.bot.texts import truck_name
 from app.models import Product, Stage, StageRun, User
 
 # --------------------------------------------------------------------------- #
@@ -61,7 +62,7 @@ def menu_for(user: User | None) -> ReplyKeyboardMarkup:
 # --------------------------------------------------------------------------- #
 def worker_product_list(products: list[Product], kind: str) -> InlineKeyboardMarkup:
     rows = [
-        [InlineKeyboardButton(text=f"📦 {p.code} — {p.name}", callback_data=f"w:open:{p.id}")]
+        [InlineKeyboardButton(text=f"📦 {truck_name(p)}", callback_data=f"w:open:{p.id}")]
         for p in products
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows or [[InlineKeyboardButton(text="— bo'sh —", callback_data="noop")]])
@@ -100,7 +101,7 @@ def qc_queue_list(runs: list[StageRun]) -> InlineKeyboardMarkup:
     rows = [
         [
             InlineKeyboardButton(
-                text=f"📦 {r.product.code} · {r.stage_order}-bosqich",
+                text=f"📦 {truck_name(r.product)} · {r.stage_order}-bosqich",
                 callback_data=f"q:open:{r.id}",
             )
         ]
@@ -163,7 +164,7 @@ def admin_product_list(products: list[Product]) -> InlineKeyboardMarkup:
     rows = [
         [
             InlineKeyboardButton(
-                text=f"{p.code} · {p.name}", callback_data=f"a:prod:{p.id}"
+                text=f"{truck_name(p)}", callback_data=f"a:prod:{p.id}"
             )
         ]
         for p in products

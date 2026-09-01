@@ -1,11 +1,92 @@
 {% extends "base.html" %}
 {% block title %}Boshqaruv paneli — Baaz{% endblock %}
 {% block heading %}Boshqaruv paneli{% endblock %}
-{% block sub %}Har bir food trucking ishlab chiqarish holatini boshqarish{% endblock %}
+{% block sub %}Har bir food truckning ishlab chiqarish holatini boshqarish{% endblock %}
 {% block body %}
 
 {%- macro sic(name) -%}<span class="sic">{{ icon(name) }}</span>{%- endmacro -%}
+<style>
+  .homegrid .trow .van{overflow:hidden;background:#eef0f7;display:block}
+  .homegrid .trow .van img{width:100%;height:100%;object-fit:cover;display:block}
+  .homegrid .selhead .photo{overflow:hidden;background:#eef0f7;display:block}
+  .homegrid .selhead .photo img{width:100%;height:100%;object-fit:cover;display:block}
 
+  /* ==== bitta ekran (o'rtacha ixchamlik) ==== */
+  .content:has(.dash1){padding-top:5px;padding-bottom:10px}
+  .dash1{display:flex;flex-direction:column;max-height:calc(100vh - 110px);overflow:hidden}
+
+  .dash1 .home5{flex:none;margin-bottom:8px;gap:9px}
+  .dash1 .h5{padding:9px 13px 0;display:flex;flex-direction:column}
+  .dash1 .h5 .r1{gap:9px}
+  .dash1 .h5 .ic{width:28px;height:28px;border-radius:8px}
+  .dash1 .h5 .ic svg{width:14px;height:14px}
+  .dash1 .h5 .lbl{font-size:9px;letter-spacing:.05em}
+  .dash1 .h5 .val{font-size:18px;margin-top:1px}
+  .dash1 .h5 .sub{font-size:8.5px;margin:2px 0 0}
+  .dash1 .h5 .sp{margin:6px -13px 0;flex:1;display:flex;align-items:flex-end}
+  .dash1 .h5 .sp svg{width:100%;height:22px;display:block}
+
+  .dash1 .homegrid{flex:1;min-height:0;align-items:stretch;grid-auto-rows:minmax(0,1fr)}
+  .dash1 .homegrid > *{min-height:0;max-height:100%}
+  .dash1 .col2,.dash1 .col3{display:flex;flex-direction:column;gap:9px;overflow-y:auto;overflow-x:hidden;
+    padding-right:3px;scrollbar-width:thin}
+  .dash1 .col2>*,.dash1 .col3>*{flex:0 0 auto}
+  /* bo'sh joyni katta kartaga bering (oraliqlar minimal) */
+  .dash1 .col2>*:nth-child(2){flex:1 1 auto;display:flex;flex-direction:column}
+  .dash1 .col2>*:nth-child(2) .vstep{flex:1;display:flex;flex-direction:column;justify-content:space-around}
+  .dash1 .col3>*:last-child{flex:1 1 auto;display:flex;flex-direction:column}
+  .dash1 .col3>*:last-child .upcs{flex:1;display:flex;flex-direction:column;justify-content:space-around}
+  .dash1 .tlist{display:flex;flex-direction:column}
+  .dash1 .tlist .rows{flex:1;min-height:0;max-height:none}
+
+  .dash1 .homegrid .card.pad{padding:12px}
+  .dash1 .homegrid .hd{margin-bottom:9px}
+  .dash1 .selhead .photo{width:128px;height:78px}
+  .dash1 .selhead .photo svg{width:100px;height:60px}
+  .dash1 .selmeta{margin-top:8px;padding-top:8px}
+
+  /* tanlangan truck — pastki ma'lumot qatori (mockupdek) */
+  .dash1 .selfoot{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:18px;align-items:start}
+  .dash1 .selfoot .k{font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:6px}
+  .dash1 .selfoot .v{font-size:12.5px;font-weight:650}
+  .dash1 .avstack{display:flex;align-items:center}
+  .dash1 .avstack .a{width:28px;height:28px;border-radius:50%;border:2px solid var(--panel);
+    object-fit:cover;background:var(--brand-soft);margin-left:-9px;box-shadow:0 1px 3px rgba(16,24,40,.12)}
+  .dash1 .avstack .a:first-child{margin-left:0}
+  .dash1 .avstack .more{margin-left:8px;font-size:12px;font-weight:750;color:var(--muted)}
+
+  .dash1 .vrow{padding:6px 0}
+  .dash1 .vrow.current{padding:8px 12px}
+  .dash1 .vrow .nm{font-size:12.5px}
+  .dash1 .vrow .nm small{font-size:10.5px}
+  .dash1 .vrow .fr,.dash1 .vrow .pc{font-size:12px}
+
+  /* col3 — endi biroz kattaroq (tepadagi KPI kichraydi) */
+  .dash1 .mini{gap:8px}
+  .dash1 .mini .m{padding:9px 11px;border-radius:11px}
+  .dash1 .mini .m .l{font-size:10.5px;line-height:1.25;color:var(--faint);font-weight:600}
+  .dash1 .mini .m .vr{margin-top:4px;gap:8px}
+  .dash1 .mini .m .v{font-size:18px;letter-spacing:-.02em}
+  .dash1 .mini .m .d{font-size:10.5px;font-weight:700}
+  .dash1 .mini .m .sp{margin-top:4px}
+  .dash1 .mini .m .sp svg{height:18px}
+  .dash1 .donut-box{gap:11px;justify-content:center}
+  .dash1 .lg{gap:6px}
+  .dash1 .lg .it{font-size:12px}
+  .dash1 .lg .it .s{font-size:11px}
+  .dash1 .upc .it{padding:5px 0}
+  .dash1 .upc .it .bd b{font-size:12px}
+  .dash1 .upc .it .bd small{font-size:10.5px}
+
+  @media(max-width:1180px){.dash1 .selfoot{grid-template-columns:auto 1fr 1fr}}
+  /* past ekranlarda siqmay, oddiy sahifa scroll qilsin */
+  @media(max-height:850px){.dash1{max-height:none;overflow:visible}
+    .dash1 .col2,.dash1 .col3{overflow:visible}
+    .dash1 .homegrid > *{max-height:none}}
+</style>
+
+<div class="dash1">
 <!-- ===== 5 KPI ===== -->
 <div class="home5">
   {% for c in d.kpi5 %}
@@ -26,7 +107,7 @@
 <div class="homegrid">
 
   <!-- ===== 1: truck ro'yxati ===== -->
-  <div class="card tlist" style="align-self:start">
+  <div class="card tlist">
     <div class="hd" style="display:flex;align-items:center;gap:10px">
       <b style="font-size:13px">Trucklar ro'yxati</b>
       <span style="margin-left:auto;color:var(--faint);font-size:14px">⌕</span>
@@ -34,10 +115,10 @@
     <div class="rows">
       {% for t in d.trucks %}
       <a href="/?sel={{ t.code }}" class="trow {{ 'on' if d.sel and d.sel.code==t.code }}">
-        <span class="van" style="color:{{ t.hex }}">{{ icon('van') }}</span>
+        <span class="van"><img src="{{ t.image }}" alt="Model {{ t.model }} food truck"></span>
         <span class="mid">
-          <b>{{ t.code }}</b>
-          <small>Model {{ t.model }} · {{ t.size or '—' }} metr</small>
+          <b>Model {{ t.model }}</b>
+          <small>{{ t.size or '—' }} metr · {{ t.color }}</small>
         </span>
         <span class="rt">
           <span class="fr num">{{ t.done }}/{{ t.total }}</span>
@@ -58,11 +139,10 @@
   {% set s = d.sel %}
   <div class="card pad">
     <div class="selhead">
-      <span class="photo" style="color:{{ s.hex }}">{{ icon('van') }}</span>
+      <span class="photo"><img src="{{ s.image }}" alt="Model {{ s.model }} food truck"></span>
       <div style="flex:1;min-width:0">
-        <div class="h1">{{ s.code }} <span class="badge b-{{ s.status }}">{{ s.status_label }}</span></div>
+        <div class="h1">Model {{ s.model }} <span class="badge b-{{ s.status }}">{{ s.status_label }}</span></div>
         <div class="spec">
-          <span>Model <b style="color:var(--ink)">{{ s.model }}</b></span>
           <span>{{ s.size or '—' }} metr</span>
           <span class="dot"><i style="background:{{ s.hex }};border:1px solid var(--line)"></i>{{ s.color }} rang</span>
         </div>
@@ -103,11 +183,18 @@
   </div>
 
   <div class="card pad">
-    <div class="selmeta" style="margin:0">
-      <div class="m"><div class="k">Mas'ul ishchi</div><div class="v">👷 {{ s.workers|join(', ') if s.workers else '—' }}{% if s.worker_extra %} +{{ s.worker_extra }}{% endif %}</div></div>
-      <div class="m"><div class="k">Liniya</div><div class="v">{{ s.line }}</div></div>
-      <div class="m"><div class="k">Oxirgi yangilanish</div><div class="v num">{{ s.last_update|dt }}</div></div>
-      <div class="m"><div class="k">Keyingi reja</div><div class="v num">{{ s.next_plan|dt }}</div></div>
+    <div class="selfoot">
+      <div class="cell">
+        <div class="k">Mas'ul ishchi</div>
+        <div class="avstack">
+          {% for w in s.workers[:3] %}<img class="a" src="{{ avatar_url(w) }}" alt="{{ w }}" title="{{ w }}" onerror="this.onerror=null;this.src='{{ avatar_svg(w) }}'">{% endfor %}
+          {% if s.worker_extra %}<span class="more">+{{ s.worker_extra }}</span>{% endif %}
+          {% if not s.workers %}<span class="v">—</span>{% endif %}
+        </div>
+      </div>
+      <div class="cell"><div class="k">Liniya</div><div class="v">{{ s.line }}</div></div>
+      <div class="cell"><div class="k">Oxirgi yangilanish</div><div class="v num">{{ s.last_update|dt }}</div></div>
+      <div class="cell"><div class="k">Keyingi reja</div><div class="v num">{{ s.next_plan|dt }}</div></div>
     </div>
   </div>
   {% else %}
@@ -123,8 +210,7 @@
         {% for m in d.summary4 %}
         <div class="m">
           <div class="l">{{ m.label }}</div>
-          <div class="v num">{{ m.value }}</div>
-          <div class="d {{ m.delta_tone }}">{{ m.delta }}</div>
+          <div class="vr"><span class="v num">{{ m.value }}</span><span class="d {{ m.delta_tone }}">{{ m.delta }}</span></div>
           <div class="sp">{{ m.spark_svg }}</div>
         </div>
         {% endfor %}
@@ -146,16 +232,18 @@
 
     <div class="card pad upc">
       <div class="hd"><h3>Yaqinlashayotgan muddatlar</h3><a class="lnk" href="/calendar">Barchasi</a></div>
+      <div class="upcs">
       {% for u in d.upcoming %}
       <div class="it">
         <span class="ic">{{ icon(u.icon) }}</span>
-        <div class="bd"><b>{{ u.code }} — {{ u.stage }} bosqichi</b><small>{{ u.date|dt }}</small></div>
+        <div class="bd"><b>Model {{ u.model }} — {{ u.stage }} bosqichi</b><small>{{ u.date|dt }}</small></div>
         <span class="rel rel-{{ u.tone }}">{{ u.rel }}</span>
       </div>
       {% else %}<div class="empty">Muddat yo'q</div>{% endfor %}
-      <a class="lnk" href="/calendar" style="display:block;text-align:center;margin-top:10px">Barchasini ko'rish →</a>
+      </div>
     </div>
   </div>
 
+</div>
 </div>
 {% endblock %}

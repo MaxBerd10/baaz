@@ -11,7 +11,7 @@
     <tbody>
     {% for r in rows %}
     <tr>
-      <td><a href="/products/{{ r.code }}" style="color:var(--brand);font-weight:700">{{ r.code }}</a> <span class="muted">{{ r.name }}</span></td>
+      <td><a href="/products/{{ r.code }}" style="color:var(--brand);font-weight:700">Model {{ r.model }}</a> <span class="muted">{{ r.size or "—" }} m</span></td>
       <td class="muted">{{ r.line or '—' }}</td>
       <td class="num">{{ r.stage }}</td>
       <td><span class="chip {{ 'warn' if r.tone=='amber' else 'warn' }}" style="{{ 'color:var(--c-red);background:#fdecec' if r.tone=='red' }}">{{ r.kind }}</span></td>

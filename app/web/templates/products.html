@@ -1,28 +1,146 @@
 {% extends "base.html" %}
 {% block title %}Trucklar — Baaz{% endblock %}
-{% block heading %}Trucklar parki{% endblock %}
-{% block sub %}Har bir food truckning ishlab chiqarish holatini boshqaring{% endblock %}
+{% block heading %}Trucklar{% endblock %}
+{% block sub %}Ishlab chiqarish liniyasi: trucklar qaysi bosqichda ekanini bir qarashda ko‘ring{% endblock %}
 {% block body %}
 <style>
-  .fleet{--violet:#735ee9;--teal:#16b69d;--orange:#f2943f;--sky:#458cea}.fleet .sum{display:grid;grid-template-columns:1.45fr repeat(4,1fr);gap:12px;margin-bottom:16px}.fleet .sum-card{display:flex;align-items:center;gap:11px;padding:15px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 7px 17px rgba(20,31,55,.04)}.fleet .sum-card:first-child{background:linear-gradient(135deg,#7460e9,#8c76f1);border:0;color:#fff;box-shadow:0 9px 20px rgba(107,88,227,.23)}.fleet .sum-card .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#eef0ff;color:var(--violet)}.fleet .sum-card:first-child .ic{background:rgba(255,255,255,.18);color:#fff}.fleet .sum-card .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}.fleet .sum-card span{display:block;font-size:10.5px;color:var(--muted);font-weight:700}.fleet .sum-card:first-child span{color:#e7e1ff}.fleet .sum-card b{display:block;font-size:21px;line-height:1.1;margin-top:2px;letter-spacing:-.04em}.fleet .sum-card:nth-child(3) .ic{background:#e6f8f1;color:var(--teal)}.fleet .sum-card:nth-child(4) .ic{background:#fff4e5;color:var(--orange)}.fleet .sum-card:nth-child(5) .ic{background:#e9f2ff;color:var(--sky)}
-  .fleet .fleet-board{display:block;overflow:hidden}.fleet .toolbar{padding:17px 20px;border-bottom:1px solid var(--line-2);display:grid;grid-template-columns:minmax(240px,.7fr) 1fr auto;align-items:center;gap:12px}.fleet .search{height:38px;display:flex;align-items:center;gap:8px;padding:0 11px;border:1px solid var(--line);border-radius:10px;background:#fafbfc}.fleet .search svg{width:16px;height:16px;stroke:var(--faint);fill:none;stroke-width:2}.fleet .search input{border:0;outline:0;background:transparent;width:100%;font:inherit;font-size:12px;color:var(--ink)}.fleet .filters{margin:0;gap:6px;justify-content:center}.fleet .filters a{padding:6px 10px;font-size:11px}.fleet .filters a.on{background:var(--violet);border-color:var(--violet)}.fleet .result{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}.fleet .result b{color:var(--ink)}
-  .fleet .fleet-list{min-width:980px}.fleet .list-head,.fleet .truck-row{display:grid;grid-template-columns:1.28fr .72fr .72fr 1.1fr .9fr .95fr 34px;gap:16px;align-items:center;padding:0 20px}.fleet .list-head{height:43px;background:#fbfcfd;border-bottom:1px solid var(--line-2);color:var(--faint);font-size:10px;font-weight:800;letter-spacing:.055em;text-transform:uppercase}.fleet .truck-row{min-height:72px;border-bottom:1px solid var(--line-2);transition:background .15s ease}.fleet .truck-row:last-child{border:0}.fleet .truck-row:hover{background:#faf9ff}.fleet .truck{display:flex;align-items:center;gap:10px}.fleet .truck .vehicle{width:32px;height:32px;border-radius:9px;background:#f0edff;color:var(--violet);display:grid;place-items:center;flex:none}.fleet .truck .vehicle svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9}.fleet .truck a{font-size:13px;font-weight:800;color:var(--violet)}.fleet .truck small{display:block;color:var(--muted);font-size:10px;margin-top:1px}.fleet .spec{font-weight:750;font-size:12px}.fleet .color{display:inline-flex;align-items:center;gap:7px;font-size:12px}.fleet .color i{width:9px;height:9px;border-radius:50%;background:#a6afbd}.fleet .color[data-color*="qora"] i{background:#2a3040}.fleet .color[data-color*="oq"] i{background:#fff;border:1px solid #dce1e9}.fleet .color[data-color*="qizil"] i{background:#ee625b}.fleet .color[data-color*="yashil"] i{background:#20ad73}.fleet .color[data-color*="ko'k"] i{background:#478fe5}.fleet .stage-top{display:flex;justify-content:space-between;gap:8px;font-size:10.5px;color:var(--muted);font-weight:700}.fleet .stage-top b{color:var(--ink)}.fleet .stage-bar{height:6px;border-radius:99px;background:#edf0f4;margin-top:6px;overflow:hidden}.fleet .stage-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#87a5ff,var(--violet))}.fleet .badge{font-size:10.5px;white-space:nowrap}.fleet .date{font-size:10.5px;color:var(--muted);line-height:1.35;white-space:nowrap}.fleet .go{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--faint)}.fleet .go svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}.fleet .truck-row:hover .go{background:#f0edff;color:var(--violet)}
-  @media(max-width:1180px){.fleet .sum{grid-template-columns:repeat(3,1fr)}.fleet .sum-card:first-child{grid-column:span 2}.fleet .toolbar{grid-template-columns:1fr auto}.fleet .filters{grid-column:1/-1;justify-content:flex-start}}@media(max-width:760px){.fleet .sum{grid-template-columns:repeat(2,1fr)}.fleet .sum-card:first-child{grid-column:span 2}.fleet .toolbar{grid-template-columns:1fr}.fleet .result{display:none}}
+  .fleet-line{--purple:#7058e8;--purple2:#8a73f0;--blue:#2f80ed;--green:#11ad68;--orange:#f58914;--red:#ef4755;--panel:#fff;--line:#e7eaf0;--muted:#7f8aa0}.fleet-line .top-tools{display:flex;align-items:center;gap:11px;margin:7px 0 18px}.fleet-line .search{height:40px;width:310px;position:relative;flex:none}.fleet-line .search svg{position:absolute;width:15px;height:15px;left:12px;top:12px;stroke:#9da7b8;fill:none;stroke-width:2}.fleet-line .search input{width:100%;height:100%;padding:0 36px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit;font-size:12px;color:#273149;outline:0}.fleet-line .search:after{content:'⌕';font-size:19px;color:#8792a5;position:absolute;right:12px;top:8px}.fleet-line .filters{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.fleet-line .filters a{padding:8px 12px;border-radius:10px;border:1px solid var(--line);font-size:10.5px;font-weight:750;color:#49566b;background:#fff;white-space:nowrap}.fleet-line .filters a.on{color:#fff;background:linear-gradient(135deg,var(--purple),#5a43dc);border-color:var(--purple);box-shadow:0 5px 13px rgba(99,76,220,.22)}.fleet-line .filters b{margin-left:4px}.fleet-line .view-toggle{margin-left:auto;border:1px solid var(--line);border-radius:9px;padding:4px;display:flex;gap:2px;background:#fff;white-space:nowrap}.fleet-line .view-toggle span{font-size:10px;font-weight:700;color:#8490a4;padding:6px 9px;border-radius:6px}.fleet-line .view-toggle .on{color:var(--purple);background:#f0edff}
+  .fleet-line .line-wrap{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 8px 25px rgba(24,34,58,.04);overflow-x:auto}.fleet-line .line-grid{min-width:1250px;display:grid;grid-template-columns:repeat(7,minmax(174px,1fr));align-items:stretch}.fleet-line .lane{min-height:560px;border-right:1px solid var(--line);padding:0 9px 9px;display:flex;flex-direction:column;position:relative;background:linear-gradient(180deg,#fff 0,#fbfcfe 100%)}.fleet-line .lane:last-child{border:0}.fleet-line .lane-head{min-height:84px;padding:15px 7px 9px;border-bottom:1px solid var(--line);position:relative}.fleet-line .lane-head:after{content:'→';position:absolute;color:#97a5ba;right:-13px;top:22px;z-index:2;font-size:18px}.fleet-line .lane:last-child .lane-head:after{display:none}.fleet-line .lane-num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--purple);color:#fff;font-size:10px;font-weight:850;margin-right:7px;vertical-align:2px}.fleet-line .lane h2{display:inline;font-size:11.5px;letter-spacing:-.01em}.fleet-line .lane-count{float:right;font-size:10px;font-weight:800;color:#8490a5;margin-top:4px}.fleet-line .lane-time{display:block;margin-top:14px;color:#8994a8;font-size:9.5px}.fleet-line .lane-time svg{width:12px;height:12px;vertical-align:-3px;margin-right:3px;stroke:currentColor;fill:none;stroke-width:2}.fleet-line .lane-cards{display:flex;flex-direction:column;gap:9px;padding:10px 0;flex:1}.fleet-line .empty{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#9ba5b5;font-size:10px;line-height:1.45;padding:20px 12px}.fleet-line .empty .empty-ic{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:#f3f5f9;color:#68758a;margin-bottom:10px}.fleet-line .empty svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.6}.fleet-line .add{border:1px dashed #d6dce7;border-radius:7px;padding:8px;text-align:center;color:#75829a;font-size:9.5px;font-weight:750;background:#fff;margin-top:auto}.fleet-line .add:hover{border-color:var(--purple);color:var(--purple)}
+  .fleet-line .truck{display:block;background:#fff;border:1px solid #e5e9f0;border-top:0;border-left:3px solid var(--blue);border-radius:9px;padding:9px;color:#273149;box-shadow:0 2px 8px rgba(31,41,65,.035)}.fleet-line .truck:hover{border-color:#d4ccff;box-shadow:0 7px 17px rgba(74,53,180,.11);transform:translateY(-1px)}.fleet-line .truck.st-qc_pending{border-left-color:var(--orange)}.fleet-line .truck.st-returned{border-left-color:var(--red)}.fleet-line .truck.st-done{border-left-color:var(--green)}.fleet-line .truck img{width:100%;height:93px;object-fit:cover;border-radius:6px;background:#eef1f6;display:block;margin-bottom:8px}.fleet-line .truck b{display:block;font-size:11px;color:#263048}.fleet-line .truck .spec{font-size:9.5px;color:#8792a5;margin-top:4px}.fleet-line .truck .color{display:flex;align-items:center;gap:5px;font-size:9.5px;color:#728095;margin-top:7px}.fleet-line .truck .color i{width:7px;height:7px;border-radius:2px;background:var(--color)}.fleet-line .truck .status{font-size:9.5px;color:var(--blue);font-weight:800;display:block;margin-top:8px;padding:5px 7px;background:#edf4ff;border-radius:6px}.fleet-line .truck.st-qc_pending .status{color:var(--orange);background:#fff4e7}.fleet-line .truck.st-returned .status{color:var(--red);background:#fff0f1}.fleet-line .truck.st-done .status{color:var(--green);background:#eaf9f0}.fleet-line .truck .worker{font-size:9px;color:#7e899d;display:block;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fleet-line .truck .worker strong{color:#4f5a6d}.fleet-line .truck .duration{font-size:9px;color:#8893a6;margin-top:7px}.fleet-line .truck .duration::before{content:'◷';margin-right:4px}
+  .fleet-line .done-lane{background:linear-gradient(180deg,#fbfffc,#f8fdfa)}.fleet-line .done-lane .lane-head{border-bottom-color:#d8f1e2}.fleet-line .done-lane .lane-num{background:var(--green)}.fleet-line .done-lane .lane-head:after{display:none}.fleet-line .done-lane .lane-cards{max-height:470px;overflow-y:auto}.fleet-line .done-lane .truck{display:grid;grid-template-columns:48px 1fr;gap:8px;align-items:center;border-left-color:var(--green);padding:7px}.fleet-line .done-lane .truck img{height:43px;width:48px;margin:0}.fleet-line .done-lane .truck .color,.fleet-line .done-lane .truck .worker,.fleet-line .done-lane .truck .duration{display:none}.fleet-line .done-lane .truck .status{grid-column:2;padding:3px 5px;margin:1px 0 0;font-size:8.5px;justify-self:start}.fleet-line .done-lane .truck .spec{margin-top:2px}
+  .fleet-line .bottom{display:grid;grid-template-columns:1.45fr repeat(4,1fr) .8fr;gap:8px;margin-top:16px}.fleet-line .bottom-card{min-height:122px;padding:14px;border:1px solid var(--line);border-radius:11px;background:#fff;box-shadow:0 5px 15px rgba(24,34,58,.03)}.fleet-line .bottom-card h3{font-size:10px;color:#78849a;margin:0 0 9px}.fleet-line .donut-block{display:grid;grid-template-columns:92px 1fr;gap:9px;align-items:center}.fleet-line .donut{height:86px;width:86px;border-radius:50%;display:grid;place-items:center;position:relative}.fleet-line .donut:after{content:'';height:58px;width:58px;background:#fff;position:absolute;border-radius:50%}.fleet-line .donut b{z-index:1;font-size:17px}.fleet-line .legend{display:grid;gap:6px}.fleet-line .legend span{font-size:8.8px;color:#667389;display:flex;align-items:center;gap:5px}.fleet-line .legend i{width:7px;height:7px;border-radius:50%;background:var(--dot)}.fleet-line .legend b{margin-left:auto;color:#3c465b}.fleet-line .metric b{font-size:20px;letter-spacing:-.05em}.fleet-line .metric b small{font-size:9px;letter-spacing:0}.fleet-line .metric em{font-style:normal;float:right;color:var(--green);font-size:9.5px;font-weight:800;margin-top:8px}.fleet-line .metric.red em{color:var(--red)}.fleet-line .spark{height:30px;margin-top:12px;background:linear-gradient(180deg,transparent 48%,#edf1f6 49%,transparent 52%);position:relative;overflow:hidden}.fleet-line .spark:after{content:'';position:absolute;inset:2px 0;background:linear-gradient(135deg,transparent 0 6%,var(--spark) 7% 9%,transparent 10% 16%,var(--spark) 17% 19%,transparent 20% 26%,var(--spark) 27% 29%,transparent 30% 36%,var(--spark) 37% 39%,transparent 40% 46%,var(--spark) 47% 49%,transparent 50% 57%,var(--spark) 58% 60%,transparent 61% 68%,var(--spark) 69% 71%,transparent 72% 100%);opacity:.8}.fleet-line .finish{display:grid;place-items:center;text-align:center}.fleet-line .finish .finish-ic{width:31px;height:31px;display:grid;place-items:center;border-radius:8px;background:#e9f9ef;color:var(--green);margin-bottom:6px}.fleet-line .finish svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2}.fleet-line .finish b{font-size:20px}.fleet-line .finish span{font-size:9px;color:#7c889c;margin-top:3px}
+  .fleet-line .bottom{display:grid;grid-template-columns:1.55fr repeat(4,1fr) .72fr;gap:8px;margin-top:16px}.fleet-line .bottom-card{min-height:112px;padding:13px 14px;border:1px solid var(--line);border-radius:11px;background:#fff;box-shadow:0 5px 15px rgba(24,34,58,.03)}.fleet-line .bottom-card h3{font-size:10px;color:#78849a;margin:0 0 9px}.fleet-line .donut-block{display:grid;grid-template-columns:82px 1fr;gap:10px;align-items:center}.fleet-line .donut{height:76px;width:76px;border-radius:50%;display:grid;place-items:center;position:relative}.fleet-line .donut:after{content:'';height:51px;width:51px;background:#fff;position:absolute;border-radius:50%}.fleet-line .donut b{z-index:1;font-size:15px}.fleet-line .legend{display:grid;gap:5px}.fleet-line .legend span{font-size:8.8px;color:#667389;display:flex;align-items:center;gap:5px}.fleet-line .legend i{width:7px;height:7px;border-radius:50%;background:var(--dot)}.fleet-line .legend b{margin-left:auto;color:#3c465b}.fleet-line .metric b{font-size:20px;letter-spacing:-.05em}.fleet-line .metric b small{font-size:9px;letter-spacing:0}.fleet-line .metric em{font-style:normal;float:right;color:var(--green);font-size:9.5px;font-weight:800;margin-top:8px}.fleet-line .metric.red em{color:var(--red)}.fleet-line .metric-note{font-size:9px;color:#8a95a8;margin-top:12px;display:block}.fleet-line .meter{height:5px;border-radius:99px;background:#edf0f5;margin-top:7px;overflow:hidden}.fleet-line .meter i{display:block;height:100%;width:var(--value);background:var(--meter);border-radius:inherit}.fleet-line .finish{display:grid;place-items:center;text-align:center}.fleet-line .finish .finish-ic{width:31px;height:31px;display:grid;place-items:center;border-radius:8px;background:#e9f9ef;color:var(--green);margin-bottom:6px}.fleet-line .finish svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2}.fleet-line .finish b{font-size:20px}.fleet-line .finish span{font-size:9px;color:#7c889c;margin-top:3px}
+  @media(max-width:850px){.fleet-line .top-tools{flex-wrap:wrap}.fleet-line .search{width:100%;max-width:none}.fleet-line .view-toggle{margin-left:0}.fleet-line .bottom{grid-template-columns:1fr 1fr}.fleet-line .bottom-card:first-child{grid-column:span 2}}@media(max-width:520px){.fleet-line .bottom{grid-template-columns:1fr}.fleet-line .bottom-card:first-child{grid-column:auto}.fleet-line .filters{gap:4px}.fleet-line .filters a{padding:6px 8px;font-size:9.5px}}
+
+  /* ==== bitta ekranga sig'dirish: sahifa scroll qilmaydi ==== */
+  .content:has(.fleet-line){padding-top:4px;padding-bottom:10px}
+  .fleet-line{display:flex;flex-direction:column;height:calc(100vh - 112px);min-height:360px;overflow:hidden}
+
+  .fleet-line .top-tools{margin:0 0 8px;flex:none;flex-wrap:nowrap;gap:8px;overflow-x:auto;align-items:center}
+  .fleet-line .search{height:34px;width:240px;flex:none}
+  .fleet-line .search input{height:34px;border-radius:9px;font-size:11px}
+  .fleet-line .search svg{top:10px}
+  .fleet-line .search:after{top:7px}
+  .fleet-line .filters{flex-wrap:nowrap;gap:6px;margin:0}
+  .fleet-line .filters a{display:inline-flex;align-items:center;height:34px;padding:0 12px;
+    border-radius:9px;font-size:11px;font-weight:750;line-height:1}
+  .fleet-line .view-toggle{align-items:center;height:34px;border-radius:9px;padding:0 3px}
+  .fleet-line .view-toggle span{display:inline-flex;align-items:center;height:26px;padding:0 8px;font-size:10px}
+
+  .fleet-line .line-wrap{flex:1;min-height:0;display:flex;overflow-y:hidden}
+  .fleet-line .line-grid{height:100%;min-height:0}
+  .fleet-line .lane{min-height:0;overflow:visible}
+  .fleet-line .lane-head{min-height:0;padding:9px 7px 7px;overflow:visible}
+  .fleet-line .lane-head .lane-time{margin-top:6px;font-size:9px}
+  .fleet-line .lane-cards{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;padding:8px 0;scrollbar-width:thin}
+  /* liniyalar orasidagi ulanish belgisi — qirqilmasin, chiroyli chip */
+  .fleet-line .lane-head:after{
+    content:'→';width:22px;height:22px;right:-12px;top:24px;transform:none;
+    display:grid;place-items:center;background:#fff;border:1px solid var(--line);
+    border-radius:50%;color:#6b7688;font-size:12px;font-weight:800;line-height:1;
+    box-shadow:0 2px 7px rgba(24,34,58,.1);z-index:6}
+  .fleet-line .lane:last-child .lane-head:after,
+  .fleet-line .done-lane .lane-head:after{display:none}
+  .fleet-line .truck{padding:7px}
+  .fleet-line .truck img{width:100%;height:auto;aspect-ratio:1/1;margin-bottom:6px;object-fit:cover;background:#f1f3f7}
+  .fleet-line .truck b{font-size:10.5px}
+  .fleet-line .truck .spec{margin-top:2px}
+  .fleet-line .truck .color{margin-top:4px}
+  .fleet-line .truck .status{margin-top:5px;padding:3px 6px}
+  .fleet-line .truck .worker{margin-top:4px}
+  .fleet-line .truck .duration{display:none}
+  .fleet-line .add{padding:5px;margin-top:6px;font-size:9px}
+
+  .fleet-line .bottom{margin-top:8px;flex:none;grid-template-columns:1.5fr repeat(4,1fr) .7fr;gap:7px}
+  .fleet-line .bottom-card{min-height:0;padding:7px 10px}
+  .fleet-line .bottom-card h3{margin:0 0 3px;font-size:9px}
+  .fleet-line .bottom .metric-note,.fleet-line .bottom .meter,.fleet-line .bottom .spark{display:none}
+  .fleet-line .bottom .metric b{font-size:15px}
+  .fleet-line .bottom .metric em{margin-top:1px;font-size:9px}
+  .fleet-line .bottom .donut-block{grid-template-columns:48px 1fr;gap:9px}
+  .fleet-line .bottom .donut{height:48px;width:48px}
+  .fleet-line .bottom .donut:after{height:32px;width:32px}
+  .fleet-line .bottom .donut b{font-size:10px}
+  .fleet-line .bottom .legend{gap:2px}
+  .fleet-line .bottom .legend span{font-size:8px}
+  .fleet-line .bottom .finish .finish-ic{width:20px;height:20px;margin-bottom:2px}
+  .fleet-line .bottom .finish b{font-size:15px}
+  .fleet-line .bottom .finish span{font-size:8px}
+  @media(max-height:560px){.fleet-line{height:auto;min-height:0;overflow:visible}}
+
+  /* ko'rinish almashtirgichi (link) */
+  .fleet-line .view-toggle a{display:inline-flex;align-items:center;height:26px;padding:0 9px;font-size:10px;
+    font-weight:700;color:#8490a4;border-radius:6px;text-decoration:none}
+  .fleet-line .view-toggle a.on{color:var(--purple);background:#f0edff}
+
+  /* ==== Ro'yxat ko'rinishi ==== */
+  .fleet-line .list-wrap{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:14px;
+    background:#fff;box-shadow:0 8px 25px rgba(24,34,58,.04)}
+  .fleet-line .ltable{width:100%;border-collapse:collapse;font-size:11.5px}
+  .fleet-line .ltable thead th{position:sticky;top:0;background:#f7f8fb;text-align:left;padding:10px 14px;
+    font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:#8490a4;border-bottom:1px solid var(--line);z-index:1}
+  .fleet-line .ltable td{padding:8px 14px;border-bottom:1px solid #eef1f5;color:#2b3548;white-space:nowrap}
+  .fleet-line .ltable tbody tr{cursor:pointer}
+  .fleet-line .ltable tbody tr:hover{background:#faf9ff}
+  .fleet-line .lt-truck{display:flex;align-items:center;gap:10px}
+  .fleet-line .lt-truck img{width:44px;height:34px;border-radius:7px;object-fit:cover;background:#f1f3f7;flex:none}
+  .fleet-line .lt-truck b{display:block;font-size:12px;color:var(--purple)}
+  .fleet-line .lt-truck small{color:#8792a5;font-size:10px}
+  .fleet-line .lt-clr{display:inline-flex;align-items:center;gap:6px}
+  .fleet-line .lt-clr i{width:11px;height:11px;border-radius:3px;border:1px solid var(--line)}
+  .fleet-line .lt-prog{display:inline-block;width:56px;height:6px;border-radius:99px;background:#eef0f5;
+    overflow:hidden;vertical-align:middle;margin-right:7px}
+  .fleet-line .lt-prog>i{display:block;height:100%;background:var(--purple)}
+  .fleet-line .lt-prog.full>i{background:var(--green)}
+  .fleet-line .lt-over{color:var(--red);font-weight:700}
+  .fleet-line .lt-empty{text-align:center;color:#9aa4b3;padding:34px}
+
+  /* ishchi avatarlari */
+  .fleet-line .truck .worker{display:flex;align-items:center;gap:6px;margin-top:6px}
+  .fleet-line .truck .worker .wav{width:18px;height:18px;min-width:18px;border-radius:50%;object-fit:cover;
+    aspect-ratio:auto;margin:0;background:#eef1f6;border:1px solid #e3e7ee}
+  .fleet-line .lt-wk{display:inline-flex;align-items:center;gap:7px}
+  .fleet-line .lt-wk img{width:22px;height:22px;border-radius:50%;object-fit:cover;background:#eef1f6;
+    border:1px solid #e3e7ee}
 </style>
-<div class="fleet">
-  <section class="sum">
-    <div class="sum-card"><span class="ic">{{ icon('foodtruck') }}</span><div><span>JAMI TRUCKLAR</span><b>{{ total_count }}</b></div></div>
-    <div class="sum-card"><span class="ic">{{ icon('bolt') }}</span><div><span>ISHLAB CHIQARISHDA</span><b>{{ status_counts['in_production'] }}</b></div></div>
-    <div class="sum-card"><span class="ic">{{ icon('shield') }}</span><div><span>QC KUTMOQDA</span><b>{{ status_counts['qc_pending'] }}</b></div></div>
-    <div class="sum-card"><span class="ic">{{ icon('check') }}</span><div><span>TAYYOR</span><b>{{ status_counts['done'] }}</b></div></div>
-  </section>
-  <section class="card fleet-board">
-    <div class="toolbar">
-      <form class="search" method="get" action="/products"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input name="q" value="{{ query }}" placeholder="Kod, model yoki rang bo‘yicha qidirish"></form>
-      <div class="filters"><a href="/products" class="{{ 'on' if not cur_status and not cur_stage }}">Hammasi</a><a href="/products?status=in_production" class="{{ 'on' if cur_status=='in_production' }}">Jarayonda</a><a href="/products?status=qc_pending" class="{{ 'on' if cur_status=='qc_pending' }}">QC</a><a href="/products?status=returned" class="{{ 'on' if cur_status=='returned' }}">Qaytarilgan</a><a href="/products?status=done" class="{{ 'on' if cur_status=='done' }}">Tayyor</a></div>
-      <span class="result"><b>{{ items|length }}</b> ta truck</span>
-    </div>
-    <div class="table-wrap"><div class="fleet-list"><div class="list-head"><span>Truck</span><span>Parametr</span><span>Rang</span><span>Jarayon</span><span>Holat</span><span>Yaratilgan</span><span></span></div>{% for p in items %}<div class="truck-row"><div class="truck"><span class="vehicle">{{ icon('foodtruck') }}</span><div><a href="/products/{{ p.code }}">{{ p.code }}</a><small>Model {{ p.model or '—' }}</small></div></div><div><span class="spec">{{ (p.size_m ~ ' metr') if p.size_m else '—' }}</span><div class="muted" style="font-size:10px;margin-top:2px">Liniya {{ p.current_stage_order }}</div></div><span class="color" data-color="{{ (p.color or '')|lower }}"><i></i>{{ p.color or 'Belgilanmagan' }}</span><div><div class="stage-top"><span>{{ p.current_stage_order }}-bosqich</span><b>{{ ((p.current_stage_order / stage_total) * 100)|round|int }}%</b></div><div class="stage-bar"><i style="width:{{ ((p.current_stage_order / stage_total) * 100)|round|int }}%"></i></div></div><span class="badge b-{{ p.status.value }}">{{ PRODUCT_STATUS_LABEL[p.status] }}</span><div><span class="date">{{ p.created_at|dt }}</span>{% if p.finished_at %}<br><span class="date" style="color:var(--c-green)">Tayyor: {{ p.finished_at|dt }}</span>{% endif %}</div><a href="/products/{{ p.code }}" class="go"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>{% else %}<div class="empty">Bu filter bo‘yicha truck topilmadi</div>{% endfor %}</div></div>
-  </section>
+{% macro truck(c) %}<a class="truck st-{{ c.status }}" href="/products/{{ c.code }}"><img class="tphoto" src="{{ c.image }}" alt="Model {{ c.model }} food truck"><b>Model {{ c.model }}</b><span class="spec">{{ c.size or '—' }} metr</span><span class="color"><i style="--color:{{ c.hex }}"></i>{{ c.color }}</span><span class="status">{{ c.status_label }}</span><span class="worker">{% if c.worker and c.worker != '—' %}<img class="wav" src="{{ avatar_url(c.worker) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(c.worker) }}'"><strong>{{ c.worker }}</strong>{% else %}Mas’ul: <strong>biriktirilmagan</strong>{% endif %}</span></a>{% endmacro %}
+{%- set parts = [] -%}
+{%- if cur_status %}{% set _ = parts.append('status=' ~ cur_status) %}{% endif -%}
+{%- if query %}{% set _ = parts.append('q=' ~ query|urlencode) %}{% endif -%}
+{%- set qsuf = parts|join('&') -%}
+{%- set line_href = '/products' ~ ('?' ~ qsuf if qsuf else '') -%}
+{%- set list_href = '/products?view=list' ~ ('&' ~ qsuf if qsuf else '') -%}
+{%- set vpar = 'view=list' if view == 'list' else '' -%}
+{%- set qpar = ('q=' ~ query|urlencode) if query else '' -%}
+{%- macro fhref(statuspar) -%}
+/products?{{ [statuspar, vpar, qpar]|select|join('&') }}
+{%- endmacro -%}
+<div class="fleet-line">
+  <form class="top-tools" method="get" action="/products">{% if view == 'list' %}<input type="hidden" name="view" value="list">{% endif %}<label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input name="q" value="{{ query }}" placeholder="Model yoki rang bo‘yicha qidirish..."></label><nav class="filters"><a class="{{ 'on' if not cur_status }}" href="{{ fhref('')|trim }}">Hammasi <b>{{ total_count }}</b></a>{% for key,label in [('in_production','Ishlab chiqarishda'),('qc_pending','QC kutmoqda'),('returned','Qaytarilgan'),('done','Tayyor')] %}<a class="{{ 'on' if cur_status==key }}" href="{{ fhref('status=' ~ key)|trim }}">{{ label }} <b>{{ status_counts[key] }}</b></a>{% endfor %}</nav><span class="view-toggle"><a href="{{ line_href }}" class="{{ 'on' if view != 'list' }}">▦ Liniya ko‘rinishi</a><a href="{{ list_href }}" class="{{ 'on' if view == 'list' }}">☷ Ro‘yxat</a></span></form>
+  {% if view == 'list' %}
+  <div class="list-wrap">
+    <table class="ltable">
+      <thead><tr><th>Truck</th><th>Rang</th><th>Joriy bosqich</th><th>Holat</th><th>Progress</th><th>Mas'ul ishchi</th><th>Muddat</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr onclick="location.href='/products/{{ r.code }}'">
+          <td><span class="lt-truck"><img src="{{ r.image }}" alt=""><span><b>Model {{ r.model }}</b><small>{{ r.size or '—' }} metr</small></span></span></td>
+          <td><span class="lt-clr"><i style="background:{{ r.hex }}"></i>{{ r.color }}</span></td>
+          <td>{{ r.cur }}. {{ r.cur_name }}</td>
+          <td><span class="badge b-{{ r.status }}">{{ r.status_label }}</span></td>
+          <td><span class="lt-prog {{ 'full' if r.pct >= 100 }}"><i style="width:{{ r.pct }}%"></i></span>{{ r.done }}/{{ stage_total }}</td>
+          <td>{% if r.worker and r.worker != '—' %}<span class="lt-wk"><img src="{{ avatar_url(r.worker) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(r.worker) }}'">{{ r.worker }}</span>{% else %}—{% endif %}</td>
+          <td class="{{ 'lt-over' if r.overdue }}">{{ r.due|dt if r.due else '—' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="lt-empty">Truck topilmadi</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <section class="line-wrap"><div class="line-grid">{% for col in board %}<article class="lane"><header class="lane-head"><span class="lane-num">{{ col.order }}</span><h2>{{ col.name }}</h2><b class="lane-count">{{ col.cards|length }} / {{ shown }}</b><span class="lane-time">{{ icon('clock') }} O‘rtacha: {{ col.avg_h if col.avg_h else '—' }} soat</span></header><div class="lane-cards">{% for c in col.cards %}{{ truck(c) }}{% else %}{% if loop.index == 1 and col.order == board|length %}<div class="empty"><span class="empty-ic">{{ icon('wrench') }}</span>Trucklar yo‘q<br>Bu bosqichda hozircha<br>truck mavjud emas.</div>{% else %}<div class="empty">Hozircha bo‘sh</div>{% endif %}{% endfor %}</div><a href="/products" class="add">＋ Truck qo‘shish</a></article>{% endfor %}<article class="lane done-lane"><header class="lane-head"><span class="lane-num">✓</span><h2>Tayyor</h2><b class="lane-count">{{ done_cards|length }}</b><span class="lane-time">{{ icon('clock') }} Bugun tayyor: {{ done_cards|length }}</span></header><div class="lane-cards">{% for c in done_cards %}{{ truck(c) }}{% else %}<div class="empty">Tayyor truck yo‘q</div>{% endfor %}</div><a href="/products?status=done" class="add">Barchasini ko‘rish</a></article></div></section>
+  {% set total = total_count or 1 %}{% set d1 = (status_counts['done']/total*100)|round(1) %}{% set d2 = d1 + (status_counts['in_production']/total*100)|round(1) %}{% set d3 = d2 + (status_counts['qc_pending']/total*100)|round(1) %}<section class="bottom"><article class="bottom-card"><h3>Jarayonga oid KPI lar</h3><div class="donut-block"><div class="donut" style="background:conic-gradient(var(--green) 0 {{ d1 }}%,var(--blue) {{ d1 }}% {{ d2 }}%,var(--orange) {{ d2 }}% {{ d3 }}%,var(--red) {{ d3 }}% 100%)"><b>{{ d2|round|int }}%</b></div><div class="legend"><span><i style="--dot:var(--blue)"></i>Ishlab chiqarishda <b>{{ status_counts['in_production'] }}</b></span><span><i style="--dot:var(--orange)"></i>QC kutmoqda <b>{{ status_counts['qc_pending'] }}</b></span><span><i style="--dot:var(--red)"></i>Qaytarilgan <b>{{ status_counts['returned'] }}</b></span><span><i style="--dot:var(--green)"></i>Tayyor <b>{{ status_counts['done'] }}</b></span></div></div></article><article class="bottom-card metric"><h3>O‘rtacha cycle time</h3><b>{{ fleet_kpis.avg_cycle_h }} <small>soat</small></b><em>↓ 6%</em><span class="metric-note">Maqsad: 42 soatdan kam</span><div class="meter" style="--value:68%;--meter:var(--green)"><i></i></div></article><article class="bottom-card metric"><h3>QC Pass Rate</h3><b>{{ fleet_kpis.pass_rate }}%</b><em>↑ 2.6%</em><span class="metric-note">Maqsad: 90% va undan yuqori</span><div class="meter" style="--value:{{ fleet_kpis.pass_rate }}%;--meter:var(--green)"><i></i></div></article><article class="bottom-card metric red"><h3>Qaytarilishlar</h3><b>{{ fleet_kpis.returns }}</b><em>↑ 1.2%</em><span class="metric-note">Qayta tekshiruv talab qilinadi</span><div class="meter" style="--value:42%;--meter:var(--red)"><i></i></div></article><article class="bottom-card metric"><h3>Bugun tayyor</h3><b>{{ fleet_kpis.finished_today }}</b><em>↑ natija</em><span class="metric-note">Kunlik reja: {{ status_counts['done'] }} truck</span><div class="meter" style="--value:{{ (fleet_kpis.finished_today / status_counts['done'] * 100)|round|int if status_counts['done'] else 0 }}%;--meter:var(--purple)"><i></i></div></article><article class="bottom-card finish"><span class="finish-ic">{{ icon('check') }}</span><b>{{ status_counts['done'] }}</b><span>Tayyor bo‘lgan<br>trucklar</span></article></section>
+  {% endif %}
 </div>
 {% endblock %}

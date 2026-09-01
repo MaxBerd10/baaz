@@ -408,7 +408,7 @@ async def media_library(
     limit: int = 300,
 ) -> list[dict]:
     q = (
-        select(Media, Product.code, Product.name, Stage.name, User.full_name)
+        select(Media, Product.code, Product.name, Product.model, Stage.name, User.full_name)
         .join(Product, Product.id == Media.product_id)
         .join(StageRun, StageRun.id == Media.stage_run_id)
         .join(Stage, Stage.id == StageRun.stage_id)
@@ -427,11 +427,12 @@ async def media_library(
             "type": m.type.value,
             "code": code,
             "pname": pname,
+            "model": model or "—",
             "stage": sname,
             "by": uname or "—",
             "at": m.created_at,
         }
-        for (m, code, pname, sname, uname) in rows
+        for (m, code, pname, model, sname, uname) in rows
     ]
 
 
