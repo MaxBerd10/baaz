@@ -281,13 +281,31 @@ async def _side_counts(session: AsyncSession) -> dict:
     return {s.value: int(rows.get(s, 0)) for s in ProductStatus}
 
 
+# Yon panel / qo'ng'iroq ma'lumotlari har bir sahifada kerak, lekin kam o'zgaradi —
+# qisqa muddatli (jarayon ichidagi) kesh bilan har so'rovdagi 3 ta qo'shimcha
+# so'rovni olib tashlaymiz (demo bazasi statik bo'lgani uchun xavfsiz).
+_SIDE_CACHE: dict = {"t": 0.0, "alerts": [], "counts": None}
+_SIDE_TTL = 20.0
+
+
+async def _side_data(session: AsyncSession) -> tuple[list, dict]:
+    import time as _t
+
+    now = _t.monotonic()
+    if _SIDE_CACHE["counts"] is None or now - _SIDE_CACHE["t"] > _SIDE_TTL:
+        _SIDE_CACHE["alerts"] = await dash_svc.alerts(session)
+        _SIDE_CACHE["counts"] = await _side_counts(session)
+        _SIDE_CACHE["t"] = now
+    return _SIDE_CACHE["alerts"], _SIDE_CACHE["counts"]
+
+
 async def page(name: str, request: Request, session: AsyncSession, **ctx):
     ctx.setdefault("now_str", dt.datetime.now(_TZ).strftime("%d.%m.%Y"))
+    _al, _counts = await _side_data(session)
     if "alerts_list" not in ctx or "alerts_count" not in ctx:
-        _al = await dash_svc.alerts(session)
         ctx.setdefault("alerts_count", len(_al))
         ctx.setdefault("alerts_list", _al[:6])
-    ctx.setdefault("side_counts", await _side_counts(session))
+    ctx.setdefault("side_counts", _counts)
     return templates.TemplateResponse(name, {"request": request, **ctx})
 
 
