@@ -2,6 +2,17 @@ import datetime as dt
 import os
 from pathlib import Path
 
+# --- Vercel (yoki boshqa read-only serverless) muhitini config yuklanishidan
+#     OLDIN to'g'rilaymiz: faqat /tmp yoziladi, SQLite'ni o'sha yerga olamiz. ---
+if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    _db = os.environ.get("DATABASE_URL", "").strip()
+    if not _db.startswith(("postgres://", "postgresql://", "postgresql+asyncpg://")):
+        os.environ["DATABASE_URL"] = "sqlite+aiosqlite:////tmp/baaz.db"
+        os.environ["AUTO_SEED"] = "1"
+        os.environ.pop("SKIP_INIT_DB", None)
+    os.environ["MEDIA_ROOT"] = "/tmp/media"
+    os.environ.setdefault("SHOW_ERRORS", "1")
+
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
