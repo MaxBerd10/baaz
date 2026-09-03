@@ -11,3 +11,4 @@ media/
 .pytest_cache/
 .vercel
 .env*
+.claude/
