@@ -10,6 +10,16 @@ if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
         os.environ["DATABASE_URL"] = "sqlite+aiosqlite:////tmp/baaz.db"
         os.environ["AUTO_SEED"] = "1"
         os.environ.pop("SKIP_INIT_DB", None)
+        # Tayyor demo bazani /tmp ga nusxalash — har cold-start'da qaytadan
+        # seed qilishdan ancha tez (fayl nusxasi vs yuzlab INSERT).
+        import shutil
+
+        _seed = Path(__file__).resolve().parents[2] / "seed.sqlite3"
+        if _seed.is_file() and not os.path.exists("/tmp/baaz.db"):
+            try:
+                shutil.copy(_seed, "/tmp/baaz.db")
+            except OSError:
+                pass
     os.environ["MEDIA_ROOT"] = "/tmp/media"
     os.environ.setdefault("SHOW_ERRORS", "1")
 
@@ -177,6 +187,19 @@ except OSError:  # read-only FS (Vercel)
 if _static.is_dir():
     app.mount("/static", StaticFiles(directory=str(_static)), name="static")
 
+
+@app.middleware("http")
+async def _static_cache(request: Request, call_next):
+    """Statik fayllarga uzoq cache — CDN chekkasida keshlansin, funksiya har safar
+    chaqirilmasin (Vercel'da tezlik uchun muhim)."""
+    resp = await call_next(request)
+    path = request.url.path
+    if path.startswith("/static/"):
+        resp.headers["Cache-Control"] = "public, max-age=604800, s-maxage=604800, immutable"
+    elif path.startswith("/media/"):
+        resp.headers["Cache-Control"] = "public, max-age=3600, s-maxage=86400"
+    return resp
+
 _SKIP_INIT = os.getenv("SKIP_INIT_DB", "").lower() in ("1", "true", "yes")
 _AUTO_SEED = os.getenv("AUTO_SEED", "").lower() in ("1", "true", "yes")
 _log = __import__("logging").getLogger("web")
@@ -319,10 +342,10 @@ async def overview(
 ):
     d = await dash_svc.home(session, sel_code=sel or None)
     truck_images = [
-        "/static/trucks/trailer-orange.png",
-        "/static/trucks/trailer-blue.png",
-        "/static/trucks/trailer-green.png",
-        "/static/trucks/trailer-cream.png",
+        "/static/trucks/trailer-orange.jpg",
+        "/static/trucks/trailer-blue.jpg",
+        "/static/trucks/trailer-green.jpg",
+        "/static/trucks/trailer-cream.jpg",
     ]
     image_by_code = {
         truck["code"]: truck_images[index % len(truck_images)]
@@ -351,10 +374,10 @@ async def overview(
 # Products
 # --------------------------------------------------------------------------- #
 _TRUCK_IMAGES = [
-    "/static/trucks/trailer-orange.png",
-    "/static/trucks/trailer-blue.png",
-    "/static/trucks/trailer-green.png",
-    "/static/trucks/trailer-cream.png",
+    "/static/trucks/trailer-orange.jpg",
+    "/static/trucks/trailer-blue.jpg",
+    "/static/trucks/trailer-green.jpg",
+    "/static/trucks/trailer-cream.jpg",
 ]
 _FLEET_ST = {
     "in_production": "Ishlab chiqarishda",
