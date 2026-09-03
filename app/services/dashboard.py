@@ -794,6 +794,15 @@ async def home(session: AsyncSession, sel_code: str | None = None) -> dict:
         for r in runs:
             by_order.setdefault(r.stage_order, []).append(r)
 
+        # har bir bosqichdagi faol tekshiruv bandlari sonini bitta so'rovda olamiz
+        chk_totals: dict[int, int] = {}
+        for sid, cnt in (await session.execute(
+            select(StageCheckItem.stage_id, func.count())
+            .where(StageCheckItem.is_active.is_(True))
+            .group_by(StageCheckItem.stage_id)
+        )):
+            chk_totals[sid] = int(cnt)
+
         tl = []
         for s in stages:
             rs = by_order.get(s.order_no, [])
@@ -805,10 +814,7 @@ async def home(session: AsyncSession, sel_code: str | None = None) -> dict:
                 state, ref = "current", act
             else:
                 state, ref = "todo", None
-            chk_total = int(await session.scalar(
-                select(func.count()).select_from(StageCheckItem)
-                .where(StageCheckItem.stage_id == s.id, StageCheckItem.is_active.is_(True))
-            ) or 0)
+            chk_total = chk_totals.get(s.id, 0)
             chk_ok = len([c for c in (ref.checks if ref else []) if c.ok]) if ref else (chk_total if state == "done" else 0)
             frac_t = chk_total or 1
             frac_n = chk_total if state == "done" else chk_ok
