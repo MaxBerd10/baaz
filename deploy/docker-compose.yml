@@ -5,6 +5,8 @@ name: baaz
 x-bot-build: &bot-build
   # Bot manba kodi: standart — GitHub'dan. Lokal nusxadan qurish uchun .env da BOT_SRC=../../truck-factory-bot
   context: ${BOT_SRC:-https://github.com/MaxBerd10/truck-factory-bot.git#main}
+  additional_contexts:
+    botfixes: ./bot-fixes     # build paytida botga qo'llanadigan tuzatishlar (bot-fixes/patch_bot.py)
   # Botning o'z Dockerfile'i locales/, alembic.ini va migrations/ ni image'ga olmaydi — shuning uchun o'zimiznikini beramiz.
   dockerfile_inline: |
     FROM python:3.11-slim
@@ -14,6 +16,8 @@ x-bot-build: &bot-build
     COPY requirements.txt .
     RUN pip install --no-cache-dir -r requirements.txt
     COPY . .
+    COPY --from=botfixes patch_bot.py /tmp/patch_bot.py
+    RUN python /tmp/patch_bot.py
     RUN mkdir -p /app/media /app/logs && useradd -m -u 1000 botuser && chown -R botuser:botuser /app
     USER botuser
     CMD ["python", "-m", "src.main"]

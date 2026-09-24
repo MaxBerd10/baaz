@@ -78,3 +78,12 @@ ID avtomatik admin bo'ladi; keyin botdan ishchi/QC uchun taklif havolalari yarat
 
 Yangilashdan keyin: `git pull && docker compose up -d --build` (web ishga tushganda ko'rinishlar va `web.create_truck`
 funksiyasi avtomatik yangilanadi).
+
+## Botga odam qo'shish
+1. Yangi odam botga **`/id`** yozadi — bot uning Telegram ID'sini qaytaradi (u hali tizimda bo'lmasa ham ishlaydi).
+2. Admin botda **👥 Foydalanuvchilar → ➕ Yangi foydalanuvchi**: ID → ism → rol (ishchi/QC/admin) → bosqich → tasdiqlash.
+3. Odam botga `/start` yozadi — menyusi paydo bo'ladi.
+
+`bot-fixes/patch_bot.py` — botning manba kodidagi kichik xatolarni docker build paytida tuzatadi
+(hozir: «👥 Foydalanuvchilar» tugmasi faqat lotin-o'zbek tilida ishlardi). Bot repo'sida tuzatilgach, skript
+o'zini o'tkazib yuboradi; keyin papkani va compose'dagi `botfixes` ni o'chirsa bo'ladi.
