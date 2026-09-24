@@ -1,0 +1,5 @@
+# DOMAIN .env dan olinadi. HTTPS sertifikatini Caddy o'zi (Let's Encrypt) oladi.
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy web:8080
+}
