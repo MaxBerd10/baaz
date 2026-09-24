@@ -28,7 +28,7 @@ sudo ufw allow 22,80,443/tcp && sudo ufw enable   # ufw ishlatsangiz
 ```bash
 git clone https://github.com/MaxBerd10/baaz.git
 cd baaz/deploy
-cp .env.example .env
+cp env.example .env
 nano .env        # BOT_TOKEN, ADMIN_IDS, WEB_PASSWORD (parol va kalit avtomatik yoziladi, pastga qarang)
 docker compose up -d --build
 ```
