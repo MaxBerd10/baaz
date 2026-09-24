@@ -1,14 +1,20 @@
-# Ubuntu serverga o'rnatish (Postgres + bot + web + HTTPS)
+# Ubuntu serverga o'rnatish (Postgres + bot + web)
 
-Bitta `docker compose up` bilan: **Postgres**, **Telegram bot**, **web panel** va domen uchun **HTTPS (Caddy)**.
+Bitta `docker compose up` bilan: **Postgres**, **Telegram bot**, **web panel**. Web serverda faqat
+`127.0.0.1:8090` da ochiladi; internetga ikki yo'ldan biri bilan chiqariladi:
 
+**A) Cloudflare Tunnel (tavsiya — serverda allaqachon `cloudflared` bo'lsa)**
 ```
-Telegram ◀──▶ bot ──▶ Postgres ◀── web ◀── Caddy(:443) ◀── brauzer (https://DOMEN)
+brauzer ─https─▶ Cloudflare ─tunnel─▶ cloudflared ─▶ 127.0.0.1:8090 (web) ─▶ Postgres ◀─ bot ◀─▶ Telegram
 ```
+Port ochish, A-yozuv, sertifikat kerak emas. Tunnel sozlamasida: Public hostname `panel.max.co.uz` → `http://localhost:8090`.
+
+**B) Caddy (agar tunnel yo'q bo'lsa):** `docker compose --profile caddy up -d --build`, `.env` da `DOMAIN=...`,
+A-yozuv serverga qarasin, 80/443 ochiq bo'lsin.
 
 ## 0. Oldindan
-- DNS: domeningizda **A-yozuv** (masalan `panel.example.uz`) → serveringizning IP'si.
-- Serverda 80 va 443 portlar ochiq bo'lsin (Postgres/bot/web tashqariga ochilmaydi).
+- (B variant uchun) DNS'da **A-yozuv** (masalan `panel.example.uz`) → server IP'si, 80/443 ochiq.
+- Postgres/bot/web tashqariga ochilmaydi.
 - @BotFather'dan bot tokeni, @userinfobot'dan o'zingizning Telegram ID'ingiz.
 
 ## 1. Docker o'rnatish (bir marta)
@@ -23,7 +29,7 @@ sudo ufw allow 22,80,443/tcp && sudo ufw enable   # ufw ishlatsangiz
 git clone https://github.com/MaxBerd10/baaz.git
 cd baaz/deploy
 cp .env.example .env
-nano .env        # DOMAIN, BOT_TOKEN, ADMIN_IDS, parollar
+nano .env        # BOT_TOKEN, ADMIN_IDS, WEB_PASSWORD (parol va kalit avtomatik yoziladi, pastga qarang)
 docker compose up -d --build
 ```
 `.env` da:
@@ -35,7 +41,7 @@ Birinchi qurish 3–5 daqiqa oladi. Keyin:
 docker compose ps                 # migrate = Exited (0), qolganlari Up
 docker compose logs -f bot        # "Bot tasdiqlandi: @..." ko'rinsin
 ```
-Brauzerda `https://DOMEN` → `WEB_PASSWORD` bilan kiring. Telegram'da botga `/start` yozing — `ADMIN_IDS` dagi
+Serverning o'zida `curl -I http://127.0.0.1:8090/login` → `200`. So'ng tunnelga hostname qo'shing va `https://panel.max.co.uz` → `WEB_PASSWORD` bilan kiring. Telegram'da botga `/start` yozing — `ADMIN_IDS` dagi
 ID avtomatik admin bo'ladi; keyin botdan ishchi/QC uchun taklif havolalari yarating.
 
 ## Kundalik
