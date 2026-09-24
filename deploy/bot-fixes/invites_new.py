@@ -5,9 +5,11 @@ Eski `invites.py` `Invite(token=...)` yaratardi, modelda esa maydon `code` — s
 menyuda tugmasi ham yo'q edi va muddat 24 soatga qattiq yozilgan edi. Bu fayl docker build paytida
 `src/bot/handlers/admin/invites.py` o'rniga qo'yiladi (deploy/bot-fixes/patch_bot.py).
 """
+from urllib.parse import quote
+
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,18 +32,33 @@ TTL_OPTIONS = [
 
 TXT = {
     "uz": {
+        "share": "📤 Yuborish",
+        "open": "✅ Ro'yxatdan o'tish",
+        "fwd": "👋 <b>BAAZ Trucks</b>\n\nSizni jamoaga taklif qilamiz.\n\n🎭 <b>{role}</b>{step}\n\nRo'yxatdan o'tish uchun pastdagi tugmani bosing ⬇️\n\n⏰ Havola {ttl} amal qiladi.",
+        "share_text": "BAAZ Trucks jamoasiga qo'shiling ({ttl} amal qiladi):",
+        "hint": "👇 Pastdagi xabarni odamga <b>yuboring (forward)</b> yoki «📤 Yuborish» tugmasini bosing.",
         "ttl_prompt": "3️⃣ <b>Havola qancha vaqt amal qilsin?</b>\n\n🎭 {role}{step}\n\nMuddat o'tgach havola ishlamaydi. Havola bir martalik.",
-        "done": "✅ <b>Taklif yaratildi!</b>\n\n🎭 {role}{step}\n\n🔗 <b>Havola:</b>\n<code>{link}</code>\n\n⏰ Muddat: <b>{ttl}</b>\n☝️ Bir martalik: bitta odam foydalana oladi.\n\n<i>Havolani odamga yuboring — u bosib, ism va telefonini kiritadi.</i>",
+        "done": "✅ <b>Taklif yaratildi!</b>\n\n🎭 {role}{step}\n\n🔗 <b>Havola:</b>\n{link}\n\n⏰ Muddat: <b>{ttl}</b>\n☝️ Bir martalik: bitta odam foydalana oladi.\n\n{hint}",
         "cancel": "❌ Bekor qilish",
     },
     "uz_cyrl": {
+        "share": "📤 Юбориш",
+        "open": "✅ Рўйхатдан ўтиш",
+        "fwd": "👋 <b>BAAZ Trucks</b>\n\nСизни жамоага таклиф қиламиз.\n\n🎭 <b>{role}</b>{step}\n\nРўйхатдан ўтиш учун пастдаги тугмани босинг ⬇️\n\n⏰ Ҳавола {ttl} амал қилади.",
+        "share_text": "BAAZ Trucks жамоасига қўшилинг ({ttl} амал қилади):",
+        "hint": "👇 Пастдаги хабарни одамга <b>юборинг (forward)</b> ёки «📤 Юбориш» тугмасини босинг.",
         "ttl_prompt": "3️⃣ <b>Ҳавола қанча вақт амал қилсин?</b>\n\n🎭 {role}{step}\n\nМуддат ўтгач ҳавола ишламайди. Ҳавола бир марталик.",
-        "done": "✅ <b>Таклиф яратилди!</b>\n\n🎭 {role}{step}\n\n🔗 <b>Ҳавола:</b>\n<code>{link}</code>\n\n⏰ Муддат: <b>{ttl}</b>\n☝️ Бир мартали: битта одам фойдалана олади.\n\n<i>Ҳаволани одамга юборинг — у босиб, исм ва телефонини киритади.</i>",
+        "done": "✅ <b>Таклиф яратилди!</b>\n\n🎭 {role}{step}\n\n🔗 <b>Ҳавола:</b>\n{link}\n\n⏰ Муддат: <b>{ttl}</b>\n☝️ Бир мартали: битта одам фойдалана олади.\n\n{hint}",
         "cancel": "❌ Бекор қилиш",
     },
     "ru": {
+        "share": "📤 Отправить",
+        "open": "✅ Зарегистрироваться",
+        "fwd": "👋 <b>BAAZ Trucks</b>\n\nПриглашаем вас в команду.\n\n🎭 <b>{role}</b>{step}\n\nДля регистрации нажмите кнопку ниже ⬇️\n\n⏰ Ссылка действует {ttl}.",
+        "share_text": "Присоединяйтесь к команде BAAZ Trucks (действует {ttl}):",
+        "hint": "👇 <b>Перешлите</b> сообщение ниже человеку или нажмите «📤 Отправить».",
         "ttl_prompt": "3️⃣ <b>Сколько времени ссылка будет действовать?</b>\n\n🎭 {role}{step}\n\nПосле истечения срока ссылка не работает. Ссылка одноразовая.",
-        "done": "✅ <b>Приглашение создано!</b>\n\n🎭 {role}{step}\n\n🔗 <b>Ссылка:</b>\n<code>{link}</code>\n\n⏰ Срок: <b>{ttl}</b>\n☝️ Одноразовая: ей сможет воспользоваться один человек.\n\n<i>Отправьте ссылку человеку — он нажмёт и введёт имя и телефон.</i>",
+        "done": "✅ <b>Приглашение создано!</b>\n\n🎭 {role}{step}\n\n🔗 <b>Ссылка:</b>\n{link}\n\n⏰ Срок: <b>{ttl}</b>\n☝️ Одноразовая: ей сможет воспользоваться один человек.\n\n{hint}",
         "cancel": "❌ Отмена",
     },
 }
@@ -168,9 +185,21 @@ async def choose_ttl(
         f"➕ Taklif yaratildi: role={role}, step={step_number}, muddat={hours}s, "
         f"code={invite.code}, kim={user.telegram_id}"
     )
+    t = TXT[lang]
+    role_name = get_role_name(role, lang)
+    share_url = f"https://t.me/share/url?url={quote(link, safe='')}&text={quote(t['share_text'].format(ttl=ttl_label))}"
+    share_kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=t["share"], url=share_url)]])
     await callback.message.edit_text(
-        TXT[lang]["done"].format(role=get_role_name(role, lang), step=step, link=link, ttl=ttl_label),
+        t["done"].format(role=role_name, step=step, link=link, ttl=ttl_label, hint=t["hint"]),
+        reply_markup=share_kb,
         disable_web_page_preview=True,
+    )
+    # Oldinga yuborishga tayyor xabar: ichida bosiladigan tugma bor (forward qilinganda ham saqlanadi).
+    await callback.message.answer(
+        t["fwd"].format(role=role_name, step=step, ttl=ttl_label),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text=t["open"], url=link)]]
+        ),
     )
 
 
