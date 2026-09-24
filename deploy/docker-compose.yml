@@ -92,9 +92,12 @@ services:
       WEB_PASSWORD: ${WEB_PASSWORD:?WEB_PASSWORD ni .env ga yozing}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY ni .env ga yozing}
       TZ: ${TZ:-Asia/Tashkent}
-      MEDIA_ROOT: /app/media   # model rasmlari shu yerga yuklanadi
+      MEDIA_ROOT: /app/media   # model rasmlari va Telegram keshi shu yerga yoziladi
+      BOT_MEDIA_ROOT: /botmedia   # botning ishchilar yuborgan rasm/videolari (faqat o'qish)
+      BOT_MEDIA_PREFIX: /app/media
     volumes:
       - web_media:/app/media
+      - bot_media:/botmedia:ro
     # Web ko'rinishlarini (VIEW) har ishga tushganda yangilaydi, keyin serverni ko'taradi.
     command: >
       sh -c "python -m app.botdb install &&

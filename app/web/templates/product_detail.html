@@ -66,8 +66,8 @@
           {% if r.media %}
           <div class="thumbs">
             {% for m in r.media %}
-              {% if m.type.value == 'photo' %}<a href="/media/{{ m.id }}" target="_blank"><img src="/media/{{ m.id }}" loading="lazy" alt=""></a>
-              {% else %}<a href="/media/{{ m.id }}" target="_blank" class="vid">🎥 video</a>{% endif %}
+              {% if m.type.value == 'photo' %}<a href="/media/{{ m.id }}" target="_blank" data-lb="photo"><img src="/media/{{ m.id }}" loading="lazy" alt=""></a>
+              {% else %}<a href="/media/{{ m.id }}" target="_blank" class="vid" data-lb="video"><video src="/media/{{ m.id }}#t=0.1" preload="metadata" muted playsinline></video><span class="play">▶</span></a>{% endif %}
             {% endfor %}
           </div>
           {% endif %}

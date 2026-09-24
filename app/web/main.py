@@ -41,7 +41,7 @@ from app.services import telegram_notify
 from app.services import products as products_svc
 from app.services import stages as stages_svc
 from app.services import stats as stats_svc
-from app.services.media_store import abs_path, ensure_root, fetch_telegram
+from app.services.media_store import abs_path, ensure_root, guess_type, resolve_local, telegram_cached
 from app.web import charts
 from app.web.auth import (
     COOKIE_NAME,
@@ -912,12 +912,11 @@ async def media_file(media_id: int, request: Request, session: AsyncSession = De
     if not valid(request.cookies.get(COOKIE_NAME)):
         return RedirectResponse("/login", status_code=302)
     m = await session.get(Media, media_id)
-    path = abs_path(m.file_path) if (m and m.file_path) else None
-    if path is not None and path.is_file():
-        return FileResponse(str(path))
-    if m is not None and m.telegram_file_id:
-        got = await fetch_telegram(m.telegram_file_id)
-        if got:
-            return Response(content=got[0], media_type=got[1])
+    path = resolve_local(m.file_path) if m else None
+    if path is None and m is not None and m.telegram_file_id:
+        path = await telegram_cached(m.telegram_file_id)
+    if path is not None:
+        # FileResponse Range so'rovlarini qo'llaydi — video brauzerda to'g'ridan-to'g'ri o'ynaydi.
+        return FileResponse(str(path), media_type=guess_type(path))
     # Fayl yo'q (masalan Vercel'da media saqlanmaydi) — chiroyli o'rin egallovchi.
     return Response(content=_MEDIA_PLACEHOLDER, media_type="image/svg+xml")

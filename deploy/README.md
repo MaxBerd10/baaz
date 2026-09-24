@@ -90,3 +90,8 @@ muddati o'tsa yoki ishlatilgan bo'lsa ishlamaydi. Odamni Telegram ID bilan qo'ld
 - Taklif havolasi ishlamasdi (`Invite(token=…)`, modelda `code`), menyuda tugmasi yo'q, muddat 24 soatga qattiq yozilgan →
   `invites_new.py` bilan qayta yozilgan (1 soat / 1 kun / 5 kun).
 Bot repo'sida tuzatilgach, skript o'zini o'tkazib yuboradi; keyin papkani va compose'dagi `botfixes` ni olib tashlang.
+
+## Rasm va videolar
+Ishchi botga yuborgan rasm/videolar web'da (Fayllar bo'limi va truck sahifasi) yuklab olinmaydi — bosilganda sahifaning
+o'zida oynada ochiladi (video pleyer bilan). Fayllar botning `bot_media` papkasidan o'qiladi (web'ga faqat-o'qish rejimida
+ulangan); u yerda bo'lmasa, Telegram'dan olinib `web_media/tgcache` ga keshlanadi.

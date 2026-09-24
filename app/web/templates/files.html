@@ -23,9 +23,9 @@
   {% for it in items %}
   <div class="fcard">
     {% if it.type == 'photo' %}
-    <a href="/media/{{ it.id }}" target="_blank"><img class="ph" src="/media/{{ it.id }}" loading="lazy" alt=""></a>
+    <a href="/media/{{ it.id }}" target="_blank" data-lb="photo"><img class="ph" src="/media/{{ it.id }}" loading="lazy" alt=""></a>
     {% else %}
-    <a href="/media/{{ it.id }}" target="_blank" class="vd">🎥 Video</a>
+    <a href="/media/{{ it.id }}" target="_blank" class="vd" data-lb="video"><video src="/media/{{ it.id }}#t=0.1" preload="metadata" muted playsinline></video><span class="play">▶</span></a>
     {% endif %}
     <div class="meta">
       <div class="p"><a href="/products/{{ it.code }}" style="color:var(--brand)">Model {{ it.model }}</a></div>
