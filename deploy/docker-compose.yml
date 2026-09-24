@@ -16,8 +16,8 @@ x-bot-build: &bot-build
     COPY requirements.txt .
     RUN pip install --no-cache-dir -r requirements.txt
     COPY . .
-    COPY --from=botfixes patch_bot.py /tmp/patch_bot.py
-    RUN python /tmp/patch_bot.py
+    COPY --from=botfixes . /tmp/botfixes/
+    RUN python /tmp/botfixes/patch_bot.py
     RUN mkdir -p /app/media /app/logs && useradd -m -u 1000 botuser && chown -R botuser:botuser /app
     USER botuser
     CMD ["python", "-m", "src.main"]

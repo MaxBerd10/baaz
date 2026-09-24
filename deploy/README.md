@@ -80,10 +80,15 @@ Yangilashdan keyin: `git pull && docker compose up -d --build` (web ishga tushga
 funksiyasi avtomatik yangilanadi).
 
 ## Botga odam qo'shish
-1. Yangi odam botga **`/id`** yozadi — bot uning Telegram ID'sini qaytaradi (u hali tizimda bo'lmasa ham ishlaydi).
-2. Admin botda **👥 Foydalanuvchilar → ➕ Yangi foydalanuvchi**: ID → ism → rol (ishchi/QC/admin) → bosqich → tasdiqlash.
-3. Odam botga `/start` yozadi — menyusi paydo bo'ladi.
+**A) Taklif havolasi (tavsiya):** botda admin **👥 Foydalanuvchilar → 🔗 Taklif havolasi** → rol → (ishchi bo'lsa) bosqich →
+**muddat: 1 soat / 1 kun / 5 kun** → bot havola beradi. Havolani odamga yuboring: u bosadi, ism va telefonini kiritadi va
+tayinlangan rol/bosqich bilan tizimga kiradi. Havola **bir martalik**; muddati o'tsa yoki ishlatilgan bo'lsa ishlamaydi.
 
-`bot-fixes/patch_bot.py` — botning manba kodidagi kichik xatolarni docker build paytida tuzatadi
-(hozir: «👥 Foydalanuvchilar» tugmasi faqat lotin-o'zbek tilida ishlardi). Bot repo'sida tuzatilgach, skript
-o'zini o'tkazib yuboradi; keyin papkani va compose'dagi `botfixes` ni o'chirsa bo'ladi.
+**B) Telegram ID bo'yicha:** odam botga `/id` yozib ID'sini bildiradi; admin **👥 Foydalanuvchilar → ➕ Yangi foydalanuvchi**:
+ID → ism → rol → bosqich → tasdiqlash.
+
+`bot-fixes/` — botning manba kodidagi xatolarni docker build paytida tuzatadi (bot repo'siga tegmasdan):
+- «👥 Foydalanuvchilar» tugmasi faqat lotin-o'zbek tilida ishlardi → tilga moslashuvchi.
+- Taklif havolasi ishlamasdi (`Invite(token=…)`, modelda `code`), menyuda tugmasi yo'q, muddat 24 soatga qattiq yozilgan →
+  `invites_new.py` bilan qayta yozilgan (1 soat / 1 kun / 5 kun).
+Bot repo'sida tuzatilgach, skript o'zini o'tkazib yuboradi; keyin papkani va compose'dagi `botfixes` ni olib tashlang.
