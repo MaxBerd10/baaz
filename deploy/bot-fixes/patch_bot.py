@@ -30,18 +30,18 @@ if new_invites.is_file() and target.is_file():
 else:
     print("patch_bot: invites.py almashtirilmadi (fayl topilmadi)")
 
-# 3) Foydalanuvchilar ro'yxatiga «🔗 Taklif havolasi» tugmasi.
+# 3) Foydalanuvchilar ro'yxatida «➕ Yangi foydalanuvchi» (Telegram ID bilan) o'rniga faqat
+#    «🔗 Taklif havolasi» turadi: odamlar havola orqali o'zi ro'yxatdan o'tadi.
 kb = pathlib.Path("src/bot/keyboards/admin.py")
 ks = kb.read_text(encoding="utf-8")
-anchor = '''            callback_data="user_add",
+old_btn = '''    builder.row(
+        InlineKeyboardButton(
+            text=f"➕ {_('admin.user_add_title', language=language)}",
+            callback_data="user_add",
         )
     )
 '''
-if "invite_start" in ks:
-    print("patch_bot: keyboards/admin.py — taklif tugmasi allaqachon bor")
-elif ks.count(anchor) == 1:
-    add = anchor + '''
-    builder.row(
+new_btn = '''    builder.row(
         InlineKeyboardButton(
             text={
                 "uz_cyrl": "\\U0001F517 Таклиф ҳаволаси",
@@ -51,7 +51,10 @@ elif ks.count(anchor) == 1:
         )
     )
 '''
-    kb.write_text(ks.replace(anchor, add), encoding="utf-8")
-    print("patch_bot: users ro'yxatiga taklif tugmasi qo'shildi")
+if "invite_start" in ks:
+    print("patch_bot: keyboards/admin.py — taklif tugmasi allaqachon bor")
+elif ks.count(old_btn) == 1:
+    kb.write_text(ks.replace(old_btn, new_btn), encoding="utf-8")
+    print("patch_bot: users ro'yxatida «Yangi foydalanuvchi» o'rniga «Taklif havolasi» qo'yildi")
 else:
-    print("patch_bot: keyboards/admin.py — anchor topilmadi, tugma qo'shilmadi")
+    print("patch_bot: keyboards/admin.py — tugma topilmadi, o'zgartirilmadi")

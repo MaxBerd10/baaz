@@ -80,12 +80,10 @@ Yangilashdan keyin: `git pull && docker compose up -d --build` (web ishga tushga
 funksiyasi avtomatik yangilanadi).
 
 ## Botga odam qo'shish
-**A) Taklif havolasi (tavsiya):** botda admin **👥 Foydalanuvchilar → 🔗 Taklif havolasi** → rol → (ishchi bo'lsa) bosqich →
-**muddat: 1 soat / 1 kun / 5 kun** → bot havola beradi. Havolani odamga yuboring: u bosadi, ism va telefonini kiritadi va
-tayinlangan rol/bosqich bilan tizimga kiradi. Havola **bir martalik**; muddati o'tsa yoki ishlatilgan bo'lsa ishlamaydi.
-
-**B) Telegram ID bo'yicha:** odam botga `/id` yozib ID'sini bildiradi; admin **👥 Foydalanuvchilar → ➕ Yangi foydalanuvchi**:
-ID → ism → rol → bosqich → tasdiqlash.
+Botda admin **👥 Foydalanuvchilar → 🔗 Taklif havolasi** → rol → (ishchi bo'lsa) bosqich →
+**muddat: 1 soat / 1 kun / 5 kun** → bot havola beradi (**📤 Yuborish** tugmasi va forward qilishga tayyor kartochka bilan).
+Odam havolani bosadi, ism va telefonini kiritadi va tayinlangan rol/bosqich bilan tizimga kiradi. Havola **bir martalik**;
+muddati o'tsa yoki ishlatilgan bo'lsa ishlamaydi. Odamni Telegram ID bilan qo'lda qo'shish tugmasi olib tashlangan.
 
 `bot-fixes/` — botning manba kodidagi xatolarni docker build paytida tuzatadi (bot repo'siga tegmasdan):
 - «👥 Foydalanuvchilar» tugmasi faqat lotin-o'zbek tilida ishlardi → tilga moslashuvchi.
