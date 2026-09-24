@@ -23,7 +23,7 @@ if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
     os.environ["MEDIA_ROOT"] = "/tmp/media"
     os.environ.setdefault("SHOW_ERRORS", "1")
 
-from fastapi import Depends, FastAPI, Form, Request
+from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -34,8 +34,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.db import SessionLocal, init_db
 from app.enums import PRODUCT_STATUS_LABEL, ROLE_LABEL, ProductStatus, StageRunStatus
-from app.models import AuditLog, Media, Product, StageRun, User
+from app.models import AuditLog, Media, ModelCard, Product, StageRun, User
 from app.services import dashboard as dash_svc
+from app.services import factory as factory_svc
+from app.services import telegram_notify
 from app.services import products as products_svc
 from app.services import stages as stages_svc
 from app.services import stats as stats_svc
@@ -234,7 +236,7 @@ async def _bootstrap_once() -> None:
         ensure_root()
     except Exception:  # pragma: no cover
         pass
-    if not _SKIP_INIT and not settings.bot_db:
+    if not _SKIP_INIT:
         try:
             await init_db()
         except Exception as exc:  # pragma: no cover
@@ -389,6 +391,12 @@ async def overview(
         truck["image"] = image_by_code[truck["code"]]
     if d["sel"]:
         d["sel"]["image"] = image_by_code.get(d["sel"]["code"], truck_images[0])
+    if settings.bot_db:  # model katalogidagi haqiqiy rasm bo'lsa — shuni ko'rsatamiz
+        imgs = await factory_svc.image_map(session)
+        for truck in d["trucks"]:
+            truck["image"] = imgs.get(truck["model"], truck["image"])
+        if d["sel"]:
+            d["sel"]["image"] = imgs.get(d["sel"]["model"], d["sel"]["image"])
 
     for c in d["kpi5"]:
         col = _KPI_SPARK_COLOR.get(c["tone"], "var(--brand)")
@@ -458,6 +466,7 @@ async def products_page(
     ):
         worker_by_id.setdefault(pid, name)
 
+    imgs = await factory_svc.image_map(session) if settings.bot_db else {}
     today = dt.datetime.now(_TZ).date()
     rows = []
     for idx, p in enumerate(all_items):
@@ -472,7 +481,7 @@ async def products_page(
             "code": p.code, "model": p.model or "—", "size": p.size_m,
             "color": p.color or "—", "hex": dash_svc.color_hex(p.color),
             "customer": p.note or "—",
-            "image": _TRUCK_IMAGES[idx % len(_TRUCK_IMAGES)],
+            "image": imgs.get(p.model or "", _TRUCK_IMAGES[idx % len(_TRUCK_IMAGES)]),
             "status": p.status.value, "status_label": _FLEET_ST.get(p.status.value, p.status.value),
             "cur": p.current_stage_order,
             "cur_name": "Yakunlandi" if p.status == ProductStatus.done
@@ -534,9 +543,177 @@ async def products_page(
     )
 
 
+
+# --------------------------------------------------------------------------- #
+# Model katalogi va web'dan truck yaratish (faqat bot rejimida)
+# --------------------------------------------------------------------------- #
+import re as _re2
+import urllib.parse as _urlp
+
+_SERIAL_RE = _re2.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$")
+
+
+def _redir(url: str) -> RedirectResponse:
+    return RedirectResponse(url, status_code=303)
+
+
+@app.get("/models", response_class=HTMLResponse)
+async def models_page(
+    request: Request, edit: int | None = None, msg: str = "",
+    session: AsyncSession = Depends(get_session), _=Depends(require_login),
+):
+    models = await factory_svc.list_models(session)
+    usage = {}
+    if settings.bot_db:
+        usage = {m: c for m, c in (await session.execute(
+            select(Product.model, func.count()).group_by(Product.model))).all()}
+    editing = next((m for m in models if m.id == edit), None)
+    return await page("models.html", request, session, active="models", models=models,
+                      usage=usage, editing=editing, msg=msg)
+
+
+@app.post("/models")
+async def models_save(
+    id: int | None = Form(None), name: str = Form(""), description: str = Form(""),
+    size_m: str = Form(""), color: str = Form(""), remove_image: str = Form(""),
+    image: UploadFile | None = File(None),
+    session: AsyncSession = Depends(get_session), _=Depends(require_login),
+):
+    name = name.strip()
+    if not name:
+        return _redir("/models?msg=" + _urlp.quote("Model nomini kiriting"))
+    card = await factory_svc.get_model(session, id) if id else None
+    dup = await factory_svc.get_model_by_name(session, name)
+    if dup is not None and (card is None or dup.id != card.id):
+        return _redir("/models?msg=" + _urlp.quote(f"«{name}» nomli model allaqachon bor"))
+    if card is None:
+        card = ModelCard(name=name)
+        session.add(card)
+    card.name = name
+    card.description = description.strip() or None
+    card.size_m = int(size_m) if size_m.strip().isdigit() else None
+    card.color = color.strip() or None
+
+    data = await image.read() if image is not None and image.filename else b""
+    if data:
+        try:
+            new_file = factory_svc.save_image(data)
+        except ValueError as exc:
+            await session.rollback()
+            return _redir("/models?msg=" + _urlp.quote(str(exc)))
+        factory_svc.delete_image(card.image_file)
+        card.image_file, card.tg_file_id = new_file, None
+    elif remove_image and card.image_file:
+        factory_svc.delete_image(card.image_file)
+        card.image_file, card.tg_file_id = None, None
+    await session.commit()
+    return _redir("/models?msg=" + _urlp.quote("Saqlandi ✅"))
+
+
+@app.post("/models/{model_id}/toggle")
+async def models_toggle(model_id: int, session: AsyncSession = Depends(get_session), _=Depends(require_login)):
+    card = await factory_svc.get_model(session, model_id)
+    if card is not None:
+        card.is_active = not card.is_active
+        await session.commit()
+    return _redir("/models")
+
+
+@app.post("/models/{model_id}/delete")
+async def models_delete(model_id: int, session: AsyncSession = Depends(get_session), _=Depends(require_login)):
+    card = await factory_svc.get_model(session, model_id)
+    if card is not None:
+        factory_svc.delete_image(card.image_file)
+        await session.delete(card)
+        await session.commit()
+    return _redir("/models?msg=" + _urlp.quote("O‘chirildi"))
+
+
+@app.get("/media/model/{model_id}")
+async def model_image(model_id: int, request: Request, session: AsyncSession = Depends(get_session)):
+    if not valid(request.cookies.get(COOKIE_NAME)):
+        return RedirectResponse("/login", status_code=302)
+    card = await factory_svc.get_model(session, model_id)
+    path = abs_path(card.image_file) if card and card.image_file else None
+    if path is not None and path.is_file():
+        return FileResponse(str(path))
+    return Response(content=_MEDIA_PLACEHOLDER, media_type="image/svg+xml")
+
+
+async def _new_truck_ctx(session: AsyncSession) -> dict:
+    models = await factory_svc.list_models(session, only_active=True)
+    serials = {m.name: await factory_svc.suggest_serial(session, m.name) for m in models}
+    imgs = await factory_svc.image_map(session)
+    meta = {m.name: {"img": imgs.get(m.name), "ds": m.description or "", "serial": serials[m.name]}
+            for m in models}
+    return {"models": models, "serials": serials, "imgs": imgs, "meta": meta,
+            "priorities": factory_svc.PRIORITIES, "priority_label": factory_svc.PRIORITY_LABEL}
+
+
+@app.get("/products/new", response_class=HTMLResponse)
+async def product_new_form(request: Request, session: AsyncSession = Depends(get_session), _=Depends(require_login)):
+    if not settings.bot_db:
+        return RedirectResponse("/products", status_code=302)
+    ctx = await _new_truck_ctx(session)
+    return await page("product_new.html", request, session, active="products", error="", form={}, **ctx)
+
+
+@app.post("/products/new")
+async def product_create(
+    request: Request, model: str = Form(""), serial: str = Form(""), customer: str = Form(""),
+    priority: str = Form("normal"), deadline: str = Form(""), notify: str = Form(""),
+    session: AsyncSession = Depends(get_session), _=Depends(require_login),
+):
+    if not settings.bot_db:
+        return RedirectResponse("/products", status_code=302)
+    form = {"model": model, "serial": serial, "customer": customer, "priority": priority,
+            "deadline": deadline, "notify": notify}
+
+    async def fail(msg: str):
+        ctx = await _new_truck_ctx(session)
+        return await page("product_new.html", request, session, active="products",
+                          error=msg, form=form, **ctx)
+
+    card = await factory_svc.get_model_by_name(session, model)
+    if card is None or not card.is_active:
+        return await fail("Modelni tanlang (avval «Modellar» bo‘limida model qo‘shing)")
+    serial = serial.strip() or await factory_svc.suggest_serial(session, card.name)
+    if not _SERIAL_RE.match(serial):
+        return await fail("Seriya raqami: faqat harf, raqam, nuqta, tire (32 belgigacha)")
+    try:
+        due = dt.date.fromisoformat(deadline) if deadline.strip() else None
+    except ValueError:
+        return await fail("Muddat sanasi noto‘g‘ri")
+    try:
+        await factory_svc.create_truck(session, serial=serial, model=card.name,
+                                       customer=customer.strip() or None, priority=priority, deadline=due)
+    except factory_svc.DuplicateSerial:
+        return await fail(f"«{serial}» seriyali truck allaqachon bor")
+    _SIDE_CACHE["counts"] = None  # yon paneldagi sanoqlar darrov yangilansin
+
+    q = {"created": 1, "sent": 0, "failed": 0}
+    if notify:
+        recips = await factory_svc.recipients(session)
+        res = await telegram_notify.notify_new_order(
+            recips, model=card.name, serial=serial, customer=customer.strip() or None,
+            priority=priority, deadline=due.isoformat() if due else None, description=card.description,
+            image=factory_svc.read_image(card),
+            image_name=(card.image_file or "model.jpg").rsplit("/", 1)[-1], tg_file_id=card.tg_file_id)
+        if res["file_id"] and res["file_id"] != card.tg_file_id:
+            card.tg_file_id = res["file_id"]
+            await session.commit()
+        q.update(sent=res["sent"], failed=res["failed"])
+        if res.get("error"):
+            q["err"] = str(res["error"])[:120]
+    else:
+        q["notified"] = 0
+    return _redir(f"/products/{_urlp.quote(serial)}?" + _urlp.urlencode(q))
+
+
 @app.get("/products/{code}", response_class=HTMLResponse)
 async def product_detail(
-    code: str, request: Request, session: AsyncSession = Depends(get_session), _=Depends(require_login)
+    code: str, request: Request, created: int = 0, sent: int = 0, failed: int = 0, err: str = "",
+    notified: int = 1, session: AsyncSession = Depends(get_session), _=Depends(require_login)
 ):
     product = await products_svc.get_by_code(session, code)
     if product is None:
@@ -551,6 +728,9 @@ async def product_detail(
         "product_detail.html", request, session,
         active="products", heading=product.code,
         product=product, runs=runs, total=total, stages=all_stages, by_stage=by_stage,
+        flash={"created": created, "sent": sent, "failed": failed, "err": err, "notified": notified},
+        model_card=(await factory_svc.get_model_by_name(session, product.model)) if settings.bot_db else None,
+        model_img=(await factory_svc.image_map(session)).get(product.model or "") if settings.bot_db else None,
     )
 
 

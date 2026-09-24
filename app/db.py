@@ -82,7 +82,13 @@ if _is_sqlite:
 
 
 async def init_db() -> None:
-    if settings.bot_db:  # bot bazasi — jadval yaratmaymiz, faqat o'qiymiz
+    if settings.bot_db:
+        # Bot jadvallariga tegmaymiz; faqat web'ning o'z jadvali (model katalogi).
+        from app.models import ModelCard
+
+        async with engine.begin() as conn:
+            await conn.exec_driver_sql("CREATE SCHEMA IF NOT EXISTS web")
+            await conn.run_sync(lambda c: ModelCard.__table__.create(c, checkfirst=True))
         return
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

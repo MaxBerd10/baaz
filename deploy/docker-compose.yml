@@ -88,6 +88,9 @@ services:
       WEB_PASSWORD: ${WEB_PASSWORD:?WEB_PASSWORD ni .env ga yozing}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY ni .env ga yozing}
       TZ: ${TZ:-Asia/Tashkent}
+      MEDIA_ROOT: /app/media   # model rasmlari shu yerga yuklanadi
+    volumes:
+      - web_media:/app/media
     # Web ko'rinishlarini (VIEW) har ishga tushganda yangilaydi, keyin serverni ko'taradi.
     command: >
       sh -c "python -m app.botdb install &&
@@ -120,5 +123,6 @@ services:
 volumes:
   pgdata:
   bot_media:
+  web_media:
   caddy_data:
   caddy_config:

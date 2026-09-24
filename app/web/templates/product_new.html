@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Yangi zakaz — Baaz{% endblock %}
+{% block heading %}Yangi zakaz{% endblock %}
+{% block sub %}Truck yaratiladi va ishchilarga Telegram orqali xabar yuboriladi{% endblock %}
+{% block body %}
+<style>
+  .nz{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:start}
+  .nz label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin:0 0 5px;letter-spacing:.03em}
+  .nz .fld{margin-bottom:14px}
+  .fi{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;font-size:13px;color:var(--ink)}
+  .fi:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+  .nz .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .nz .err{margin-bottom:14px;padding:10px 14px;border-radius:11px;background:#fff0f1;color:#c0303a;font-weight:650;font-size:12.5px}
+  .nz .chk{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink);margin:4px 0 16px}
+  .nz .chk input{width:17px;height:17px}
+  .pv{overflow:hidden;position:sticky;top:14px}
+  .pv .ph{aspect-ratio:4/3;background:#eef1f6;display:grid;place-items:center;color:var(--faint);font-size:12px}
+  .pv .ph img{width:100%;height:100%;object-fit:cover;display:block}
+  .pv .bd{padding:14px 16px}
+  .pv h3{margin:0 0 6px;font-size:16px}
+  .pv p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.5;white-space:pre-line}
+  @media(max-width:900px){.nz{grid-template-columns:1fr}.pv{position:static}}
+</style>
+
+<div class="nz">
+  <form class="card pad" method="post" action="/products/new" id="nzform">
+    {% if error %}<div class="err">{{ error }}</div>{% endif %}
+    {% if not models %}
+      <div class="err">Avval model qo‘shing: <a href="/models" style="text-decoration:underline">Modellar</a> bo‘limida rasmi bilan.</div>
+    {% endif %}
+    <div class="fld">
+      <label>Model *</label>
+      <select class="fi" name="model" id="f-model" required>
+        {% for m in models %}<option value="{{ m.name }}" {{ 'selected' if form.get('model')==m.name }}>{{ m.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Seriya raqami</label><input class="fi" name="serial" id="f-serial" maxlength="32" value="{{ form.get('serial','') }}" placeholder="avtomatik"></div>
+      <div class="fld"><label>Muddat</label><input class="fi" type="date" name="deadline" value="{{ form.get('deadline','') }}"></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Buyurtmachi</label><input class="fi" name="customer" maxlength="255" value="{{ form.get('customer','') }}" placeholder="masalan: Oltin Non MChJ"></div>
+      <div class="fld"><label>Prioritet</label>
+        <select class="fi" name="priority">
+          {% for p in priorities %}<option value="{{ p }}" {{ 'selected' if (form.get('priority') or 'normal')==p }}>{{ priority_label[p] }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <label class="chk"><input type="checkbox" name="notify" value="1" {{ 'checked' if (not form) or form.get('notify') }}> Telegramda hammaga «yangi zakaz keldi» xabarini yuborish</label>
+    <button class="btn" type="submit" {{ 'disabled' if not models }}>Zakaz yaratish</button>
+  </form>
+
+  <div class="card pv">
+    <div class="ph" id="pv-ph">rasm yo‘q</div>
+    <div class="bd"><h3 id="pv-name">—</h3><p id="pv-ds"></p></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var M = {{ meta|tojson }};
+  var sel = document.getElementById('f-model'), ser = document.getElementById('f-serial');
+  var dirty = {{ 'true' if form.get('serial') else 'false' }};
+  ser.addEventListener('input', function(){ dirty = ser.value.trim() !== ''; });
+  function upd(){
+    var m = M[sel.value]; if(!m) return;
+    document.getElementById('pv-name').textContent = sel.value;
+    document.getElementById('pv-ds').textContent = m.ds;
+    var ph = document.getElementById('pv-ph');
+    ph.innerHTML = m.img ? '<img src="'+m.img+'" alt="">' : 'rasm yo‘q';
+    if(!dirty) ser.placeholder = m.serial || 'avtomatik';
+  }
+  sel.addEventListener('change', upd); upd();
+})();
+</script>
+{% endblock %}

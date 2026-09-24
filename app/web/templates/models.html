@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Modellar — Baaz{% endblock %}
+{% block heading %}Modellar{% endblock %}
+{% block sub %}Har bir modelning rasmi va tavsifi — yangi zakazda ishchilarga Telegram orqali yuboriladi{% endblock %}
+{% block body %}
+<style>
+  .mdl-msg{margin:0 0 14px;padding:10px 14px;border-radius:11px;background:var(--brand-soft);color:var(--brand-ink);font-weight:650;font-size:12.5px}
+  .mdl-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;align-items:start}
+  .mdl-form .full{grid-column:1/-1}
+  .mdl-form label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em}
+  .fi{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;font-size:13px;color:var(--ink)}
+  .fi:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+  textarea.fi{min-height:74px;resize:vertical}
+  .mdl-actions{display:flex;gap:10px;align-items:center}
+  .btn-line{padding:10px 16px;border:1px solid var(--line);border-radius:11px;background:#fff;font-size:12.5px;font-weight:650;cursor:pointer;color:var(--ink)}
+  .mdl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;margin-top:18px}
+  .mdl{overflow:hidden;display:flex;flex-direction:column}
+  .mdl .ph{aspect-ratio:4/3;background:#eef1f6;display:grid;place-items:center;color:var(--faint);font-size:12px}
+  .mdl .ph img{width:100%;height:100%;object-fit:cover;display:block}
+  .mdl .bd{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .mdl h3{margin:0;font-size:15px;display:flex;align-items:center;gap:8px}
+  .mdl .ds{font-size:12px;color:var(--muted);line-height:1.45;flex:1}
+  .mdl .mt{font-size:11px;color:var(--faint)}
+  .mdl .ac{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .mdl .ac form{margin:0}
+  .mdl .ac button,.mdl .ac a{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:11px;font-weight:650;cursor:pointer;color:var(--ink)}
+  .mdl .ac .dg{color:var(--c-red)}
+  .mdl.off{opacity:.55}
+  .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:#f0f1f5;color:var(--muted)}
+  @media(max-width:700px){.mdl-form{grid-template-columns:1fr}}
+</style>
+
+{% if msg %}<div class="mdl-msg">{{ msg }}</div>{% endif %}
+
+<div class="card pad">
+  <div class="hd"><h2>{{ 'Modelni tahrirlash: ' ~ editing.name if editing else 'Yangi model qo‘shish' }}</h2></div>
+  <form class="mdl-form" method="post" action="/models" enctype="multipart/form-data">
+    {% if editing %}<input type="hidden" name="id" value="{{ editing.id }}">{% endif %}
+    <div><label>Model nomi *</label><input class="fi" name="name" required maxlength="128" placeholder="masalan: T1" value="{{ editing.name if editing }}"></div>
+    <div><label>Rasm (JPG, PNG, WEBP — 8 MB gacha)</label><input class="fi" type="file" name="image" accept="image/jpeg,image/png,image/webp"></div>
+    <div><label>O‘lcham (metr)</label><input class="fi" name="size_m" inputmode="numeric" placeholder="masalan: 5" value="{{ editing.size_m if editing and editing.size_m }}"></div>
+    <div><label>Rang</label><input class="fi" name="color" maxlength="64" placeholder="masalan: Oq" value="{{ editing.color if editing and editing.color }}"></div>
+    <div class="full"><label>Tavsif (ishchilar uchun: nima qurish kerak)</label><textarea class="fi" name="description" placeholder="Qisqacha: o‘lcham, jihozlar, muhim talablar…">{{ editing.description if editing and editing.description }}</textarea></div>
+    {% if editing and editing.image_file %}
+    <div class="full"><label><input type="checkbox" name="remove_image" value="1"> Hozirgi rasmni o‘chirish</label></div>
+    {% endif %}
+    <div class="full mdl-actions">
+      <button class="btn" type="submit">{{ 'Saqlash' if editing else 'Model qo‘shish' }}</button>
+      {% if editing %}<a class="btn-line" href="/models">Bekor qilish</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+<div class="mdl-grid">
+  {% for m in models %}
+  <div class="card mdl {{ 'off' if not m.is_active }}">
+    <div class="ph">{% if m.image_file %}<img src="/media/model/{{ m.id }}?v={{ m.image_file[7:15] }}" alt="{{ m.name }}">{% else %}rasm yo‘q{% endif %}</div>
+    <div class="bd">
+      <h3>{{ m.name }}{% if not m.is_active %} <span class="tag">nofaol</span>{% endif %}</h3>
+      <div class="ds">{{ m.description or '—' }}</div>
+      <div class="mt">{% if m.size_m %}{{ m.size_m }} metr · {% endif %}{% if m.color %}{{ m.color }} · {% endif %}{{ usage.get(m.name, 0) }} ta truck</div>
+      <div class="ac">
+        <a href="/models?edit={{ m.id }}">Tahrirlash</a>
+        <form method="post" action="/models/{{ m.id }}/toggle"><button type="submit">{{ 'Nofaol qilish' if m.is_active else 'Faollashtirish' }}</button></form>
+        <form method="post" action="/models/{{ m.id }}/delete" onsubmit="return confirm('«{{ m.name }}» modelini o‘chirasizmi? Trucklar o‘chmaydi.')"><button class="dg" type="submit">O‘chirish</button></form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card pad muted" style="grid-column:1/-1">Hali model yo‘q. Yuqoridagi shakldan birinchi modelni qo‘shing (masalan «T1»), rasm bilan.</div>
+  {% endfor %}
+</div>
+{% endblock %}

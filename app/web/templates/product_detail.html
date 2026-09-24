@@ -6,6 +6,22 @@
 
 <p class="muted" style="margin-top:-4px"><a href="/products">← Trucklar ro'yxati</a></p>
 
+{% if flash and flash.created %}
+<div class="card pad" style="margin-bottom:14px;background:#effaf3;border-color:#bfe8cf">
+  <b style="color:#0f8a4d">✅ Zakaz yaratildi.</b>
+  {% if flash.notified == 0 %}<span class="muted"> Telegram xabari yuborilmadi (tanlanmagan).</span>
+  {% elif flash.sent %}<span> Telegramda <b>{{ flash.sent }}</b> kishiga xabar yuborildi{% if flash.failed %}, <b style="color:#c0303a">{{ flash.failed }}</b> tasiga yetmadi{% endif %}.</span>
+  {% else %}<span style="color:#c0303a"> Xabar hech kimga yuborilmadi{% if flash.err %}: {{ flash.err }}{% endif %}. Botda foydalanuvchilar borligini va BOT_TOKEN ni tekshiring.</span>{% endif %}
+</div>
+{% endif %}
+{% if model_card and (model_img or model_card.description) %}
+<div class="card" style="display:flex;gap:16px;overflow:hidden;margin-bottom:14px;align-items:stretch">
+  {% if model_img %}<img src="{{ model_img }}" alt="{{ model_card.name }}" style="width:200px;object-fit:cover;flex:none">{% endif %}
+  <div style="padding:14px 16px 14px 0;{{ '' if model_img else 'padding-left:16px;' }}"><b style="font-size:15px">Model {{ model_card.name }}</b>
+    <p class="muted" style="margin:6px 0 0;white-space:pre-line">{{ model_card.description or '' }}</p></div>
+</div>
+{% endif %}
+
 <div class="row" style="grid-template-columns:repeat(5,1fr)">
   <div class="card kpi"><div class="lbl">Model / O'lcham / Rang</div><div class="val" style="font-size:15px;margin-top:8px">{{ product.model or '—' }}{% if product.size_m or product.color %} · {{ spec(product.size_m, product.color) }}{% endif %}{% if bot_db %} · {{ product.code }}{% endif %}</div></div>
   <div class="card kpi"><div class="lbl">Holat</div><div style="margin-top:8px"><span class="badge b-{{ product.status.value }}">{{ PRODUCT_STATUS_LABEL[product.status] }}</span></div></div>

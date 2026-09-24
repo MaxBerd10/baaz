@@ -167,3 +167,31 @@ SELECT (dense_rank() OVER (ORDER BY m.model))::int AS id,
        true                                        AS is_active,
        (now() AT TIME ZONE 'UTC')                  AS created_at
 FROM (SELECT DISTINCT model FROM public.trucks WHERE model IS NOT NULL AND model <> '') m;
+
+-- Web'dan truck yaratish: botning `create_truck` servisi bilan bir xil ish
+-- (truck + 6 ta 'pending' bosqich). Bot shu truckni o'z ro'yxatida darrov ko'radi.
+-- Seriya takrorlansa unique_violation ko'tariladi.
+CREATE OR REPLACE FUNCTION web.create_truck(
+    p_serial   text,
+    p_model    text,
+    p_customer text,
+    p_priority text,
+    p_deadline timestamptz
+) RETURNS integer
+LANGUAGE plpgsql AS $$
+DECLARE
+    tid integer;
+BEGIN
+    INSERT INTO public.trucks
+           (serial_number, model, customer, deadline, priority, current_step, status, source)
+    VALUES (p_serial, NULLIF(p_model, ''), NULLIF(p_customer, ''), p_deadline,
+            p_priority::public.truck_priority, 1,
+            'in_progress'::public.truck_status, 'admin'::public.truck_source)
+    RETURNING id INTO tid;
+
+    INSERT INTO public.truck_steps (truck_id, step_number, status)
+    SELECT tid, n, 'pending'::public.step_status FROM generate_series(1, 6) AS n;
+
+    RETURN tid;
+END;
+$$;

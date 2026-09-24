@@ -100,6 +100,25 @@ class TruckModel(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class ModelCard(Base):
+    """Model katalogi (T1, T2, ...): rasm va tavsif. Ishchilar rasmni Telegram xabarida oladi.
+
+    Bot rejimida bu web'ning O'Z jadvali (`web` sxemasida) — bot jadvallariga tegmaydi.
+    """
+
+    __tablename__ = "model_cards"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), unique=True)
+    description: Mapped[str | None] = mapped_column(Text)
+    size_m: Mapped[int | None] = mapped_column(Integer)
+    color: Mapped[str | None] = mapped_column(String(64))
+    image_file: Mapped[str | None] = mapped_column(String(512))   # MEDIA_ROOT ga nisbatan
+    tg_file_id: Mapped[str | None] = mapped_column(String(512))   # Telegram'ga bir marta yuklangach
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Product(Base):
     __tablename__ = "products"
 

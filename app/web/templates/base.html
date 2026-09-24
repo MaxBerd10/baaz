@@ -570,6 +570,7 @@
         ('calendar','/calendar','Kalendar','cal'),
         ('settings','/settings','Sozlamalar','gear'),
       ] %}
+      {% if bot_db %}{% set nav = nav[:2] + [('models','/models','Modellar','foodtruck')] + nav[2:] %}{% endif %}
       {% for key,href,label,ic in nav %}
       <a href="{{ href }}" class="{{ 'on' if active==key }}">
         {{ icon(ic) }}<span>{{ label }}</span>
@@ -628,7 +629,7 @@
           <a class="np-all" href="/alerts">Barchasini ko‘rish →</a>
         </div>
       </div>
-      <a href="/products" class="btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="txt">Yangi mahsulot</span></a>
+      <a href="{{ '/products/new' if bot_db else '/products' }}" class="btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="txt">{{ 'Yangi zakaz' if bot_db else 'Yangi mahsulot' }}</span></a>
     </div>
     <div class="content">{% block body %}{% endblock %}</div>
   </div>
