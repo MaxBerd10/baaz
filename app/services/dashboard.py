@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.db import day
 
 from app.enums import ProductStatus, StageRunStatus
@@ -82,7 +83,7 @@ async def build(session: AsyncSession, *, line: str | None = None) -> dict:
         select(StageRun.product_id)
         .where(StageRun.status == StageRunStatus.returned)
         .group_by(StageRun.product_id)
-        .having(func.count() >= 2)
+        .having(func.count() >= (1 if settings.bot_db else 2))
     )
     problem = int(
         await session.scalar(
@@ -332,7 +333,7 @@ async def alerts(session: AsyncSession) -> list[dict]:
         select(StageRun.product_id)
         .where(StageRun.status == StageRunStatus.returned)
         .group_by(StageRun.product_id)
-        .having(func.count() >= 2)
+        .having(func.count() >= (1 if settings.bot_db else 2))
     )
     rows = list(
         (
@@ -346,7 +347,7 @@ async def alerts(session: AsyncSession) -> list[dict]:
     out = [
         {"code": p.code, "name": p.name, "model": p.model or "—", "size": p.size_m,
          "line": p.line, "stage": p.current_stage_order,
-         "kind": "Ko'p marta qaytarilgan", "tone": "red"}
+         "kind": "Qaytarilgan" if settings.bot_db else "Ko'p marta qaytarilgan", "tone": "red"}
         for p in rows
     ]
 
@@ -817,7 +818,7 @@ async def home(session: AsyncSession, sel_code: str | None = None) -> dict:
             chk_total = chk_totals.get(s.id, 0)
             chk_ok = len([c for c in (ref.checks if ref else []) if c.ok]) if ref else (chk_total if state == "done" else 0)
             frac_t = chk_total or 1
-            frac_n = chk_total if state == "done" else chk_ok
+            frac_n = (chk_total or 1) if state == "done" else chk_ok
             date = None
             if state == "done" and ref:
                 date = ref.decided_at

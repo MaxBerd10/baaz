@@ -118,7 +118,7 @@
         <span class="van"><img src="{{ t.image }}" alt="Model {{ t.model }} food truck"></span>
         <span class="mid">
           <b>Model {{ t.model }}</b>
-          <small>{{ t.size or '—' }} metr · {{ t.color }}</small>
+          <small>{{ spec(t.size, t.color, t.code) }}</small>
         </span>
         <span class="rt">
           <span class="fr num">{{ t.done }}/{{ t.total }}</span>
@@ -143,8 +143,9 @@
       <div style="flex:1;min-width:0">
         <div class="h1">Model {{ s.model }} <span class="badge b-{{ s.status }}">{{ s.status_label }}</span></div>
         <div class="spec">
-          <span>{{ s.size or '—' }} metr</span>
-          <span class="dot"><i style="background:{{ s.hex }};border:1px solid var(--line)"></i>{{ s.color }} rang</span>
+          {% if s.size %}<span>{{ s.size }} metr</span>{% endif %}
+          {% if s.color and s.color != '—' %}<span class="dot"><i style="background:{{ s.hex }};border:1px solid var(--line)"></i>{{ s.color }} rang</span>{% endif %}
+          {% if bot_db %}<span>{{ s.code }}</span>{% endif %}
         </div>
         <div class="selmeta">
           <div class="m"><div class="k">Boshlanish sanasi</div><div class="v num">📅 {{ s.started|dt }}</div></div>

@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     web_password: str = "admin"
     secret_key: str = "change-me"
 
+    # True bo'lsa web `truck-factory-bot` ning Postgres bazasidan (faqat o'qish) ishlaydi:
+    # DATABASE_URL — botning bazasi, `web` sxemasidagi VIEW'lar orqali (app/bot_views.sql).
+    bot_db: bool = False
+
     default_stage_count: int = 6
     timezone: str = "Asia/Tashkent"
 

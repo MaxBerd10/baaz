@@ -47,6 +47,8 @@ def _normalize(url: str) -> tuple[str, dict]:
     host = (parts.hostname or "").lower()
     if "asyncpg" in scheme and host not in ("localhost", "127.0.0.1", "db"):
         connect_args["ssl"] = True
+        if "pooler" in host:  # Neon (pgbouncer) prepared statement'larni qo'llamaydi
+            connect_args["statement_cache_size"] = 0
     return new, connect_args
 
 
@@ -62,6 +64,9 @@ if not _is_sqlite:
         _kw["connect_args"] = _connect_args
 
 engine = create_async_engine(_url, **_kw)
+if settings.bot_db and not _is_sqlite:
+    # Botning jadvallari `public`da, web ko'rinishlari (VIEW) `web` sxemasida.
+    engine = engine.execution_options(schema_translate_map={None: "web"})
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 
@@ -77,5 +82,7 @@ if _is_sqlite:
 
 
 async def init_db() -> None:
+    if settings.bot_db:  # bot bazasi — jadval yaratmaymiz, faqat o'qiymiz
+        return
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

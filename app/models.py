@@ -14,7 +14,13 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from app.config import settings
 from app.enums import MediaType, ProductStatus, Role, StageRunStatus
+
+
+def _enum(cls):
+    """Bot rejimida view'lar oddiy matn qaytaradi — native Postgres enum ishlatilmaydi."""
+    return SAEnum(cls, native_enum=not settings.bot_db)
 
 
 def utcnow() -> dt.datetime:
@@ -32,7 +38,7 @@ class User(Base):
     telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, index=True)
     full_name: Mapped[str] = mapped_column(String(255))
     username: Mapped[str | None] = mapped_column(String(255))
-    role: Mapped[Role] = mapped_column(SAEnum(Role), default=Role.pending, index=True)
+    role: Mapped[Role] = mapped_column(_enum(Role), default=Role.pending, index=True)
     stage_id: Mapped[int | None] = mapped_column(ForeignKey("stages.id"))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -106,7 +112,7 @@ class Product(Base):
     line: Mapped[str | None] = mapped_column(String(64), index=True)
     note: Mapped[str | None] = mapped_column(Text)
     status: Mapped[ProductStatus] = mapped_column(
-        SAEnum(ProductStatus), default=ProductStatus.in_production, index=True
+        _enum(ProductStatus), default=ProductStatus.in_production, index=True
     )
     current_stage_order: Mapped[int] = mapped_column(Integer, default=1, index=True)
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
@@ -136,7 +142,7 @@ class StageRun(Base):
     qc_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
     status: Mapped[StageRunStatus] = mapped_column(
-        SAEnum(StageRunStatus), default=StageRunStatus.in_progress, index=True
+        _enum(StageRunStatus), default=StageRunStatus.in_progress, index=True
     )
     worker_comment: Mapped[str | None] = mapped_column(Text)
     qc_comment: Mapped[str | None] = mapped_column(Text)
@@ -163,7 +169,7 @@ class Media(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     stage_run_id: Mapped[int] = mapped_column(ForeignKey("stage_runs.id"), index=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), index=True)
-    type: Mapped[MediaType] = mapped_column(SAEnum(MediaType))
+    type: Mapped[MediaType] = mapped_column(_enum(MediaType))
     file_path: Mapped[str] = mapped_column(String(512))
     telegram_file_id: Mapped[str | None] = mapped_column(String(512))
     uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))

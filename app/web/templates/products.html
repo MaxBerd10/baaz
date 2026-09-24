@@ -103,7 +103,7 @@
   .fleet-line .lt-wk img{width:22px;height:22px;border-radius:50%;object-fit:cover;background:#eef1f6;
     border:1px solid #e3e7ee}
 </style>
-{% macro truck(c) %}<a class="truck st-{{ c.status }}" href="/products/{{ c.code }}"><img class="tphoto" src="{{ c.image }}" alt="Model {{ c.model }} food truck"><b>Model {{ c.model }}</b><span class="spec">{{ c.size or '—' }} metr</span><span class="color"><i style="--color:{{ c.hex }}"></i>{{ c.color }}</span><span class="status">{{ c.status_label }}</span><span class="worker">{% if c.worker and c.worker != '—' %}<img class="wav" src="{{ avatar_url(c.worker) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(c.worker) }}'"><strong>{{ c.worker }}</strong>{% else %}Mas’ul: <strong>biriktirilmagan</strong>{% endif %}</span></a>{% endmacro %}
+{% macro truck(c) %}<a class="truck st-{{ c.status }}" href="/products/{{ c.code }}"><img class="tphoto" src="{{ c.image }}" alt="Model {{ c.model }} food truck"><b>Model {{ c.model }}</b><span class="spec">{{ spec(c.size, None, c.code) }}</span>{% if c.color and c.color != '—' %}<span class="color"><i style="--color:{{ c.hex }}"></i>{{ c.color }}</span>{% endif %}<span class="status">{{ c.status_label }}</span><span class="worker">{% if c.worker and c.worker != '—' %}<img class="wav" src="{{ avatar_url(c.worker) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(c.worker) }}'"><strong>{{ c.worker }}</strong>{% else %}Mas’ul: <strong>biriktirilmagan</strong>{% endif %}</span></a>{% endmacro %}
 {%- set parts = [] -%}
 {%- if cur_status %}{% set _ = parts.append('status=' ~ cur_status) %}{% endif -%}
 {%- if query %}{% set _ = parts.append('q=' ~ query|urlencode) %}{% endif -%}
@@ -116,16 +116,16 @@
 /products?{{ [statuspar, vpar, qpar]|select|join('&') }}
 {%- endmacro -%}
 <div class="fleet-line">
-  <form class="top-tools" method="get" action="/products">{% if view == 'list' %}<input type="hidden" name="view" value="list">{% endif %}<label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input name="q" value="{{ query }}" placeholder="Model yoki rang bo‘yicha qidirish..."></label><nav class="filters"><a class="{{ 'on' if not cur_status }}" href="{{ fhref('')|trim }}">Hammasi <b>{{ total_count }}</b></a>{% for key,label in [('in_production','Ishlab chiqarishda'),('qc_pending','QC kutmoqda'),('returned','Qaytarilgan'),('done','Tayyor')] %}<a class="{{ 'on' if cur_status==key }}" href="{{ fhref('status=' ~ key)|trim }}">{{ label }} <b>{{ status_counts[key] }}</b></a>{% endfor %}</nav><span class="view-toggle"><a href="{{ line_href }}" class="{{ 'on' if view != 'list' }}">▦ Liniya ko‘rinishi</a><a href="{{ list_href }}" class="{{ 'on' if view == 'list' }}">☷ Ro‘yxat</a></span></form>
+  <form class="top-tools" method="get" action="/products">{% if view == 'list' %}<input type="hidden" name="view" value="list">{% endif %}<label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input name="q" value="{{ query }}" placeholder="{{ 'Model, seriya yoki buyurtmachi bo‘yicha qidirish...' if bot_db else 'Model yoki rang bo‘yicha qidirish...' }}"></label><nav class="filters"><a class="{{ 'on' if not cur_status }}" href="{{ fhref('')|trim }}">Hammasi <b>{{ total_count }}</b></a>{% for key,label in [('in_production','Ishlab chiqarishda'),('qc_pending','QC kutmoqda'),('returned','Qaytarilgan'),('done','Tayyor')] %}<a class="{{ 'on' if cur_status==key }}" href="{{ fhref('status=' ~ key)|trim }}">{{ label }} <b>{{ status_counts[key] }}</b></a>{% endfor %}</nav><span class="view-toggle"><a href="{{ line_href }}" class="{{ 'on' if view != 'list' }}">▦ Liniya ko‘rinishi</a><a href="{{ list_href }}" class="{{ 'on' if view == 'list' }}">☷ Ro‘yxat</a></span></form>
   {% if view == 'list' %}
   <div class="list-wrap">
     <table class="ltable">
-      <thead><tr><th>Truck</th><th>Rang</th><th>Joriy bosqich</th><th>Holat</th><th>Progress</th><th>Mas'ul ishchi</th><th>Muddat</th></tr></thead>
+      <thead><tr><th>Truck</th><th>{{ 'Buyurtmachi' if bot_db else 'Rang' }}</th><th>Joriy bosqich</th><th>Holat</th><th>Progress</th><th>Mas'ul ishchi</th><th>Muddat</th></tr></thead>
       <tbody>
       {% for r in rows %}
         <tr onclick="location.href='/products/{{ r.code }}'">
-          <td><span class="lt-truck"><img src="{{ r.image }}" alt=""><span><b>Model {{ r.model }}</b><small>{{ r.size or '—' }} metr</small></span></span></td>
-          <td><span class="lt-clr"><i style="background:{{ r.hex }}"></i>{{ r.color }}</span></td>
+          <td><span class="lt-truck"><img src="{{ r.image }}" alt=""><span><b>Model {{ r.model }}</b><small>{{ spec(r.size, None, r.code) }}</small></span></span></td>
+          <td>{% if bot_db %}{{ r.customer }}{% else %}<span class="lt-clr"><i style="background:{{ r.hex }}"></i>{{ r.color }}</span>{% endif %}</td>
           <td>{{ r.cur }}. {{ r.cur_name }}</td>
           <td><span class="badge b-{{ r.status }}">{{ r.status_label }}</span></td>
           <td><span class="lt-prog {{ 'full' if r.pct >= 100 }}"><i style="width:{{ r.pct }}%"></i></span>{{ r.done }}/{{ stage_total }}</td>

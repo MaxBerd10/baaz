@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Model {{ product.model or '—' }} — Baaz{% endblock %}
 {% block heading %}Model {{ product.model or '—' }}{% endblock %}
-{% block sub %}🚚 {{ (product.size_m ~ ' metr') if product.size_m else '—' }} · {{ product.color or '—' }} rang{% endblock %}
+{% block sub %}🚚 {{ spec(product.size_m, product.color, product.code) }}{% if bot_db and product.note %} · {{ product.note }}{% endif %}{% endblock %}
 {% block body %}
 
 <p class="muted" style="margin-top:-4px"><a href="/products">← Trucklar ro'yxati</a></p>
 
 <div class="row" style="grid-template-columns:repeat(5,1fr)">
-  <div class="card kpi"><div class="lbl">Model / O'lcham / Rang</div><div class="val" style="font-size:15px;margin-top:8px">{{ product.model or '—' }} · {{ product.size_m or '—' }} m · {{ product.color or '—' }}</div></div>
+  <div class="card kpi"><div class="lbl">Model / O'lcham / Rang</div><div class="val" style="font-size:15px;margin-top:8px">{{ product.model or '—' }}{% if product.size_m or product.color %} · {{ spec(product.size_m, product.color) }}{% endif %}{% if bot_db %} · {{ product.code }}{% endif %}</div></div>
   <div class="card kpi"><div class="lbl">Holat</div><div style="margin-top:8px"><span class="badge b-{{ product.status.value }}">{{ PRODUCT_STATUS_LABEL[product.status] }}</span></div></div>
   <div class="card kpi"><div class="lbl">Joriy liniya</div><div class="val num">{{ product.current_stage_order }} <span style="font-size:14px;color:var(--muted)">/ {{ total }}</span></div></div>
   <div class="card kpi"><div class="lbl">Yaratilgan</div><div class="val num" style="font-size:15px;margin-top:6px">{{ product.created_at|dt }}</div><div class="sub">{{ product.created_by.full_name if product.created_by else '' }}</div></div>

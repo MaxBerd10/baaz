@@ -39,7 +39,7 @@ from app.services import dashboard as dash_svc
 from app.services import products as products_svc
 from app.services import stages as stages_svc
 from app.services import stats as stats_svc
-from app.services.media_store import abs_path, ensure_root
+from app.services.media_store import abs_path, ensure_root, fetch_telegram
 from app.web import charts
 from app.web.auth import (
     COOKIE_NAME,
@@ -169,6 +169,21 @@ def _nopr(text):
 templates.env.filters["dt"] = _fmt_dt
 templates.env.filters["tm"] = _fmt_time
 templates.env.filters["nopr"] = _nopr
+def _spec(size=None, color=None, code=None):
+    """'5 metr · Oq · T1-2026-001' — bo'sh qismlar tashlanadi. Seriya raqami faqat
+    bot rejimida (haqiqiy zavod raqami) ko'rsatiladi; demo'dagi ichki PR-kod emas."""
+    parts = []
+    if size:
+        parts.append(f"{size} metr")
+    if color and color != "—":
+        parts.append(color)
+    if settings.bot_db and code:
+        parts.append(code)
+    return " · ".join(parts) or "—"
+
+
+templates.env.globals["spec"] = _spec
+templates.env.globals["bot_db"] = settings.bot_db
 templates.env.globals["avatar_url"] = _avatar_url
 templates.env.globals["avatar_svg"] = _avatar_svg
 templates.env.globals["PRODUCT_STATUS_LABEL"] = PRODUCT_STATUS_LABEL
@@ -197,7 +212,8 @@ async def _static_cache(request: Request, call_next):
     if path.startswith("/static/"):
         resp.headers["Cache-Control"] = "public, max-age=604800, s-maxage=604800, immutable"
     elif path.startswith("/media/"):
-        resp.headers["Cache-Control"] = "public, max-age=3600, s-maxage=86400"
+        # Login talab qiladi — CDN'da umumiy keshlanmasin, faqat brauzerda.
+        resp.headers["Cache-Control"] = "private, max-age=3600"
     return resp
 
 _SKIP_INIT = os.getenv("SKIP_INIT_DB", "").lower() in ("1", "true", "yes")
@@ -218,12 +234,12 @@ async def _bootstrap_once() -> None:
         ensure_root()
     except Exception:  # pragma: no cover
         pass
-    if not _SKIP_INIT:
+    if not _SKIP_INIT and not settings.bot_db:
         try:
             await init_db()
         except Exception as exc:  # pragma: no cover
             _log.warning("init_db: %s", exc)
-    if _AUTO_SEED:
+    if _AUTO_SEED and not settings.bot_db:
         try:
             from app.demo import is_empty, seed_demo
 
@@ -455,6 +471,7 @@ async def products_page(
             "overdue": overdue,
             "code": p.code, "model": p.model or "—", "size": p.size_m,
             "color": p.color or "—", "hex": dash_svc.color_hex(p.color),
+            "customer": p.note or "—",
             "image": _TRUCK_IMAGES[idx % len(_TRUCK_IMAGES)],
             "status": p.status.value, "status_label": _FLEET_ST.get(p.status.value, p.status.value),
             "cur": p.current_stage_order,
@@ -469,7 +486,7 @@ async def products_page(
     filtered = [
         r for r in rows
         if (status_enum is None or r["status"] == status_enum.value)
-        and (not ql or ql in f'{r["code"]} {r["model"]} {r["color"]}'.lower())
+        and (not ql or ql in f'{r["code"]} {r["model"]} {r["color"]} {r["customer"]}'.lower())
     ]
     status_counts = {s.value: sum(r["status"] == s.value for r in rows) for s in ProductStatus}
 
@@ -715,8 +732,12 @@ async def media_file(media_id: int, request: Request, session: AsyncSession = De
     if not valid(request.cookies.get(COOKIE_NAME)):
         return RedirectResponse("/login", status_code=302)
     m = await session.get(Media, media_id)
-    path = abs_path(m.file_path) if m else None
-    if path is not None and path.exists():
+    path = abs_path(m.file_path) if (m and m.file_path) else None
+    if path is not None and path.is_file():
         return FileResponse(str(path))
+    if m is not None and m.telegram_file_id:
+        got = await fetch_telegram(m.telegram_file_id)
+        if got:
+            return Response(content=got[0], media_type=got[1])
     # Fayl yo'q (masalan Vercel'da media saqlanmaydi) — chiroyli o'rin egallovchi.
     return Response(content=_MEDIA_PLACEHOLDER, media_type="image/svg+xml")

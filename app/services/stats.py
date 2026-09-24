@@ -278,7 +278,7 @@ async def top_failed_checks(session: AsyncSession, limit: int = 12) -> list[dict
             .join(StageRunCheck, StageRunCheck.check_item_id == StageCheckItem.id)
             .join(Stage, Stage.id == StageCheckItem.stage_id)
             .where(StageRunCheck.ok.is_(False))
-            .group_by(StageCheckItem.id, Stage.order_no, Stage.name)
+            .group_by(StageCheckItem.id, StageCheckItem.text, Stage.order_no, Stage.name)
             .order_by(func.count().desc())
             .limit(limit)
         )
