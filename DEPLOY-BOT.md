@@ -3,13 +3,13 @@
 ```
 Ishchi/QC/Admin ──Telegram──▶  BOT (src.main)  ──yozadi──▶  ┐
                                                             │  Postgres (Neon)
-Rahbar ──brauzer──▶  WEB (Vercel)  ──faqat o'qiydi──◀───────┘
+Rahbar ──brauzer──▶  WEB  ──o'qiydi (+ zakaz yaratadi)──◀───┘
                           │
                           └─ rasmlar: Telegram file_id orqali (BOT_TOKEN)
 ```
 
 - **Bir baza.** Bot o'z jadvallarini (`users`, `trucks`, `truck_steps`) `public` sxemasida yuritadi.
-- **Web hech narsa yozmaydi.** `app/bot_views.sql` bot jadvallarini web kutgan shaklga o'giradigan
+- **Web bot jadvallariga to'g'ridan-to'g'ri yozmaydi** (faqat `web.create_truck()` funksiyasi orqali truck yaratadi, pastga qarang). `app/bot_views.sql` bot jadvallarini web kutgan shaklga o'giradigan
   VIEW'larni `web` sxemasida yaratadi (`products`, `stage_runs`, `media`, …). Botga tegilmaydi.
 - **Real vaqt.** VIEW'lar jonli — ishchi botda "yuborish" bossa, web'da keyingi yangilashda ko'rinadi.
 - **Rasmlar.** Web ularni Telegram'dan `file_id` bilan olib beradi (token faqat serverda qoladi).
