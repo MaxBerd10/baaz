@@ -243,3 +243,118 @@ async def quick_send(
             print(f"patch_bot: submit.py soddalashtirildi ({n} ta media handler)")
         else:
             print("patch_bot: submit.py — kutilgan kod topilmadi, o'zgartirilmadi (bot kodi o'zgargan bo'lishi mumkin)")
+
+
+# 5) Ro'yxatdan o'tishda SELFI (yuz rasmi): ism -> telefon -> selfi -> tasdiqlash.
+#    Rasm foydalanuvchi profiliga (users.photo_file_id / photo_path) saqlanadi va web'da avatar bo'lib chiqadi.
+def _patch_selfie() -> None:
+    rp = pathlib.Path("src/bot/handlers/registration.py")
+    stp = pathlib.Path("src/bot/states/registration.py")
+    up = pathlib.Path("src/database/models/user.py")
+    if not (rp.is_file() and stp.is_file() and up.is_file()):
+        print("patch_bot: selfi — kerakli fayllar topilmadi, o'tkazib yuborildi")
+        return
+    rs, sts, us = (p.read_text(encoding="utf-8") for p in (rp, stp, up))
+    if "process_selfie" in rs:
+        print("patch_bot: selfi — allaqachon qo'shilgan")
+        return
+
+    # (a) FSM holati
+    st_old = "    phone = State()\n    confirm = State()"
+    # (b) telefon bosqichlaridan keyin selfi so'raymiz
+    a_old = ("    await state.update_data(phone=None)\n    await state.set_state(RegistrationFSM.confirm)\n\n"
+             "    await _show_registration_confirmation(callback.message, state)")
+    b_old = ("    await state.update_data(phone=text)\n    await state.set_state(RegistrationFSM.confirm)\n\n"
+             "    await _show_registration_confirmation(message, state)")
+    # (c) tasdiqlashda foydalanuvchiga rasmni yozamiz
+    c_old = '    if data.get("phone"):\n        new_user.phone = data["phone"]\n'
+    # (d) tasdiqlash oynasi: tahrirlab bo'lmasa yangi xabar + selfi qatori
+    d_old = ("    await message.edit_text(\n        text,\n        reply_markup=registration_confirm_keyboard(),\n    )")
+    e_old = '        f"📞 Telefon: {phone}\\n\\n"'
+    # (e) foydalanuvchi modeli
+    u_old = "    # ==== Relationships ===="
+
+    checks = [(st_old in sts, "states"), (a_old in rs, "skip_phone"), (b_old in rs, "process_phone"),
+              (c_old in rs, "confirm"), (d_old in rs, "confirmation"), (e_old in rs, "confirmation-text"),
+              (u_old in us, "user model")]
+    missing = [n for ok, n in checks if not ok]
+    if missing:
+        print(f"patch_bot: selfi — kutilgan kod topilmadi ({', '.join(missing)}); o'zgartirilmadi")
+        return
+
+    sts = sts.replace(st_old, "    phone = State()\n    photo = State()\n    confirm = State()")
+    rs = rs.replace(a_old, "    await state.update_data(phone=None)\n    await _ask_selfie(callback.message, state, edit=True)")
+    rs = rs.replace(b_old, "    await state.update_data(phone=text)\n    await _ask_selfie(message, state)")
+    rs = rs.replace(c_old, c_old + '    new_user.photo_file_id = data.get("photo_file_id")\n    new_user.photo_path = data.get("photo_path")\n')
+    rs = rs.replace(d_old, ("    try:\n        await message.edit_text(text, reply_markup=registration_confirm_keyboard())\n"
+                            "    except Exception:  # foydalanuvchining o'z xabarini tahrirlab bo'lmaydi\n"
+                            "        await message.answer(text, reply_markup=registration_confirm_keyboard())"))
+    rs = rs.replace(e_old, '        f"📞 Telefon: {phone}\\n"\n        f"🤳 Selfi: {\'✅ yuborilgan\' if data.get(\'photo_file_id\') else \'—\'}\\n\\n"')
+    us = us.replace(u_old, ('    # ==== Selfi (ro\'yxatdan o\'tishda yuborilgan yuz rasmi) ====\n'
+                            '    photo_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)\n'
+                            '    photo_path: Mapped[str | None] = mapped_column(String(512), nullable=True)\n\n' + u_old), 1)
+
+    rs = rs.rstrip("\n") + '''
+
+
+# ==== Selfi (yuz rasmi) ====
+async def _ask_selfie(message: Message, state: FSMContext, edit: bool = False) -> None:
+    from src.bot.keyboards.registration import registration_cancel_keyboard
+
+    await state.set_state(RegistrationFSM.photo)
+    text = (
+        "3️⃣ <b>Selfi yuboring</b> 🤳\\n\\n"
+        "Yuzingiz <b>aniq ko'rinadigan</b> rasm yuboring (yorug' joyda, kameraga qarab).\\n"
+        "Bu rasm rahbarga sizni tanish uchun kerak.\\n\\n"
+        "👇 Pastdagi <b>📎</b> tugmani bosib, <b>Kamera</b>ni tanlang va suratga oling."
+    )
+    if edit:
+        try:
+            await message.edit_text(text, reply_markup=registration_cancel_keyboard())
+            return
+        except Exception:
+            pass
+    await message.answer(text, reply_markup=registration_cancel_keyboard())
+
+
+@router.message(RegistrationFSM.photo, F.photo)
+async def process_selfie(message: Message, state: FSMContext) -> None:
+    """Selfini qabul qilamiz va serverga ham saqlab qo'yamiz (Telegram file_id bilan birga)."""
+    file_id = message.photo[-1].file_id
+    local = None
+    try:
+        from pathlib import Path
+        from uuid import uuid4
+
+        from src.config import settings
+
+        folder = Path(settings.MEDIA_ROOT) / "users"
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / f"{uuid4().hex}.jpg"
+        tg_file = await message.bot.get_file(file_id)
+        await message.bot.download_file(tg_file.file_path, destination=str(path))
+        local = str(path)
+    except Exception:  # noqa: BLE001 — file_id baribir saqlanadi, web uni Telegram'dan oladi
+        local = None
+    await state.update_data(photo_file_id=file_id, photo_path=local)
+    await state.set_state(RegistrationFSM.confirm)
+    await _show_registration_confirmation(message, state)
+
+
+@router.message(RegistrationFSM.photo)
+async def selfie_invalid(message: Message) -> None:
+    from src.bot.keyboards.registration import registration_cancel_keyboard
+
+    await message.answer(
+        "❌ Iltimos, <b>rasm</b> yuboring (selfi).\\n\\n"
+        "Matn yoki video emas — yuzingiz ko'rinadigan oddiy surat kerak.",
+        reply_markup=registration_cancel_keyboard(),
+    )
+'''
+    stp.write_text(sts, encoding="utf-8")
+    rp.write_text(rs, encoding="utf-8")
+    up.write_text(us, encoding="utf-8")
+    print("patch_bot: ro'yxatdan o'tishga selfi bosqichi qo'shildi")
+
+
+_patch_selfie()

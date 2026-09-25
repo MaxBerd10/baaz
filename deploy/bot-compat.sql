@@ -16,3 +16,7 @@ CREATE TABLE IF NOT EXISTS notification_settings (
     on_next_step boolean NOT NULL DEFAULT true,
     daily_report boolean NOT NULL DEFAULT false
 );
+
+-- Ro'yxatdan o'tishda yuborilgan selfi (yuz rasmi): Telegram file_id + serverdagi nusxa yo'li
+ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_file_id varchar(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_path varchar(512);

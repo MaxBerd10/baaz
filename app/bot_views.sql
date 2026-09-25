@@ -26,6 +26,10 @@ FROM (VALUES (1, 'Karkas'),
              (5, 'Eshik-deraza'),
              (6, 'Yig''ish')) AS s(n, name);
 
+-- Ro'yxatdan o'tishda yuborilgan selfi ustunlari (bot yamoqlari shularni ishlatadi)
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS photo_file_id varchar(255);
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS photo_path varchar(512);
+
 CREATE OR REPLACE VIEW web.users AS
 SELECT u.id,
        u.telegram_id,
@@ -34,7 +38,9 @@ SELECT u.id,
        u.role::text                              AS role,
        u.step_number                             AS stage_id,
        u.is_active,
-       (u.created_at AT TIME ZONE 'UTC')         AS created_at
+       (u.created_at AT TIME ZONE 'UTC')         AS created_at,
+       u.photo_file_id,
+       u.photo_path
 FROM public.users u;
 
 -- Truck -> "mahsulot". Holat botdagi joriy bosqich holatidan chiqariladi.

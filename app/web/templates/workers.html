@@ -13,7 +13,7 @@
     {% set tot = r.approved + r.returned %}
     {% set pct = (r.approved / tot * 100) if tot else 0 %}
     <tr>
-      <td style="font-weight:700">{{ r.name }}</td>
+      <td style="font-weight:700">{% set av = avatar_url(r.name) %}<span style="display:inline-flex;align-items:center;gap:11px">{% if av.startswith('/media/user/') %}<a href="{{ av }}" data-lb="photo" title="Selfini kattalashtirish" style="display:block;flex:none"><img src="{{ av }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(r.name) }}'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;display:block;background:var(--panel-2)"></a>{% else %}<img src="{{ av }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(r.name) }}'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex:none;background:var(--panel-2)">{% endif %}{{ r.name }}</span></td>
       <td class="muted">{{ r.stage }}</td>
       <td class="num">{{ r.approved }}</td>
       <td class="num">{{ r.returned }}</td>

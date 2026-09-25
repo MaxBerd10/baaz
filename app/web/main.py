@@ -157,9 +157,14 @@ def _avatar_svg(name: str | None) -> str:
 _AVATAR_DIR = BASE_DIR / "static" / "avatars"
 
 
+_PHOTO_BY_NAME: dict[str, str] = {}   # ism -> /media/user/<id>?v=...  (bot rejimida, ro'yxatdan o'tishda yuborilgan selfi)
+
+
 def _avatar_url(name: str | None) -> str:
-    """Ishchi surati: static/avatars/1..N.(jpg|png|webp) fayllardan biri (ism bo'yicha barqaror).
-    Fayllar bo'lmasa — offline generatsiya qilingan SVG avatar."""
+    """Ishchi surati: haqiqiy selfi (bot rejimida) → static/avatars/1..N → offline SVG avatar."""
+    real = _PHOTO_BY_NAME.get((name or "").strip())
+    if real:
+        return real
     files = sorted(
         f.name for f in _AVATAR_DIR.glob("*")
         if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")
@@ -325,6 +330,21 @@ async def _side_data(session: AsyncSession) -> tuple[list, dict]:
         _SIDE_CACHE["alerts"] = await dash_svc.alerts(session)
         _SIDE_CACHE["counts"] = await _side_counts(session)
         _SIDE_CACHE["t"] = now
+        if settings.bot_db:
+            try:
+                from sqlalchemy import text as _text
+
+                rows = (await session.execute(_text(
+                    "SELECT id, full_name, COALESCE(photo_path, photo_file_id) AS k "
+                    "FROM web.users WHERE photo_file_id IS NOT NULL OR photo_path IS NOT NULL"
+                ))).all()
+                import hashlib as _h
+
+                _PHOTO_BY_NAME.clear()
+                for uid_, nm, k in rows:
+                    _PHOTO_BY_NAME[(nm or "").strip()] = f"/media/user/{uid_}?v={_h.md5((k or '').encode()).hexdigest()[:8]}"
+            except Exception:  # noqa: BLE001 — selfi ustunlari hali yo'q bo'lsa, oddiy avatarlar qoladi
+                pass
     return _SIDE_CACHE["alerts"], _SIDE_CACHE["counts"]
 
 
@@ -655,6 +675,24 @@ async def model_image(model_id: int, request: Request, session: AsyncSession = D
     path = abs_path(card.image_file) if card and card.image_file else None
     if path is not None and path.is_file():
         return FileResponse(str(path))
+    return Response(content=_MEDIA_PLACEHOLDER, media_type="image/svg+xml")
+
+
+@app.get("/media/user/{user_id}")
+async def user_photo(user_id: int, request: Request, session: AsyncSession = Depends(get_session)):
+    """Ishchining ro'yxatdan o'tishda yuborgan selfisi (botning diskidan yoki Telegram'dan)."""
+    if not valid(request.cookies.get(COOKIE_NAME)):
+        return RedirectResponse("/login", status_code=302)
+    from sqlalchemy import text as _text
+
+    row = (await session.execute(
+        _text("SELECT photo_path, photo_file_id FROM web.users WHERE id = :i"), {"i": user_id}
+    )).first() if settings.bot_db else None
+    path = resolve_local(row[0]) if row and row[0] else None
+    if path is None and row and row[1]:
+        path = await telegram_cached(row[1])
+    if path is not None:
+        return FileResponse(str(path), media_type=guess_type(path))
     return Response(content=_MEDIA_PLACEHOLDER, media_type="image/svg+xml")
 
 

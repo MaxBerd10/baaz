@@ -106,12 +106,18 @@ async def worker_productivity(session: AsyncSession) -> list[dict]:
         ).all()
     )
     worker_ids = {wid for wid in (approved | returned) if wid is not None}
-    if not worker_ids:
-        return []
+    # Yangi ro'yxatdan o'tgan (hali ish qilmagan) ishchilar ham ro'yxatda ko'rinsin
     users = {
         u.id: u
-        for u in (await session.scalars(select(User).where(User.id.in_(worker_ids)))).all()
+        for u in (
+            await session.scalars(
+                select(User).where(
+                    (User.role == Role.worker) & (User.is_active.is_(True)) | User.id.in_(worker_ids)
+                )
+            )
+        ).all()
     }
+    worker_ids |= set(users)
     out = []
     for wid in worker_ids:
         u = users.get(wid)
@@ -123,7 +129,7 @@ async def worker_productivity(session: AsyncSession) -> list[dict]:
                 "returned": returned.get(wid, 0),
             }
         )
-    out.sort(key=lambda r: r["approved"], reverse=True)
+    out.sort(key=lambda r: (-r["approved"], r["name"]))
     return out
 
 
