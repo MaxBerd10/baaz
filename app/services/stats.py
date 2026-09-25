@@ -201,7 +201,7 @@ async def stage_cycle_times(session: AsyncSession) -> list[dict]:
             {
                 "order_no": st.order_no,
                 "name": st.name,
-                "hours": round(sum(vals) / len(vals), 1) if vals else 0.0,
+                "hours": round(sum(vals) / len(vals), 3) if vals else 0.0,
                 "count": len(vals),
             }
         )
@@ -490,3 +490,20 @@ async def config_overview(session: AsyncSession) -> dict:
         "workers": roles.get(Role.worker, 0),
         "pending": roles.get(Role.pending, 0),
     }
+
+
+def fmt_hours(h: float | None) -> str:
+    """Soatni o'qishga qulay ko'rinishda: '45 daq', '3 soat 20 daq', '2 kun 5 soat'. Ma'lumot yo'q bo'lsa — '—'."""
+    if not h or h <= 0:
+        return "—"
+    mins = round(h * 60)
+    if mins < 60:
+        return f"{max(mins, 1)} daq"
+    if mins < 24 * 60:
+        hh, mm = divmod(mins, 60)
+        return f"{hh} soat" + (f" {mm} daq" if mm else "")
+    dd, rest = divmod(mins, 24 * 60)
+    hh = round(rest / 60)
+    if hh == 24:
+        dd, hh = dd + 1, 0
+    return f"{dd} kun" + (f" {hh} soat" if hh else "")

@@ -200,6 +200,7 @@ def _spec(size=None, color=None, code=None):
     return " · ".join(parts) or "—"
 
 
+templates.env.filters["dur"] = stats_svc.fmt_hours
 templates.env.globals["spec"] = _spec
 templates.env.globals["bot_db"] = settings.bot_db
 templates.env.globals["RUN_STATUS_LABEL"] = {

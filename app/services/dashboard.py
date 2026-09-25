@@ -116,7 +116,7 @@ async def build(session: AsyncSession, *, line: str | None = None) -> dict:
          "sub": share(by_status[ProductStatus.returned]), "tone": "amber", "spark": sp_ret, "icon": "hourglass"},
         {"key": "problem", "label": "Muammoli", "value": problem,
          "sub": share(problem), "tone": "red", "spark": sp_ret, "icon": "alert"},
-        {"key": "cycle", "label": "O'rtacha ishlab chiqarish vaqti", "value": f"{kpi['avg_cycle_h']} soat",
+        {"key": "cycle", "label": "O'rtacha ishlab chiqarish vaqti", "value": stats_svc.fmt_hours(kpi['avg_cycle_h']),
          "sub": _delta_str(-6), "sub_tone": "good", "tone": "teal", "spark": sp_appr, "icon": "clock"},
     ]
 
@@ -630,7 +630,7 @@ async def _period_kpis(session: AsyncSession, period: str) -> list[dict]:
         ("Sifat darajasi", "qc", True, "%", sp_a, "var(--c-green)", f"{c['qc']}%"),
         ("Bajarilish", "done", True, "%", sp_a, "var(--c-blue)", f"{c['done']}%"),
         ("Qaytarilish", "ret", False, "%", sp_r, "var(--c-amber)", f"{c['ret']}%"),
-        ("O'rtacha bosqich vaqti", "avg_h", False, " soat", sp_r, "var(--c-red)", f"{c['avg_h']} soat"),
+        ("O'rtacha bosqich vaqti", "avg_h", False, " soat", sp_r, "var(--c-red)", stats_svc.fmt_hours(c['avg_h'])),
     ]:
         d, tone = delta(key, up, unit)
         out.append({"label": label, "value": val, "delta": d, "delta_tone": tone,

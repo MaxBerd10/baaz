@@ -83,10 +83,17 @@ SELECT ts.id,
              ELSE 'in_progress' END)::varchar(32) AS status,
        ts.worker_comment,
        ts.qc_comment,
-       (COALESCE(ts.started_at, ts.submitted_at, ts.created_at) AT TIME ZONE 'UTC') AS started_at,
+       -- Bosqich "boshlangan" vaqti = ish shu bosqichga kelgan payt: oldingi bosqich QC tasdiqlagan vaqt
+       -- (1-bosqich uchun — buyurtma yaratilgan payt). Botdagi started_at ishchi "Ish yuborish"ni bosgan
+       -- payt, ya'ni ish tugagandan keyin; u bilan o'lchasak faqat QC kutish vaqti chiqadi.
+       (COALESCE(CASE WHEN ts.step_number = 1 THEN t0.created_at ELSE prev.reviewed_at END,
+                 ts.started_at, ts.submitted_at, ts.created_at) AT TIME ZONE 'UTC') AS started_at,
        (ts.submitted_at AT TIME ZONE 'UTC')  AS submitted_at,
        (ts.reviewed_at  AT TIME ZONE 'UTC')  AS decided_at
 FROM public.truck_steps ts
+JOIN public.trucks t0 ON t0.id = ts.truck_id
+LEFT JOIN public.truck_steps prev
+       ON prev.truck_id = ts.truck_id AND prev.step_number = ts.step_number - 1
 WHERE ts.status::text <> 'pending' OR ts.started_at IS NOT NULL;
 
 -- Bot bitta bosqichga bitta media saqlaydi. Hujjatlar (document) web'da ko'rsatilmaydi.
