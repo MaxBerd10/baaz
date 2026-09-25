@@ -102,6 +102,25 @@
   .fleet-line .lt-wk{display:inline-flex;align-items:center;gap:7px}
   .fleet-line .lt-wk img{width:22px;height:22px;border-radius:50%;object-fit:cover;background:#eef1f6;
     border:1px solid #e3e7ee}
+
+  /* ==== telefon: bir lane — bir ekran (swipe), filtrlar va pastki KPI qulay ==== */
+  @media(max-width:700px){
+    .fleet-line{height:auto;min-height:0;overflow:visible}
+    .fleet-line .top-tools{flex-wrap:wrap;gap:8px;margin:2px 0 12px}
+    .fleet-line .search{width:100%;max-width:none;flex:1 1 100%}
+    .fleet-line .filters{flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+    .fleet-line .filters::-webkit-scrollbar{display:none}
+    .fleet-line .filters a{flex:none}
+    .fleet-line .view-toggle{flex:1 1 100%;margin-left:0;display:grid;grid-template-columns:1fr 1fr;text-align:center}
+    .fleet-line .view-toggle a{padding:8px 6px}
+    .fleet-line .line-wrap{flex:none;display:block;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+    .fleet-line .line-grid{min-width:0;height:auto;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:80vw}
+    .fleet-line .lane{scroll-snap-align:start}
+    .fleet-line .lane-cards{max-height:62vh}
+    .fleet-line .bottom{grid-template-columns:1fr 1fr;gap:8px}
+    .fleet-line .bottom>*:first-child{grid-column:1/-1}
+    .fleet-line .list-wrap{overflow-x:auto}
+  }
 </style>
 {% macro truck(c) %}<a class="truck st-{{ c.status }}" href="/products/{{ c.code }}"><img class="tphoto" src="{{ c.image }}" alt="Model {{ c.model }} food truck"><b>Model {{ c.model }}</b><span class="spec">{{ spec(c.size, None, c.code) }}</span>{% if c.color and c.color != '—' %}<span class="color"><i style="--color:{{ c.hex }}"></i>{{ c.color }}</span>{% endif %}<span class="status">{{ c.status_label }}</span><span class="worker">{% if c.worker and c.worker != '—' %}<img class="wav" src="{{ avatar_url(c.worker) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(c.worker) }}'"><strong>{{ c.worker }}</strong>{% else %}Mas’ul: <strong>biriktirilmagan</strong>{% endif %}</span></a>{% endmacro %}
 {%- set parts = [] -%}

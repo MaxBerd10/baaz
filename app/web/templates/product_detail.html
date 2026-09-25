@@ -22,7 +22,7 @@
 </div>
 {% endif %}
 
-<div class="row" style="grid-template-columns:repeat(5,1fr)">
+<div class="row g5">
   <div class="card kpi"><div class="lbl">Model / O'lcham / Rang</div><div class="val" style="font-size:15px;margin-top:8px">{{ product.model or '—' }}{% if product.size_m or product.color %} · {{ spec(product.size_m, product.color) }}{% endif %}{% if bot_db %} · {{ product.code }}{% endif %}</div></div>
   <div class="card kpi"><div class="lbl">Holat</div><div style="margin-top:8px"><span class="badge b-{{ product.status.value }}">{{ PRODUCT_STATUS_LABEL[product.status] }}</span></div></div>
   <div class="card kpi"><div class="lbl">Joriy liniya</div><div class="val num">{{ product.current_stage_order }} <span style="font-size:14px;color:var(--muted)">/ {{ total }}</span></div></div>

@@ -4,7 +4,7 @@
 {% block sub %}Har bosqich uchun sifat nazorati tekshiruv ro'yxati (Telegram bot orqali tahrirlanadi){% endblock %}
 {% block body %}
 
-<div class="row" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
+<div class="row" style="grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr))">
   {% for s in stages %}
   <div class="card pad">
     <div class="hd"><h3>{{ s.order_no }}. {{ s.name }}</h3></div>

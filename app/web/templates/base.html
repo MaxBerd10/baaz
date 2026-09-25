@@ -126,8 +126,10 @@
   .content{padding:6px 30px 44px;max-width:1640px;width:100%}
 
   @media(max-width:820px){
-    .topbar{flex-wrap:wrap;padding:14px 16px 12px;gap:8px}
-    .topbar .htxt{flex:1 1 100%;order:-1}
+    .topbar{flex-wrap:nowrap;align-items:center;padding:14px 16px 10px;gap:8px}
+    .topbar .htxt{flex:1 1 auto;min-width:0;order:-1}
+    .topbar .htxt h1{font-size:20px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .topbar .htxt p{display:none}
     .topbar .sp{display:none}
     .topbar .ctl{display:none}
     .btn{padding:10px 12px}
@@ -144,13 +146,32 @@
   .card .hd h2{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
 
   .row{display:grid;gap:18px;margin-bottom:18px}
+  .row.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .row.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .row.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
+  @media(max-width:1100px){.row.g5{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media(max-width:760px){.row.g4,.row.g5{grid-template-columns:repeat(2,minmax(0,1fr))}.row{gap:12px;margin-bottom:12px}
+    .row.g3>*:last-child:nth-child(odd),.row.g4>*:last-child:nth-child(odd),.row.g5>*:last-child:nth-child(odd){grid-column:1/-1}}
+  @media(max-width:480px){.row.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .kpis{grid-template-columns:repeat(6,1fr)}
   .c2{grid-template-columns:2.05fr 1fr}
   .c3{grid-template-columns:1fr 1fr 1fr}
   .rrail{display:flex;flex-direction:column;gap:18px}
   @media (max-width:1500px){.kpis{grid-template-columns:repeat(3,1fr)}}
-  @media (max-width:1200px){.shell{grid-template-columns:1fr}aside{position:static;height:auto}
-    aside .art{display:none}.c2,.c3{grid-template-columns:1fr}}
+  @media (max-width:1200px){aside .art{display:none}.c2,.c3{grid-template-columns:1fr}}
+  /* Planshet / kichik noutbuk (821–1200px): yon panel ikonkali ixcham ustunga aylanadi */
+  @media (min-width:821px) and (max-width:1200px){
+    .shell{grid-template-columns:68px minmax(0,1fr)}
+    aside .brand{padding:14px 6px 8px;text-align:center}
+    aside .brand .logo{width:46px;margin:0 auto}
+    aside nav{padding:6px 8px;align-items:stretch}
+    aside nav a{justify-content:center;padding:11px 0}
+    aside nav a span:not(.pill){display:none}
+    aside nav a .pill{position:absolute;top:3px;right:4px;margin:0;min-width:16px;height:16px;font-size:9px}
+    aside .promo,aside .sidesum,aside .user div,aside .user .cv{display:none}
+    aside .user{justify-content:center;margin:6px 8px;padding:8px 0}
+    aside .logout{font-size:0;justify-content:center;gap:0}
+  }
   @media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.content{padding:6px 14px 30px}}
 
   /* Bir ekranga sig'adigan sahifalar (Boshqaruv paneli, Trucklar): kontent ekranning pastigacha
@@ -170,6 +191,40 @@
     .shell:has(.fleet-line) .main{height:100vh;min-height:0}
     .shell:has(.fleet-line) .content{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:18px}
     .content .fleet-line{flex:1 1 auto;min-height:0;height:auto}
+  }
+
+  /* ---------- telefon: umumiy ixchamlashtirish ---------- */
+  @media(max-width:600px){
+    .home5>*:last-child:nth-child(odd){grid-column:1/-1}          /* toq oxirgi KPI butun qatorni oladi */
+    .content .vrow{grid-template-columns:26px minmax(0,1fr) auto;gap:10px}
+    .content .vrow .sic,.content .vrow .fr,.content .vrow .pc{display:none}
+    .content .vrow .cur-wrap{grid-column:2/-1}
+    .content .vrow.current{margin:0 -8px;padding:10px 8px}
+    .content .card.pad{padding:14px}
+    .content .card .hd{margin-bottom:11px}
+
+    /* Jadvallar: har bir qator — sarlavhalari bilan kartochka (JS `data-label` qo'yadi) */
+    .content table.stk thead{display:none}
+    .content table.stk,.content table.stk tbody{display:block;width:100%}
+    .content table.stk tr{display:block;border:1px solid var(--line);border-radius:12px;padding:6px 12px;margin:0 0 10px;background:var(--panel)}
+    .content table.stk td{display:flex;justify-content:space-between;align-items:center;gap:14px;width:auto;
+      padding:6px 0;border:0;border-bottom:1px solid var(--line-2);text-align:right;font-size:12.5px}
+    .content table.stk td:last-child{border-bottom:0}
+    .content table.stk td::before{content:attr(data-label);flex:none;color:var(--muted);font-size:10.5px;font-weight:700;
+      letter-spacing:.04em;text-transform:uppercase;text-align:left}
+    .content table.stk td[data-label='']::before{display:none}
+    .content table.stk td[data-label='']{justify-content:flex-start;text-align:left}
+    .content table.stk td:first-child{font-size:13.5px}
+    .content table.stk tr:hover{background:var(--panel)}
+  }
+  @media (pointer:coarse){ td a,.meta a{display:inline-block;padding:5px 0} }
+  /* iPhone: maydon 16px dan kichik bo'lsa, bosganda sahifa o'zi kattalashib ketadi */
+  @media (max-width:820px){
+    input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea{font-size:16px !important}
+  }
+  @media(max-width:980px){
+    /* bitta ustunli ko'rinishda uzun truck ro'yxati tanlangan truck ma'lumotini pastga itarib yubormasin */
+    .content .tlist .rows{max-height:320px;overflow-y:auto;-webkit-overflow-scrolling:touch}
   }
 
   /* ---------- mobile: pastki navigatsiya ---------- */
@@ -339,7 +394,7 @@
   .dyn-tip b{display:block;font-size:11px;margin-bottom:4px}
   .dyn-tip .r{display:flex;align-items:center;gap:6px;margin-top:2px;color:var(--muted)}
   .dyn-tip .r i{width:7px;height:7px;border-radius:2px}
-  .legend2{display:flex;gap:16px;margin-top:10px;font-size:11px;color:var(--muted)}
+  .legend2{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:11px;color:var(--muted)}
   .legend2 i{display:inline-block;width:16px;height:0;border-top:2px solid;margin-right:6px;vertical-align:middle}
 
   .c-axis{font-size:9.5px;fill:var(--faint)} .c-value-label{font-size:10px;font-weight:750;fill:var(--c-blue)} .c-value-green{fill:var(--c-green)} .c-grid{stroke:var(--c-grid);stroke-width:1}
@@ -356,8 +411,10 @@
 
   /* ===== Boshqaruv paneli (master-detail) ===== */
   .home5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:16px}
-  @media(max-width:1400px){.home5{grid-template-columns:repeat(3,1fr)}}
-  @media(max-width:760px){.home5{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:1400px){.home5{grid-template-columns:repeat(6,1fr)}
+    .home5>*:nth-child(-n+3){grid-column:span 2}.home5>*:nth-child(n+4){grid-column:span 3}}
+  @media(max-width:760px){.home5{grid-template-columns:repeat(2,1fr)}
+    .home5>*:nth-child(n){grid-column:auto}}
   .h5{padding:16px 16px 0;position:relative;overflow:hidden}
   .h5 .r1{display:flex;align-items:center;gap:11px}
   .h5 .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none}
@@ -511,16 +568,26 @@
     color:#fff;font-size:20px;cursor:pointer}
 
   /* calendar */
-  .cal-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .cal-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:14px}
   .cal-top h2{margin:0;font-size:16px;font-weight:750}
   .cal-nav{display:inline-flex;gap:6px}
   .cal-nav a{width:32px;height:32px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;
     background:var(--panel);color:var(--muted);font-weight:700}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
   .cal-grid .wd{text-align:center;font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;padding:4px 0}
   .cal-cell{min-height:84px;border:1px solid var(--line);border-radius:10px;padding:7px 8px;background:var(--panel);
     display:flex;flex-direction:column;gap:4px}
   .cal-cell.empty{background:var(--panel-2);border-style:dashed}
+  .cal-cell{position:relative;min-width:0}
+  @media(max-width:700px){
+    .cal-grid{gap:3px}
+    .cal-grid .wd{font-size:9.5px;padding:2px 0}
+    .cal-cell{min-height:56px;padding:4px 3px;gap:2px;border-radius:7px}
+    .cal-cell .d{font-size:10.5px}
+    .cal-cell.today .d{width:17px;height:17px;font-size:10px}
+    .ev{font-size:9px;padding:0 3px;gap:1px}
+    .cal-cell a.d-link{position:absolute;inset:0;font-size:0}   /* butun katak bosiladi */
+  }
   .cal-cell .d{font-size:12px;font-weight:700;color:var(--muted)}
   .cal-cell.today .d{background:var(--brand);color:#fff;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px}
   .cal-cell.sel{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
@@ -602,7 +669,7 @@
       ] %}
       {% if bot_db %}{% set nav = nav[:2] + [('models','/models','Modellar','foodtruck')] + nav[2:] %}{% endif %}
       {% for key,href,label,ic in nav %}
-      <a href="{{ href }}" class="{{ 'on' if active==key }}">
+      <a href="{{ href }}" class="{{ 'on' if active==key }}" title="{{ label }}">
         {{ icon(ic) }}<span>{{ label }}</span>
         {% if key=='alerts' and alerts_count %}<span class="pill">{{ alerts_count }}</span>{% endif %}
       </a>
@@ -722,6 +789,20 @@
     if(lb.classList.contains('open') && (e.target===lb || e.target.classList.contains('x') || e.target===box)) close();
   });
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
+<script>
+/* Telefonda jadval qatorlari kartochka bo'ladi: ustun sarlavhasini har bir katakka yozib qo'yamiz */
+(function(){
+  document.querySelectorAll('.content table').forEach(function(t){
+    if(t.classList.contains('nostack')||t.querySelector('[colspan],[rowspan]')) return;
+    var th=[].map.call(t.querySelectorAll('thead th'),function(x){return x.textContent.trim();});
+    if(!th.length) return;
+    t.classList.add('stk');
+    t.querySelectorAll('tbody tr').forEach(function(tr){
+      [].forEach.call(tr.children,function(td,i){ td.setAttribute('data-label',th[i]||''); });
+    });
+  });
 })();
 </script>
 <script>
