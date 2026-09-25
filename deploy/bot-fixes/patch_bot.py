@@ -455,3 +455,112 @@ def _patch_button_caps() -> None:
 
 _patch_button_caps()
 
+
+# 8) Telefon raqami MAJBURIY (ro'yxatdan o'tishda): bir tugma bilan («📱 Raqamimni yuborish») yoki yozib.
+#    Bir xil ismli ishchilarni web'da telefon bilan ajratish uchun. «O'tkazib yuborish» olib tashlanadi.
+def _patch_phone_required() -> None:
+    rp = pathlib.Path("src/bot/handlers/registration.py")
+    if not rp.is_file():
+        print("patch_bot: telefon majburiy — registration.py topilmadi")
+        return
+    rs = rp.read_text(encoding="utf-8")
+    if "_norm_phone" in rs:
+        print("patch_bot: telefon majburiy — allaqachon qo'shilgan")
+        return
+    a = rs.find("# ==== Telefon (o'tkazib yuborish) ====")
+    b = rs.find("# ==== Tasdiqlash ====")
+    prompt_old = (
+        '        f"2️⃣ <b>Telefon raqamingizni kiriting</b> (ixtiyoriy):\\n\\n"\n'
+        '        f"<i>Masalan: +998901234567</i>",\n'
+        "        reply_markup=registration_skip_phone_keyboard(),\n"
+    )
+    if a == -1 or b == -1 or b < a or "_ask_selfie" not in rs or rs.count(prompt_old) != 1:
+        print("patch_bot: telefon majburiy — kutilgan kod topilmadi, o'zgartirilmadi")
+        return
+    prompt_new = (
+        '        f"2️⃣ <b>Telefon raqamingizni yuboring</b>\\n\\n"\n'
+        '        f"👇 Pastdagi <b>«📱 Raqamimni yuborish»</b> tugmasini bosing.\\n\\n"\n'
+        '        f"<i>Yoki raqamni yozing: +998901234567</i>",\n'
+        "        reply_markup=_phone_keyboard(),\n"
+    )
+    block = '''# ==== Telefon (majburiy) ====
+import re as _re_phone
+
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+
+
+def _phone_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="📱 Raqamimni yuborish", request_contact=True)]],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+
+
+def _norm_phone(raw: str) -> str | None:
+    """+998XXXXXXXXX ko'rinishiga keltiradi; yaroqsiz bo'lsa None."""
+    digits = _re_phone.sub(r"\\D", "", raw or "")
+    if len(digits) == 9:  # 901234567 -> 998901234567
+        digits = "998" + digits
+    if 10 <= len(digits) <= 15:
+        return "+" + digits
+    return None
+
+
+@router.callback_query(RegistrationFSM.phone, F.data == "reg_skip_phone")
+async def skip_phone(callback: CallbackQuery):
+    """Eski xabardagi «o'tkazib yuborish» tugmasi: endi telefon majburiy."""
+    await callback.answer("Telefon raqam majburiy — pastdagi tugmani bosing.", show_alert=True)
+
+
+async def _phone_ok(message: Message, state: FSMContext, phone: str) -> None:
+    await state.update_data(phone=phone)
+    await message.answer(f"✅ Raqam qabul qilindi: <b>{phone}</b>", reply_markup=ReplyKeyboardRemove())
+    await _ask_selfie(message, state)
+
+
+@router.message(RegistrationFSM.phone, F.contact)
+async def process_phone_contact(message: Message, state: FSMContext):
+    """«📱 Raqamimni yuborish» tugmasi."""
+    c = message.contact
+    phone = _norm_phone(c.phone_number)
+    if c.user_id not in (None, message.from_user.id) or not phone:
+        await message.answer(
+            "❌ Iltimos, <b>o'zingizning</b> raqamingizni yuboring: pastdagi «📱 Raqamimni yuborish» tugmasini bosing.",
+            reply_markup=_phone_keyboard(),
+        )
+        return
+    await _phone_ok(message, state, phone)
+
+
+@router.message(RegistrationFSM.phone, F.text)
+async def process_phone(message: Message, state: FSMContext):
+    """Raqamni yozib kiritish."""
+    phone = _norm_phone(message.text or "")
+    if not phone:
+        await message.answer(
+            "❌ <b>Raqam noto'g'ri.</b>\\n\\nPastdagi «📱 Raqamimni yuborish» tugmasini bosing yoki "
+            "raqamni shunday yozing: <code>+998901234567</code>",
+            reply_markup=_phone_keyboard(),
+        )
+        return
+    await _phone_ok(message, state, phone)
+
+
+'''
+    rs = rs[:a] + block + rs[b:]
+    rs = rs.replace(prompt_old, prompt_new, 1)
+    rp.write_text(rs, encoding="utf-8")
+    try:
+        import py_compile
+
+        py_compile.compile(str(rp), doraise=True)
+    except Exception as e:  # noqa: BLE001 — bot yiqilmasin: eski holatga qaytaramiz
+        rp.write_text(rs.replace(prompt_new, prompt_old, 1), encoding="utf-8")
+        print(f"patch_bot: telefon majburiy — kompilyatsiya xatosi ({e})")
+        return
+    print("patch_bot: telefon raqami majburiy qilindi (kontakt tugmasi bilan)")
+
+
+_patch_phone_required()
+

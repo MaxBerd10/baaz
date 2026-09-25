@@ -37,7 +37,8 @@ SELECT u.id,
        -- (telefon yo'q bo'lsa — #id) qo'shiladi. Ism yagona bo'lsa — o'zgarishsiz.
        (CASE WHEN count(*) OVER (PARTITION BY lower(btrim(u.full_name))) > 1
              THEN btrim(u.full_name) || ' (…' ||
-                  COALESCE(NULLIF(right(regexp_replace(COALESCE(u.phone, ''), '\D', '', 'g'), 4), ''), '#' || u.id::text) || ')'
+                  CASE WHEN u.p4 <> '' AND count(*) OVER (PARTITION BY lower(btrim(u.full_name)), u.p4) = 1
+                       THEN u.p4 ELSE '#' || u.id::text END || ')'
              ELSE u.full_name END)::varchar(255)  AS full_name,
        u.username,
        u.role::text                              AS role,
@@ -46,7 +47,7 @@ SELECT u.id,
        (u.created_at AT TIME ZONE 'UTC')         AS created_at,
        u.photo_file_id,
        u.photo_path
-FROM public.users u;
+FROM (SELECT x.*, right(regexp_replace(COALESCE(x.phone, ''), '\D', '', 'g'), 4) AS p4 FROM public.users x) u;
 
 -- Truck -> "mahsulot". Holat botdagi joriy bosqich holatidan chiqariladi.
 CREATE OR REPLACE VIEW web.products AS
