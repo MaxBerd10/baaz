@@ -53,8 +53,11 @@
   .mdl-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;align-items:start}
   .mdl-form .full{grid-column:1/-1}
   .mdl-form label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em}
-  .mdl-form .cur{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
-  .mdl-form .cur img{width:64px;height:44px;object-fit:cover;border-radius:8px}
+  .curbox{display:flex;align-items:center;gap:14px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2)}
+  .curbox img{width:120px;height:80px;object-fit:cover;border-radius:9px;background:#dfe4ec;flex:none}
+  .curbox .ce{width:120px;height:80px;border-radius:9px;background:#dfe4ec;display:grid;place-items:center;font-size:11px;color:var(--muted);flex:none;text-align:center}
+  .curbox .ct{font-size:12px;color:var(--muted);line-height:1.45;display:flex;flex-direction:column;gap:8px}
+  .curbox .rmlab{display:flex;gap:7px;align-items:center;margin:0;font-size:12px;font-weight:650;color:var(--c-red);letter-spacing:0;cursor:pointer}
   .mdl-actions{display:flex;gap:10px;align-items:center;margin-top:4px}
   @media(max-width:700px){.mdl-form{grid-template-columns:1fr}.mdlg{padding:0;align-items:flex-end}.mdlg .sheet{border-radius:18px 18px 0 0;max-height:92vh}
     .mdl-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mdl-bar .btn{margin-left:0;width:100%;justify-content:center}}
@@ -110,7 +113,17 @@
       <div><label>O‘lcham (metr)</label><input class="fi" name="size_m" id="f-size" inputmode="numeric" placeholder="masalan: 5"></div>
       <div><label>Rang</label><input class="fi" name="color" id="f-color" maxlength="64" placeholder="masalan: Oq"></div>
       <div class="full"><label>Tavsif (ishchilar uchun: nima qurish kerak)</label><textarea class="fi" name="description" id="f-desc" placeholder="Qisqacha: o‘lcham, jihozlar, muhim talablar…"></textarea></div>
-      <div class="full cur" id="f-cur" hidden><img id="f-curimg" alt=""><label style="margin:0;display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" name="remove_image" value="1"> Hozirgi rasmni o‘chirish</label></div>
+      <div class="full" id="f-cur" hidden>
+        <label>Hozirgi rasm</label>
+        <div class="curbox">
+          <img id="f-curimg" alt="Hozirgi rasm">
+          <span class="ce" id="f-ce" hidden>Rasm ko‘rinmadi</span>
+          <div class="ct">
+            <div>Yangi rasm tanlasangiz, hozirgisi almashadi.</div>
+            <label class="rmlab"><input type="checkbox" name="remove_image" value="1"> Rasmni butunlay o‘chirish</label>
+          </div>
+        </div>
+      </div>
       <div class="full mdl-actions">
         <button class="btn" type="submit" id="f-submit">Saqlash</button>
         <button class="btn-line" type="button" data-close>Bekor qilish</button>
@@ -124,14 +137,15 @@
   var dlg=document.getElementById('mdlg'), form=document.getElementById('mdl-form');
   var F={id:document.getElementById('f-id'),name:document.getElementById('f-name'),size:document.getElementById('f-size'),
          color:document.getElementById('f-color'),desc:document.getElementById('f-desc'),cur:document.getElementById('f-cur'),
-         curimg:document.getElementById('f-curimg'),title:document.getElementById('mdlg-title')};
+         curimg:document.getElementById('f-curimg'),ce:document.getElementById('f-ce'),title:document.getElementById('mdlg-title')};
+  F.curimg.addEventListener('error',function(){ F.curimg.style.display='none'; F.ce.hidden=false; });
   function openForm(card){
     form.reset();
     if(card){
       F.title.textContent='Modelni tahrirlash: '+card.dataset.name;
       F.id.disabled=false; F.id.value=card.dataset.id;
       F.name.value=card.dataset.name; F.size.value=card.dataset.size; F.color.value=card.dataset.color; F.desc.value=card.dataset.desc;
-      if(card.dataset.img){ F.cur.hidden=false; F.curimg.src=card.dataset.img; } else { F.cur.hidden=true; }
+      if(card.dataset.img){ F.cur.hidden=false; F.ce.hidden=true; F.curimg.style.display=''; F.curimg.src=card.dataset.img; } else { F.cur.hidden=true; }
     } else {
       F.title.textContent='Yangi model'; F.id.disabled=true; F.id.value=''; F.cur.hidden=true;
     }
