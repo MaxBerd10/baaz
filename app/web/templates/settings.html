@@ -20,7 +20,7 @@
     {% if not bot_db %}<div class="kv"><span>Tekshiruv punktlari (jami)</span><b>{{ cfg.check_items }}</b></div>{% endif %}
     <div class="kv"><span>Mahsulotlar</span><b>{{ cfg.products }}</b></div>
     <div class="kv"><span>Fayllar</span><b>{{ cfg.media_total }}</b></div>
-    <div class="kv"><span></span><a href="/stages" style="color:var(--brand);font-weight:600">Bosqichlarni ko'rish →</a></div>
+    <div class="kv"><span></span><a href="{{ '/products' if bot_db else '/stages' }}" style="color:var(--brand);font-weight:600">Bosqichlarni ko'rish →</a></div>
   </div>
 
   <div class="card pad">

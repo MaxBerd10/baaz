@@ -598,6 +598,16 @@ async def products_page(
                       if r["cur"] == s.order_no and r["status"] in ("in_production", "qc_pending", "returned")],
         })
     done_cards = [r for r in filtered if r["status"] == "done"]
+    if settings.bot_db:  # ustun sarlavhasida shu bosqich ishchilari ko'rinadi
+        sid2order = {s.id: s.order_no for s in stages}
+        wk_by_order: dict[int, list[str]] = {}
+        for w in (await session.scalars(
+            select(User).where(User.role == Role.worker, User.is_active.is_(True)).order_by(User.full_name)
+        )).all():
+            if w.stage_id in sid2order:
+                wk_by_order.setdefault(sid2order[w.stage_id], []).append(w.full_name)
+        for col in board:
+            col["workers"] = wk_by_order.get(col["order"], [])
 
     def _pct(x: int) -> int:
         return round(x / len(rows) * 100) if rows else 0
@@ -859,6 +869,8 @@ async def product_detail(
 # --------------------------------------------------------------------------- #
 @app.get("/stages", response_class=HTMLResponse)
 async def stages_page(request: Request, session: AsyncSession = Depends(get_session), _=Depends(require_login)):
+    if settings.bot_db:  # bot rejimida ma'lumot Trucklar (ustunlar) va Ishchilar sahifalarida
+        return RedirectResponse("/products", status_code=302)
     stages = await stages_svc.list_stages(session)
     checks = {s.id: await stages_svc.list_check_items(session, s.id) for s in stages}
     info: dict[int, dict] = {}
@@ -891,7 +903,16 @@ async def stages_page(request: Request, session: AsyncSession = Depends(get_sess
 @app.get("/workers", response_class=HTMLResponse)
 async def workers_page(request: Request, session: AsyncSession = Depends(get_session), _=Depends(require_login)):
     rows = await stats_svc.worker_productivity(session)
-    return await page("workers.html", request, session, active="workers", rows=rows)
+    by_stage: list[dict] = []
+    if settings.bot_db:  # bosqichlar bo'yicha kim ishlaydi (Bosqichlar sahifasi o'rniga)
+        stages = await stages_svc.list_stages(session)
+        names: dict[int, list[str]] = {}
+        for w in (await session.scalars(
+            select(User).where(User.role == Role.worker, User.is_active.is_(True)).order_by(User.full_name)
+        )).all():
+            names.setdefault(w.stage_id, []).append(w.full_name)
+        by_stage = [{"order": s.order_no, "name": s.name, "workers": names.get(s.id, [])} for s in stages]
+    return await page("workers.html", request, session, active="workers", rows=rows, by_stage=by_stage)
 
 
 # --------------------------------------------------------------------------- #

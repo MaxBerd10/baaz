@@ -677,7 +677,7 @@
         ('calendar','/calendar','Kalendar','cal'),
         ('settings','/settings','Sozlamalar','gear'),
       ] %}
-      {% if bot_db %}{% set nav = nav[:2] + [('models','/models','Modellar','foodtruck')] + nav[2:] %}{% endif %}
+      {% if bot_db %}{% set nav = nav[:2] + [('models','/models','Modellar','foodtruck')] + nav[3:] %}{% endif %}
       {% for key,href,label,ic in nav %}
       <a href="{{ href }}" class="{{ 'on' if active==key }}" title="{{ label }}">
         {{ icon(ic) }}<span>{{ label }}</span>
