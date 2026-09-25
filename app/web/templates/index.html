@@ -8,6 +8,8 @@
 <style>
   .homegrid .trow .van{overflow:hidden;background:#eef0f7;display:block}
   .homegrid .trow .van img{width:100%;height:100%;object-fit:cover;display:block}
+  .homegrid .trow .mid b{white-space:nowrap}
+  .stepnote{font-size:11px;color:var(--faint);margin:-6px 0 4px;line-height:1.4}
   .homegrid .selhead .photo{overflow:hidden;background:#eef0f7;display:block}
   .homegrid .selhead .photo img{width:100%;height:100%;object-fit:cover;display:block}
 
@@ -93,6 +95,24 @@
   @media(max-height:850px){.dash1{max-height:none;overflow:visible}
     .dash1 .col2,.dash1 .col3{overflow:visible}
     .dash1 .homegrid > *{max-height:none}}
+
+  /* ==== katta ekran: trucklar va bosqichlar kattaroq va o'qilishi oson ==== */
+  @media(min-width:1500px) and (min-height:980px){
+    .homegrid .trow{padding:10px 14px;gap:14px}
+    .homegrid .trow .van{width:70px;height:54px;border-radius:11px}
+    .homegrid .trow .mid b{font-size:15px}
+    .homegrid .trow .mid small{font-size:12px;margin-top:3px}
+    .homegrid .trow .rt .fr{font-size:14px}
+    .homegrid .trow .rt .pc{font-size:12.5px}
+    .dash1 .selhead .photo{width:168px;height:110px;border-radius:12px}
+    .dash1 .selhead .h1{font-size:22px}
+    .dash1 .vrow .nm{font-size:15.5px}
+    .dash1 .vrow .nm small{font-size:12px}
+    .dash1 .vrow .num{width:32px;height:32px;font-size:13px}
+    .dash1 .vrow .sic svg{width:23px;height:23px}
+    .dash1 .vrow .fr,.dash1 .vrow .pc{font-size:13.5px}
+    .dash1 .vrow .badge{font-size:12px;padding:5px 12px}
+  }
 </style>
 
 <div class="dash1">
@@ -130,7 +150,7 @@
           <small>{{ spec(t.size, t.color, t.code) }}</small>
         </span>
         <span class="rt">
-          <span class="fr num">{{ t.done }}/{{ t.total }}</span>
+          <span class="fr num" title="Tugallangan bosqichlar">{{ t.done }}/{{ t.total }}</span>
           <span class="pc" style="color:{{ 'var(--c-green)' if t.pct>=100 else 'var(--brand)' }}">{{ t.pct }}%</span>
         </span>
       </a>
@@ -169,6 +189,7 @@
   <div class="card pad">
     <div class="hd"><h2>Ishlab chiqarish jarayoni ({{ s.n_stages }} bosqich)</h2>
       <a class="lnk" href="/products/{{ s.code }}">⟲ Jarayon tarixi</a></div>
+    {% if s.timeline|selectattr('has_checks')|list %}<div class="stepnote">Bosqichlar: {{ s.n_stages }} ta. <b>QC 6/6</b> — shu bosqichdagi sifat tekshiruv bandlarining nechtasi o‘tgani (bandlar soni har bosqichda har xil).</div>{% endif %}
     <div class="vstep">
       {% for r in s.timeline %}
       <div class="vrow {{ r.state }}">
@@ -178,8 +199,9 @@
           {% if r.state=='current' %}<small>Jarayonda…</small>
           {% elif r.date %}<small>{{ r.date|dt }}</small>{% endif %}
         </span>
-        <span class="fr">{{ r.frac }}</span>
-        <span class="pc" style="color:{{ 'var(--c-green)' if r.state=='done' else ('var(--brand)' if r.state=='current' else 'var(--faint)') }}">{{ r.pct }}%</span>
+        {# QC tekshiruv bandlari (checklist) — faqat bosqichda ro'yxat bo'lsa ko'rsatiladi #}
+        <span class="fr" title="Sifat nazorati tekshiruv bandlari">{% if r.has_checks %}QC {{ r.frac }}{% endif %}</span>
+        <span class="pc" style="color:{{ 'var(--c-green)' if r.state=='done' else ('var(--brand)' if r.state=='current' else 'var(--faint)') }}">{% if r.has_checks %}{{ r.pct }}%{% endif %}</span>
         <span class="badge b-{{ 'done' if r.state=='done' else ('in_production' if r.state=='current' else 'cancelled') }}">{{ r.status_label }}</span>
         {% if r.state=='current' %}
         <div class="cur-wrap">

@@ -830,6 +830,7 @@ async def home(session: AsyncSession, sel_code: str | None = None) -> dict:
                 "state": state,
                 "date": date,
                 "frac": f"{frac_n}/{frac_t}",
+                "has_checks": chk_total > 0,
                 "pct": round(frac_n / frac_t * 100),
                 "status_label": {"done": "Tugallangan", "current": "Ishlab chiqarishda",
                                  "todo": "Kutilmoqda"}[state],
