@@ -189,7 +189,6 @@
   <div class="card pad">
     <div class="hd"><h2>Ishlab chiqarish jarayoni ({{ s.n_stages }} bosqich)</h2>
       <a class="lnk" href="/products/{{ s.code }}">⟲ Jarayon tarixi</a></div>
-    {% if s.timeline|selectattr('has_checks')|list %}<div class="stepnote">Bosqichlar: {{ s.n_stages }} ta. <b>QC 6/6</b> — shu bosqichdagi sifat tekshiruv bandlarining nechtasi o‘tgani (bandlar soni har bosqichda har xil).</div>{% endif %}
     <div class="vstep">
       {% for r in s.timeline %}
       <div class="vrow {{ r.state }}">
@@ -199,9 +198,6 @@
           {% if r.state=='current' %}<small>Jarayonda…</small>
           {% elif r.date %}<small>{{ r.date|dt }}</small>{% endif %}
         </span>
-        {# QC tekshiruv bandlari (checklist) — faqat bosqichda ro'yxat bo'lsa ko'rsatiladi #}
-        <span class="fr" title="Sifat nazorati tekshiruv bandlari">{% if r.has_checks %}QC {{ r.frac }}{% endif %}</span>
-        <span class="pc" style="color:{{ 'var(--c-green)' if r.state=='done' else ('var(--brand)' if r.state=='current' else 'var(--faint)') }}">{% if r.has_checks %}{{ r.pct }}%{% endif %}</span>
         <span class="badge b-{{ 'done' if r.state=='done' else ('in_production' if r.state=='current' else 'cancelled') }}">{{ r.status_label }}</span>
         {% if r.state=='current' %}
         <div class="cur-wrap">
