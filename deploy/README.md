@@ -87,6 +87,7 @@ muddati o'tsa yoki ishlatilgan bo'lsa ishlamaydi. Odamni Telegram ID bilan qo'ld
 
 `bot-fixes/` — botning manba kodidagi xatolarni docker build paytida tuzatadi (bot repo'siga tegmasdan):
 - «👥 Foydalanuvchilar» tugmasi faqat lotin-o'zbek tilida ishlardi → tilga moslashuvchi.
+- Ishchi «Ish yuborish» oqimi juda uzun edi (4 marta bosish) → soddalashtirildi: rasm/video yuborish → ✅ (bitta vazifasi bor ishchi tugmasiz to'g'ridan-to'g'ri rasm tashlasa ham bo'ladi; rasm ostidagi yozuv izoh bo'ladi).
 - Taklif havolasi ishlamasdi (`Invite(token=…)`, modelda `code`), menyuda tugmasi yo'q, muddat 24 soatga qattiq yozilgan →
   `invites_new.py` bilan qayta yozilgan (1 soat / 1 kun / 5 kun).
 Bot repo'sida tuzatilgach, skript o'zini o'tkazib yuboradi; keyin papkani va compose'dagi `botfixes` ni olib tashlang.
