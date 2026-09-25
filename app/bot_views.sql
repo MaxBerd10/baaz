@@ -96,7 +96,22 @@ LEFT JOIN public.truck_steps prev
        ON prev.truck_id = ts.truck_id AND prev.step_number = ts.step_number - 1
 WHERE ts.status::text <> 'pending' OR ts.started_at IS NOT NULL;
 
--- Bot bitta bosqichga bitta media saqlaydi. Hujjatlar (document) web'da ko'rsatilmaydi.
+-- Bir bosqichga bir nechta rasm/video: `truck_step_media` (bot yozadi; deploy/bot-compat.sql ham shuni yaratadi).
+-- Hujjatlar (document) web'da ko'rsatilmaydi.
+CREATE TABLE IF NOT EXISTS public.truck_step_media (
+    id          serial PRIMARY KEY,
+    step_id     integer NOT NULL REFERENCES public.truck_steps(id) ON DELETE CASCADE,
+    media_type  varchar(16) NOT NULL,
+    file_id     varchar(512) NOT NULL,
+    local_path  varchar(512),
+    added_by_id integer REFERENCES public.users(id) ON DELETE SET NULL,
+    draft       boolean NOT NULL DEFAULT true,
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_truck_step_media_step ON public.truck_step_media (step_id);
+
+-- id: yangi fayllar 1_000_000_000 + id (eski bitta-media qatorlari id'si bilan to'qnashmasligi uchun).
+-- Eski (jadvalgacha yuborilgan) ishlar uchun truck_steps.media_* ishlatiladi.
 CREATE OR REPLACE VIEW web.media AS
 SELECT ts.id,
        ts.id                                             AS stage_run_id,
@@ -108,7 +123,21 @@ SELECT ts.id,
        (COALESCE(ts.submitted_at, ts.updated_at) AT TIME ZONE 'UTC') AS created_at
 FROM public.truck_steps ts
 WHERE ts.media_file_id IS NOT NULL
-  AND ts.media_type::text IN ('photo', 'video');
+  AND ts.media_type::text IN ('photo', 'video')
+  AND NOT EXISTS (SELECT 1 FROM public.truck_step_media m WHERE m.step_id = ts.id AND NOT m.draft)
+UNION ALL
+SELECT (1000000000 + m.id)::int                          AS id,
+       m.step_id                                         AS stage_run_id,
+       ts.truck_id                                       AS product_id,
+       (CASE WHEN m.media_type = 'video' THEN 'video' ELSE 'photo' END)::varchar(16) AS type,
+       COALESCE(m.local_path, '')::varchar(512)          AS file_path,
+       m.file_id::varchar(512)                           AS telegram_file_id,
+       COALESCE(m.added_by_id, ts.worker_id)             AS uploaded_by_id,
+       (COALESCE(ts.submitted_at, m.created_at) AT TIME ZONE 'UTC') AS created_at
+FROM public.truck_step_media m
+JOIN public.truck_steps ts ON ts.id = m.step_id
+WHERE NOT m.draft
+  AND m.media_type IN ('photo', 'video');
 
 -- Faoliyat lentasi: botning audit_logs'iga bog'lanmay, aniq voqealardan yig'iladi.
 CREATE OR REPLACE VIEW web.audit_logs AS

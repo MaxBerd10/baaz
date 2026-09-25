@@ -358,3 +358,75 @@ async def selfie_invalid(message: Message) -> None:
 
 
 _patch_selfie()
+
+
+# 6) Bir yuborishda bir nechta rasm/video (10 rasm + 5 video + 3 fayl). Jadval `truck_step_media` (bot-compat.sql).
+#    submit.py to'liq almashtiriladi (submit_multi.py), QC/tarix ko'rinishlariga qo'shimcha fayllar albomi qo'shiladi.
+def _patch_multi_media() -> None:
+    svc_src = here / "step_media_service.py"
+    sub_src = here / "submit_multi.py"
+    sub_dst = pathlib.Path("src/bot/handlers/worker/submit.py")
+    svc_dst = pathlib.Path("src/services/step_media_service.py")
+    if not (svc_src.is_file() and sub_src.is_file() and sub_dst.is_file() and svc_dst.parent.is_dir()):
+        print("patch_bot: ko'p media — kerakli fayllar topilmadi, o'tkazib yuborildi")
+        return
+    if "truck_step_media" in sub_dst.read_text(encoding="utf-8"):
+        print("patch_bot: ko'p media — allaqachon qo'shilgan")
+        return
+
+    def _album(path: str, anchor: str, call_first: str) -> None:
+        fp = pathlib.Path(path)
+        if not fp.is_file():
+            print(f"patch_bot: {path} topilmadi — albom qo'shilmadi")
+            return
+        txt = fp.read_text(encoding="utf-8")
+        if "send_extra_media" in txt:
+            return
+        if txt.count(anchor) != 1:
+            print(f"patch_bot: {path} — kutilgan kod topilmadi, albom qo'shilmadi")
+            return
+        ins = (
+            "    from src.services.step_media_service import send_extra_media\n"
+            f"    await send_extra_media(callback.message, {call_first}.id, {call_first}.media_file_id)\n"
+        )
+        fp.write_text(txt.replace(anchor, ins + anchor), encoding="utf-8")
+
+    _album(
+        "src/bot/handlers/qc/review.py",
+        '    keyboard = qc_review_keyboard(step.id, lang)\n\n    if step.media_type == "photo" and step.media_file_id:\n',
+        "step",
+    )
+    _album(
+        "src/bot/handlers/worker/history.py",
+        '    if step.media_type == "photo" and step.media_file_id:\n'
+        "        await callback.message.answer_photo(\n"
+        "            photo=step.media_file_id,\n"
+        "            caption=text,\n"
+        "            reply_markup=worker_history_detail_keyboard(step, lang),\n",
+        "step",
+    )
+    _album(
+        "src/bot/handlers/qc/history.py",
+        '    if step.media_type == "photo" and step.media_file_id:\n'
+        "        await callback.message.answer_photo(\n"
+        "            photo=step.media_file_id,\n"
+        "            caption=text,\n"
+        "            reply_markup=qc_history_detail_keyboard(lang),\n",
+        "step",
+    )
+    svc_dst.write_text(svc_src.read_text(encoding="utf-8"), encoding="utf-8")
+    backup = sub_dst.read_text(encoding="utf-8")
+    sub_dst.write_text(sub_src.read_text(encoding="utf-8"), encoding="utf-8")
+    try:  # sintaksis xatosi bo'lsa — eski (bitta media) versiyaga qaytamiz, bot yiqilmasin
+        import py_compile
+
+        py_compile.compile(str(sub_dst), doraise=True)
+        py_compile.compile(str(svc_dst), doraise=True)
+    except Exception as e:  # noqa: BLE001
+        sub_dst.write_text(backup, encoding="utf-8")
+        print(f"patch_bot: ko'p media — kompilyatsiya xatosi ({e}); eski submit.py qaytarildi")
+        return
+    print("patch_bot: ko'p media qo'shildi (10 rasm + 5 video + 3 fayl)")
+
+
+_patch_multi_media()

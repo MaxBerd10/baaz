@@ -87,6 +87,9 @@ worker'iga ko'chirsa bo'ladi — baza Neon'da bo'lgani uchun web'ga ta'sir qilma
 - Botda **o'lcham, rang, liniya va QC tekshiruv ro'yxati (checklist)** yo'q — web'da bu maydonlar yashiriladi.
 - Bot bosqichni qaytarilganda bitta qatorni qayta ishlatadi, shuning uchun "necha marta qaytgan"
   tarixi yo'q — "Ogohlantirishlar"da hozir qaytarilgan trucklar ko'rsatiladi.
+- **Bir yuborishda ko'p fayl.** Ishchi bir bosqichga 10 tagacha rasm va 5 tagacha video (va 3 tagacha fayl) yuboradi.
+  Fayllar `truck_step_media` jadvalida (`deploy/bot-compat.sql` yaratadi); botning eski `truck_steps.media_*` ustunlarida asosiy fayl turadi.
+  QC botda hammasini albom bo'lib ko'radi, web'dagi truck sahifasi va Fayllarda ham hammasi chiqadi.
 - Video 4 MB dan katta bo'lsa (Vercel javob limiti) o'rniga rasm-belgi chiqadi. Rasmlarda muammo yo'q.
 
 ## Web'dan buyurtma berish va Telegram xabari
