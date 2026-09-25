@@ -573,7 +573,74 @@ async def daily_dynamics(session: AsyncSession, days: int = 7) -> dict:
     return {"labels": labels, "plan": plan, "fact": fact, "ready": ready, "tip": tip}
 
 
-async def kpi_summary(session: AsyncSession) -> list[dict]:
+PERIODS = {"today": "Bugun", "7d": "7 kun", "30d": "30 kun", "all": "Hammasi"}
+
+
+async def _period_kpis(session: AsyncSession, period: str) -> list[dict]:
+    """Tanlangan davr (Bugun / 7 kun / 30 kun / Hammasi) uchun 4 ta asosiy ko'rsatkich.
+    O'zgarish (delta) — undan oldingi shunday davr bilan solishtirma; 'Hammasi' da delta yo'q."""
+    now0 = _day0()
+    end = now0 + dt.timedelta(days=1)
+    days = {"today": 1, "7d": 7, "30d": 30}.get(period)
+    if days:
+        cur = (end - dt.timedelta(days=days), end)
+        prev = (cur[0] - dt.timedelta(days=days), cur[0])
+    else:
+        cur, prev = (None, None), None
+
+    async def stats(lo, hi):
+        def rng(col):
+            conds = []
+            if lo is not None:
+                conds += [col >= lo, col < hi]
+            return conds
+
+        a = int(await session.scalar(select(func.count()).select_from(StageRun).where(
+            StageRun.status == StageRunStatus.approved, *rng(StageRun.decided_at))) or 0)
+        r = int(await session.scalar(select(func.count()).select_from(StageRun).where(
+            StageRun.status == StageRunStatus.returned, *rng(StageRun.decided_at))) or 0)
+        durs = (await session.execute(select(StageRun.started_at, StageRun.decided_at).where(
+            StageRun.status == StageRunStatus.approved, StageRun.decided_at.is_not(None),
+            *rng(StageRun.decided_at)))).all()
+        hh = [h for s_, e_ in durs if (h := _hours(s_, e_)) is not None]
+        started = int(await session.scalar(select(func.count()).select_from(StageRun).where(
+            *rng(StageRun.started_at))) or 0)
+        started_ok = int(await session.scalar(select(func.count()).select_from(StageRun).where(
+            StageRun.status == StageRunStatus.approved, *rng(StageRun.started_at))) or 0)
+        return {
+            "qc": round(a / (a + r) * 100, 1) if (a + r) else 0.0,
+            "ret": round(r / (a + r) * 100, 1) if (a + r) else 0.0,
+            "done": round(started_ok / started * 100, 1) if started else 0.0,
+            "avg_h": round(sum(hh) / len(hh), 1) if hh else 0.0,
+        }
+
+    c = await stats(*cur)
+    p = await stats(*prev) if prev else None
+    _, sp_a = await _daily(session, StageRun.decided_at, 14, StageRun.status == StageRunStatus.approved)
+    _, sp_r = await _daily(session, StageRun.decided_at, 14, StageRun.status == StageRunStatus.returned)
+
+    def delta(key, good_when_up, unit="%"):
+        if p is None:
+            return "", "good"
+        d = round(c[key] - p[key], 1)
+        return _delta_str(d, unit), ("good" if (d >= 0) == good_when_up else "bad")
+
+    out = []
+    for label, key, up, unit, spark, color, val in [
+        ("QC Pass Rate", "qc", True, "%", sp_a, "var(--c-green)", f"{c['qc']}%"),
+        ("Bajarilish", "done", True, "%", sp_a, "var(--c-blue)", f"{c['done']}%"),
+        ("Qaytarilish", "ret", False, "%", sp_r, "var(--c-amber)", f"{c['ret']}%"),
+        ("O'rtacha bosqich vaqti", "avg_h", False, " soat", sp_r, "var(--c-red)", f"{c['avg_h']} soat"),
+    ]:
+        d, tone = delta(key, up, unit)
+        out.append({"label": label, "value": val, "delta": d, "delta_tone": tone,
+                    "spark": spark, "color": color})
+    return out
+
+
+async def kpi_summary(session: AsyncSession, period: str | None = None) -> list[dict]:
+    if period in PERIODS:
+        return await _period_kpis(session, period)
     now0 = _day0()
     cur_lo = now0 - dt.timedelta(days=6)
     prev_lo = now0 - dt.timedelta(days=13)
@@ -711,7 +778,7 @@ def _rel_day(target: dt.date) -> tuple[str, str]:
     return f"{d} kundan keyin", "red" if d <= 2 else "slate"
 
 
-async def home(session: AsyncSession, sel_code: str | None = None) -> dict:
+async def home(session: AsyncSession, sel_code: str | None = None, period: str = "7d") -> dict:
     stages = await stages_svc.list_stages(session)
     n = len(stages) or 1
     stage_names = {s.order_no: s.name for s in stages}
@@ -768,6 +835,7 @@ async def home(session: AsyncSession, sel_code: str | None = None) -> dict:
         trucks.append({
             "code": p.code, "model": p.model or "—", "size": p.size_m,
             "color": p.color or "—", "hex": color_hex(p.color),
+            "customer": p.note or "",
             "done": done_cnt, "total": n,
             "pct": round(done_cnt / n * 100),
             "status": p.status.value, "status_label": lbl, "tone": tone,
@@ -859,7 +927,7 @@ async def home(session: AsyncSession, sel_code: str | None = None) -> dict:
         }
 
     # ---- Umumiy KPI (4 mini) ----
-    summary4 = (await kpi_summary(session))[:4]
+    summary4 = (await kpi_summary(session, period=period if period in PERIODS else "7d"))[:4]
 
     # ---- donut ----
     dn = {

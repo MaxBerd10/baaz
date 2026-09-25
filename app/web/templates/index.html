@@ -113,6 +113,29 @@
     .dash1 .vrow .fr,.dash1 .vrow .pc{font-size:13.5px}
     .dash1 .vrow .badge{font-size:12px;padding:5px 12px}
   }
+
+  /* ---- davr tanlash (Umumiy KPI) ---- */
+  .pdrop{position:relative;margin-left:auto}
+  .pdrop .lnk{background:none;border:0;padding:4px 8px;margin:-4px -8px;border-radius:8px;font:inherit;font-size:11.5px;
+    font-weight:650;color:var(--brand);cursor:pointer}
+  .pdrop .lnk:hover,.pdrop.open .lnk{background:var(--brand-soft)}
+  .pdrop .menu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:40;min-width:130px;padding:5px;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 34px rgba(16,24,40,.16)}
+  .pdrop.open .menu{display:block}
+  .pdrop .menu a{display:block;padding:8px 11px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--ink)}
+  .pdrop .menu a:hover{background:var(--panel-2)}
+  .pdrop .menu a.on{background:var(--brand-soft);color:var(--brand)}
+  /* ---- truck ro'yxati: qidiruv va filtr ---- */
+  .tl-tools{display:flex;flex-direction:column;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line-2)}
+  .tl-search{position:relative;flex:1;min-width:0;margin:0}
+  .tl-search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--faint);
+    fill:none;stroke-width:2;stroke-linecap:round;pointer-events:none}
+  .tl-search input{width:100%;height:34px;padding:0 10px 0 33px;border:1px solid var(--line);border-radius:10px;background:#fff;
+    font:inherit;font-size:13px;color:var(--ink)}
+  .tl-sel{flex:none;width:100%;height:34px;padding:0 8px;border:1px solid var(--line);border-radius:10px;background:#fff;
+    font:inherit;font-size:12px;color:var(--ink);cursor:pointer}
+  .tl-search input:focus,.tl-sel:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+  .dash1 .tlist .tl-tools{flex:none}
 </style>
 
 <div class="dash1">
@@ -139,11 +162,24 @@
   <div class="card tlist">
     <div class="hd" style="display:flex;align-items:center;gap:10px">
       <b style="font-size:13px">Trucklar ro'yxati</b>
-      <span style="margin-left:auto;color:var(--faint);font-size:14px">⌕</span>
+    </div>
+    <div class="tl-tools">
+      <label class="tl-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg>
+        <input id="tl-q" type="search" placeholder="Model, seriya, buyurtmachi…" autocomplete="off" aria-label="Truck qidirish">
+      </label>
+      <select id="tl-st" class="tl-sel" aria-label="Holat bo'yicha filtr">
+        <option value="">Hammasi</option>
+        <option value="in_production">Ishlab chiqarishda</option>
+        <option value="qc_pending">QC kutmoqda</option>
+        <option value="returned">Qaytarilgan</option>
+        <option value="done">Tayyor</option>
+      </select>
     </div>
     <div class="rows">
       {% for t in d.trucks %}
-      <a href="/?sel={{ t.code }}" class="trow {{ 'on' if d.sel and d.sel.code==t.code }}">
+      <a href="/?sel={{ t.code|urlencode }}&period={{ period }}" class="trow {{ 'on' if d.sel and d.sel.code==t.code }}"
+         data-st="{{ t.status }}" data-q="{{ (t.model ~ ' ' ~ t.code ~ ' ' ~ t.color ~ ' ' ~ t.customer)|lower }}">
         <span class="van"><img src="{{ t.image }}" alt="Model {{ t.model }} food truck"></span>
         <span class="mid">
           <b>Model {{ t.model }}</b>
@@ -155,10 +191,10 @@
         </span>
       </a>
       {% else %}<div class="empty">Truck yo'q</div>{% endfor %}
+      <div class="empty" id="tl-none" hidden>Hech narsa topilmadi</div>
     </div>
     <div class="ft">
-      <span>Jami {{ d.total_count }} ta truck</span>
-      <span class="pg"><a>‹</a><a class="on">1</a><a>›</a></span>
+      <span id="tl-total" data-all="{{ d.total_count }}">Jami {{ d.total_count }} ta truck</span>
     </div>
   </div>
 
@@ -236,7 +272,14 @@
   <!-- ===== 3: KPI + donut + muddatlar ===== -->
   <div class="col3">
     <div class="card pad">
-      <div class="hd"><h3>Umumiy KPI</h3><span class="lnk">Bugun ▾</span></div>
+      <div class="hd"><h3>Umumiy KPI</h3>
+        <div class="pdrop" id="pdrop">
+          <button type="button" class="lnk" id="pdbtn" aria-haspopup="true" aria-expanded="false">{{ periods[period] }} ▾</button>
+          <div class="menu" role="menu">
+            {% for k, lbl in periods.items() %}<a role="menuitem" class="{{ 'on' if k==period }}" href="/?{% if d.sel %}sel={{ d.sel.code|urlencode }}&{% endif %}period={{ k }}">{{ lbl }}</a>{% endfor %}
+          </div>
+        </div>
+      </div>
       <div class="mini">
         {% for m in d.summary4 %}
         <div class="m">
@@ -277,4 +320,29 @@
 
 </div>
 </div>
+
+<script>
+(function(){
+  /* Umumiy KPI: davr menyusi */
+  var dd=document.getElementById('pdrop'), b=document.getElementById('pdbtn');
+  if(dd&&b){
+    b.addEventListener('click',function(e){ e.stopPropagation(); var o=dd.classList.toggle('open'); b.setAttribute('aria-expanded',o); });
+    document.addEventListener('click',function(e){ if(!dd.contains(e.target)){dd.classList.remove('open');b.setAttribute('aria-expanded','false');} });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') dd.classList.remove('open'); });
+  }
+  /* Trucklar ro'yxati: jonli qidiruv + holat filtri */
+  var q=document.getElementById('tl-q'), st=document.getElementById('tl-st');
+  var rows=[].slice.call(document.querySelectorAll('.tlist .trow')), none=document.getElementById('tl-none'), tot=document.getElementById('tl-total');
+  function apply(){
+    var s=(q.value||'').trim().toLowerCase(), f=st.value, n=0;
+    rows.forEach(function(r){
+      var ok=(!s||r.getAttribute('data-q').indexOf(s)>-1)&&(!f||r.getAttribute('data-st')===f);
+      r.style.display=ok?'':'none'; if(ok)n++;
+    });
+    if(none) none.hidden=n>0||!rows.length;
+    if(tot) tot.textContent=(s||f)?('Topildi: '+n+' / '+tot.getAttribute('data-all')+' ta truck'):('Jami '+tot.getAttribute('data-all')+' ta truck');
+  }
+  if(q&&st){ q.addEventListener('input',apply); st.addEventListener('change',apply); }
+})();
+</script>
 {% endblock %}

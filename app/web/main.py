@@ -373,10 +373,12 @@ _KPI_SPARK_COLOR = {
 
 @app.get("/", response_class=HTMLResponse)
 async def overview(
-    request: Request, sel: str | None = None,
+    request: Request, sel: str | None = None, period: str = "7d",
     session: AsyncSession = Depends(get_session), _=Depends(require_login),
 ):
-    d = await dash_svc.home(session, sel_code=sel or None)
+    if period not in dash_svc.PERIODS:
+        period = "7d"
+    d = await dash_svc.home(session, sel_code=sel or None, period=period)
     truck_images = [
         "/static/trucks/trailer-orange.jpg",
         "/static/trucks/trailer-blue.jpg",
@@ -409,7 +411,8 @@ async def overview(
         center_top=f"{d['donut']['pct']}%", center_bottom="progress",
         size=108, stroke=14,
     ))
-    return await page("index.html", request, session, active="dash", d=d, donut_svg=donut_svg)
+    return await page("index.html", request, session, active="dash", d=d, donut_svg=donut_svg,
+                      period=period, periods=dash_svc.PERIODS)
 
 
 # --------------------------------------------------------------------------- #
