@@ -73,7 +73,21 @@
   aside .user .av svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8}
   aside .user b{color:#fff;font-size:12.5px;display:block;line-height:1.2}
   aside .user span{font-size:11px}
-  aside .user .cv{margin-left:auto;color:var(--side-ink);font-size:10px}
+  aside .user .cv{margin-left:auto;color:var(--side-ink);font-size:14px;line-height:1;transition:transform .15s}
+  aside .user{cursor:pointer;user-select:none}
+  aside .user:hover,aside .user.open{background:#2b3145}
+  aside .user.open .cv{transform:rotate(-90deg);color:#fff}
+  aside .user:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  /* profil menyusi: aside overflow:hidden bo'lgani uchun fixed — JS joylashtiradi */
+  .umenu{position:fixed;z-index:150;min-width:210px;padding:6px;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;box-shadow:0 18px 44px rgba(16,24,40,.28)}
+  .umenu[hidden]{display:none}
+  .umenu a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--ink)}
+  .umenu a:hover{background:var(--panel-2)}
+  .umenu a svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;color:var(--muted);flex:none}
+  .umenu a .pill{margin-left:auto;background:var(--c-red);color:#fff;font-style:normal;font-size:10px;font-weight:700;
+    min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 5px}
+  .umenu a.out,.umenu a.out svg{color:var(--c-red)}
   aside .logout{margin:0 12px 14px;padding:11px;border-radius:11px;background:#12151f;color:#c9cedb;
     display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:12.5px;z-index:1}
   aside .logout:hover{background:#0d101a}
@@ -689,10 +703,15 @@
       <div class="ss-r"><i style="background:var(--c-green)"></i>Tayyor<b>{{ side_counts.done }}</b></div>
     </div>
     {% endif %}
-    <div class="user">
+    <div class="user" id="userbtn" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" title="Profil menyusi">
       <span class="av">{{ icon('user') }}</span>
       <div><b>Admin</b><span>Administrator</span></div>
       <span class="cv">›</span>
+    </div>
+    <div class="umenu" id="umenu" role="menu" hidden>
+      <a role="menuitem" href="/settings">{{ icon('gear') }}<span>Sozlamalar</span></a>
+      <a role="menuitem" href="/alerts">{{ icon('bell') }}<span>Ogohlantirishlar</span>{% if alerts_count %}<i class="pill">{{ alerts_count }}</i>{% endif %}</a>
+      <a role="menuitem" href="/logout" class="out">{{ icon('logout') }}<span>Chiqish</span></a>
     </div>
     <a href="/logout" class="logout">{{ icon('logout') }} Chiqish</a>
   </aside>
@@ -803,6 +822,28 @@
       [].forEach.call(tr.children,function(td,i){ td.setAttribute('data-label',th[i]||''); });
     });
   });
+})();
+</script>
+<script>
+/* Chap pastdagi profil kartasi: menyu (Sozlamalar / Ogohlantirishlar / Chiqish) */
+(function(){
+  var b=document.getElementById('userbtn'), m=document.getElementById('umenu');
+  if(!b||!m) return;
+  function place(){
+    var r=b.getBoundingClientRect();
+    m.style.minWidth=Math.max(210,r.width)+'px';
+    m.style.left=Math.max(8,Math.min(r.left,innerWidth-m.offsetWidth-8))+'px';
+    m.style.bottom=(innerHeight-r.top+8)+'px';
+  }
+  function set(open){
+    m.hidden=!open; b.classList.toggle('open',open); b.setAttribute('aria-expanded',open);
+    if(open) place();
+  }
+  b.addEventListener('click',function(e){ e.stopPropagation(); set(m.hidden); });
+  b.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); set(m.hidden); } });
+  document.addEventListener('click',function(e){ if(!m.hidden && !m.contains(e.target)) set(false); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') set(false); });
+  addEventListener('resize',function(){ if(!m.hidden) place(); });
 })();
 </script>
 <script>
