@@ -552,6 +552,15 @@ async def products_page(
         worker_by_id.setdefault(pid, name)
 
     imgs = await factory_svc.image_map(session) if settings.bot_db else {}
+    # Bot rejimida: hozir shu bosqichga biriktirilgan ishchilar (ish qilinadigan/qayta qilinadigan trucklar uchun mas'ul)
+    wk_by_order: dict[int, list[str]] = {}
+    if settings.bot_db:
+        sid2order = {s.id: s.order_no for s in stages}
+        for w in (await session.scalars(
+            select(User).where(User.role == Role.worker, User.is_active.is_(True)).order_by(User.full_name)
+        )).all():
+            if w.stage_id in sid2order:
+                wk_by_order.setdefault(sid2order[w.stage_id], []).append(w.full_name)
     today = dt.datetime.now(_TZ).date()
     rows = []
     for idx, p in enumerate(all_items):
@@ -561,7 +570,16 @@ async def products_page(
             due and due.date() < today
             and p.status not in (ProductStatus.done, ProductStatus.cancelled)
         )
+        worker, worker_more, worker_note = worker_by_id.get(p.id, "—"), 0, ""
+        if settings.bot_db and p.status in (ProductStatus.in_production, ProductStatus.returned):
+            # ish hali bajarilishi kerak: mas'ul — shu bosqichning hozirgi ishchilari (oldingi bosqich ishchisi emas)
+            cur_workers = wk_by_order.get(p.current_stage_order, [])
+            worker = cur_workers[0] if cur_workers else "—"
+            worker_more = max(len(cur_workers) - 1, 0)
+        elif settings.bot_db and p.status == ProductStatus.qc_pending:
+            worker_note = "yubordi"  # QC tekshirmoqda: ko'rsatilgan ishchi — ishni yuborgan kishi
         rows.append({
+            "worker_more": worker_more, "worker_note": worker_note,
             "overdue": overdue,
             "code": p.code, "model": p.model or "—", "size": p.size_m,
             "color": p.color or "—", "hex": dash_svc.color_hex(p.color),
@@ -572,7 +590,7 @@ async def products_page(
             "cur_name": "Yakunlandi" if p.status == ProductStatus.done
                         else stage_names.get(p.current_stage_order, "—"),
             "done": done, "pct": round(done / stage_total * 100),
-            "worker": worker_by_id.get(p.id, "—"),
+            "worker": worker,
             "due": due, "created": p.created_at,
         })
 
@@ -599,16 +617,13 @@ async def products_page(
                       if r["cur"] == s.order_no and r["status"] in ("in_production", "qc_pending", "returned")],
         })
     done_cards = [r for r in filtered if r["status"] == "done"]
-    if settings.bot_db:  # ustun sarlavhasida shu bosqich ishchilari ko'rinadi
-        sid2order = {s.id: s.order_no for s in stages}
-        wk_by_order: dict[int, list[str]] = {}
-        for w in (await session.scalars(
-            select(User).where(User.role == Role.worker, User.is_active.is_(True)).order_by(User.full_name)
-        )).all():
-            if w.stage_id in sid2order:
-                wk_by_order.setdefault(sid2order[w.stage_id], []).append(w.full_name)
+    if settings.bot_db:
         for col in board:
             col["workers"] = wk_by_order.get(col["order"], [])
+            # ogohlantirish: ish qilinishi kerak bo'lgan truck bor, lekin bosqichda ishchi yo'q
+            col["need_worker"] = not col["workers"] and any(
+                c["status"] in ("in_production", "returned") for c in col["cards"]
+            )
 
     def _pct(x: int) -> int:
         return round(x / len(rows) * 100) if rows else 0
