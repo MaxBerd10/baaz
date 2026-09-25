@@ -760,12 +760,13 @@ async def product_new_form(request: Request, session: AsyncSession = Depends(get
 async def product_create(
     request: Request, model: str = Form(""), serial: str = Form(""), customer: str = Form(""),
     priority: str = Form("normal"), deadline: str = Form(""), notify: str = Form(""),
+    count: str = Form("1"),
     session: AsyncSession = Depends(get_session), _=Depends(require_login),
 ):
     if not settings.bot_db:
         return RedirectResponse("/products", status_code=302)
     form = {"model": model, "serial": serial, "customer": customer, "priority": priority,
-            "deadline": deadline, "notify": notify}
+            "deadline": deadline, "notify": notify, "count": count}
 
     async def fail(msg: str):
         ctx = await _new_truck_ctx(session)
@@ -775,27 +776,44 @@ async def product_create(
     card = await factory_svc.get_model_by_name(session, model)
     if card is None or not card.is_active:
         return await fail("Modelni tanlang (avval «Modellar» bo‘limida model qo‘shing)")
-    serial = serial.strip() or await factory_svc.suggest_serial(session, card.name)
-    if not _SERIAL_RE.match(serial):
+    model_name = card.name   # rollback'dan keyin card "eskiradi" — nomini oldindan saqlab qo'yamiz
+    n = int(count) if count.strip().isdigit() else 1
+    if not 1 <= n <= 10:
+        return await fail("Soni 1 dan 10 gacha bo‘lishi kerak")
+    manual = serial.strip()
+    if manual and n > 1:
+        return await fail("Bir nechta truck buyurtma qilinganda seriya raqamini bo‘sh qoldiring — har biriga avtomatik noyob raqam beriladi")
+    if manual and not _SERIAL_RE.match(manual):
         return await fail("Seriya raqami: faqat harf, raqam, nuqta, tire (32 belgigacha)")
     try:
         due = dt.date.fromisoformat(deadline) if deadline.strip() else None
     except ValueError:
         return await fail("Muddat sanasi noto‘g‘ri")
+    serials: list[str] = []
     try:
-        await factory_svc.create_truck(session, serial=serial, model=card.name,
-                                       customer=customer.strip() or None, priority=priority, deadline=due)
+        for _i in range(n):
+            s_i = manual or await factory_svc.suggest_serial(session, model_name)
+            await factory_svc.create_truck(session, serial=s_i, model=model_name,
+                                           customer=customer.strip() or None, priority=priority, deadline=due)
+            serials.append(s_i)
     except factory_svc.DuplicateSerial:
-        return await fail(f"«{serial}» seriyali truck allaqachon bor")
+        nxt = await factory_svc.suggest_serial(session, model_name)
+        if serials:  # bir nechtasi yaratilib, keyingisi to'qnashdi (kamdan-kam)
+            return await fail(f"{len(serials)} ta yaratildi, lekin «{s_i}» raqami band bo‘lib qoldi. Sahifani yangilab qayta urinib ko‘ring.")
+        return await fail(
+            f"«{manual}» seriyali truck allaqachon bor. Har bir truckning seriya raqami noyob bo‘ladi. "
+            f"Bir xil modeldan yana buyurtma berish uchun seriya maydonini bo‘sh qoldiring — tizim o‘zi «{nxt}» kabi keyingi raqamni beradi."
+        )
     _SIDE_CACHE["counts"] = None  # yon paneldagi sanoqlar darrov yangilansin
+    serial = serials[0] if n == 1 else f"{serials[0]} … {serials[-1]}"
 
-    q = {"created": 1, "sent": 0, "failed": 0}
+    q = {"created": 1, "n": n, "sent": 0, "failed": 0}
     if notify:
         recips = await factory_svc.recipients(session)
         res = await telegram_notify.notify_new_order(
             recips, model=card.name, serial=serial, customer=customer.strip() or None,
             priority=priority, deadline=due.isoformat() if due else None, description=card.description,
-            image=factory_svc.read_image(card),
+            count=n, image=factory_svc.read_image(card),
             image_name=(card.image_file or "model.jpg").rsplit("/", 1)[-1], tg_file_id=card.tg_file_id)
         if res["file_id"] and res["file_id"] != card.tg_file_id:
             card.tg_file_id = res["file_id"]
@@ -805,12 +823,12 @@ async def product_create(
             q["err"] = str(res["error"])[:120]
     else:
         q["notified"] = 0
-    return _redir(f"/products/{_urlp.quote(serial)}?" + _urlp.urlencode(q))
+    return _redir(f"/products/{_urlp.quote(serials[0])}?" + _urlp.urlencode(q))
 
 
 @app.get("/products/{code}", response_class=HTMLResponse)
 async def product_detail(
-    code: str, request: Request, created: int = 0, sent: int = 0, failed: int = 0, err: str = "",
+    code: str, request: Request, created: int = 0, n: int = 1, sent: int = 0, failed: int = 0, err: str = "",
     notified: int = 1, session: AsyncSession = Depends(get_session), _=Depends(require_login)
 ):
     product = await products_svc.get_by_code(session, code)
@@ -826,7 +844,7 @@ async def product_detail(
         "product_detail.html", request, session,
         active="products", heading=product.code,
         product=product, runs=runs, total=total, stages=all_stages, by_stage=by_stage,
-        flash={"created": created, "sent": sent, "failed": failed, "err": err, "notified": notified},
+        flash={"created": created, "n": n, "sent": sent, "failed": failed, "err": err, "notified": notified},
         model_card=(await factory_svc.get_model_by_name(session, product.model)) if settings.bot_db else None,
         model_img=(await factory_svc.image_map(session)).get(product.model or "") if settings.bot_db else None,
     )

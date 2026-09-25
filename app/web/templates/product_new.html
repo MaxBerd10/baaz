@@ -7,6 +7,7 @@
   .nz{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:start}
   .nz label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin:0 0 5px;letter-spacing:.03em}
   .nz .fld{margin-bottom:14px}
+  .nz .hint{font-size:11px;color:var(--faint);margin-top:5px;line-height:1.4}
   .fi{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;font-size:13px;color:var(--ink)}
   .fi:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
   .nz .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -35,7 +36,8 @@
       </select>
     </div>
     <div class="row2">
-      <div class="fld"><label>Seriya raqami</label><input class="fi" name="serial" id="f-serial" maxlength="32" value="{{ form.get('serial','') }}" placeholder="avtomatik"></div>
+      <div class="fld"><label>Seriya raqami (ixtiyoriy)</label><input class="fi" name="serial" id="f-serial" maxlength="32" value="{{ form.get('serial','') }}" placeholder="avtomatik">
+        <div class="hint">Bo‘sh qoldiring — tizim o‘zi keyingi noyob raqamni beradi. Har bir truckning seriyasi noyob bo‘ladi; bir modeldan istagancha buyurtma berish mumkin.</div></div>
       <div class="fld"><label>Muddat</label><input class="fi" type="date" name="deadline" value="{{ form.get('deadline','') }}"></div>
     </div>
     <div class="row2">
@@ -46,6 +48,7 @@
         </select>
       </div>
     </div>
+    <div class="fld" style="max-width:180px"><label>Nechta truck</label><input class="fi" type="number" name="count" min="1" max="10" value="{{ form.get('count') or 1 }}"></div>
     <label class="chk"><input type="checkbox" name="notify" value="1" {{ 'checked' if (not form) or form.get('notify') }}> Telegramda hammaga «yangi buyurtma keldi» xabarini yuborish</label>
     <button class="btn" type="submit" {{ 'disabled' if not models }}>Buyurtma yaratish</button>
   </form>

@@ -112,3 +112,10 @@ Nusxalarni vaqti-vaqti bilan serverdan tashqariga (masalan boshqa kompyuterga) k
 - Parolni 5 daqiqada 5 marta noto'g'ri kiritgan IP vaqtincha bloklanadi; sessiya 12 soatdan keyin tugaydi.
 - `/docs`, `/openapi.json` o'chirilgan; xato tafsilotlari brauzerga chiqmaydi (`SHOW_ERRORS=0`).
 - `.env` fayl huquqi: `chmod 600 deploy/.env`. Postgres va web tashqariga ochilmagan (faqat Cloudflare Tunnel orqali).
+
+## Buyurtma va seriya raqami
+- Har bir buyurtma — alohida truck; **seriya raqami noyob** (ikkita bir xil raqamli truck bo'lmaydi). **Model** takrorlanishi mumkin.
+- **Seriya maydonini bo'sh qoldiring** — tizim o'zi keyingisini beradi (`T2-2026-003`, `T2-2026-004`…). Qo'lda mavjud raqam kiritilsa,
+  aniq xato va taklif chiqadi.
+- **Nechta truck** (1–10): bir modeldan bir nechta buyurtma bir bosishda yaratiladi (seriyalar ketma-ket, avtomatik). Telegram'ga bitta
+  xabar ketadi: «Soni: 3 ta, seriya T2-2026-007 … T2-2026-009».

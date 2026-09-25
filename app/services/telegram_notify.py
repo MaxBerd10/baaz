@@ -80,12 +80,19 @@ def _api(method: str, fields: dict, file: tuple[str, str, bytes] | None = None, 
         return {"ok": False, "description": str(e)[:120]}
 
 
+QTY = {"uz": "Soni", "uz_cyrl": "Сони", "ru": "Количество"}
+QTY_UNIT = {"uz": "ta", "uz_cyrl": "та", "ru": "шт."}
+
+
 def build_text(rec: dict, *, model: str, serial: str, customer: str | None, priority: str,
-               deadline: str | None, description: str | None) -> str:
+               deadline: str | None, description: str | None, count: int = 1) -> str:
     lang = rec.get("language") if rec.get("language") in T else "uz"
     t = T[lang]
     e = html.escape
-    lines = [t["title"], "", f"🚛 {t['model']}: <b>{e(model)}</b>", f"🔖 {t['serial']}: <b>{e(serial)}</b>"]
+    lines = [t["title"], "", f"🚛 {t['model']}: <b>{e(model)}</b>"]
+    if count > 1:
+        lines.append(f"🔢 {QTY[lang]}: <b>{count} {QTY_UNIT[lang]}</b>")
+    lines.append(f"🔖 {t['serial']}: <b>{e(serial)}</b>")
     if customer:
         lines.append(f"👤 {t['customer']}: {e(customer)}")
     lines.append(f"🎯 {t['priority']}: {PRIORITY[lang].get(priority, priority)}")
@@ -108,7 +115,7 @@ def build_text(rec: dict, *, model: str, serial: str, customer: str | None, prio
 
 async def notify_new_order(
     recips: list[dict], *, model: str, serial: str, customer: str | None, priority: str,
-    deadline: str | None, description: str | None,
+    deadline: str | None, description: str | None, count: int = 1,
     image: bytes | None = None, image_name: str = "model.jpg", tg_file_id: str | None = None,
 ) -> dict:
     """Hammaga yangi buyurtma xabarini yuboradi. {sent, failed, total, file_id, error} qaytaradi."""
@@ -121,7 +128,7 @@ async def notify_new_order(
 
     async def send(rec: dict) -> bool:
         text = build_text(rec, model=model, serial=serial, customer=customer, priority=priority,
-                          deadline=deadline, description=description)
+                          deadline=deadline, description=description, count=count)
         chat = rec["telegram_id"]
         if out["file_id"] or image:
             fields = {"chat_id": chat, "caption": text, "parse_mode": "HTML"}

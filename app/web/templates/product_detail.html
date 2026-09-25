@@ -8,7 +8,7 @@
 
 {% if flash and flash.created %}
 <div class="card pad" style="margin-bottom:14px;background:#effaf3;border-color:#bfe8cf">
-  <b style="color:#0f8a4d">✅ Buyurtma yaratildi.</b>
+  <b style="color:#0f8a4d">✅ {{ (flash.n ~ " ta buyurtma yaratildi") if flash.n > 1 else "Buyurtma yaratildi" }}.</b>{% if flash.n > 1 %} <span class="muted">Bu — birinchisi; qolganlari <a href="/products" style="color:var(--brand)">Trucklar</a> sahifasida.</span>{% endif %}
   {% if flash.notified == 0 %}<span class="muted"> Telegram xabari yuborilmadi (tanlanmagan).</span>
   {% elif flash.sent %}<span> Telegramda <b>{{ flash.sent }}</b> kishiga xabar yuborildi{% if flash.failed %}, <b style="color:#c0303a">{{ flash.failed }}</b> tasiga yetmadi{% endif %}.</span>
   {% else %}<span style="color:#c0303a"> Xabar hech kimga yuborilmadi{% if flash.err %}: {{ flash.err }}{% endif %}. Botda foydalanuvchilar borligini va BOT_TOKEN ni tekshiring.</span>{% endif %}
