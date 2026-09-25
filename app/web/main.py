@@ -518,9 +518,11 @@ _FLEET_ST = {
 @app.get("/products", response_class=HTMLResponse)
 async def products_page(
     request: Request, status: str | None = None, q: str | None = None, view: str | None = None,
+    sort: str | None = None,
     session: AsyncSession = Depends(get_session), _=Depends(require_login),
 ):
-    view = "list" if view == "list" else "line"
+    sort = "deadline" if sort == "deadline" else ""
+    view = "list" if (view == "list" or sort) else "line"
     status_enum = None
     if status:
         try:
@@ -562,12 +564,24 @@ async def products_page(
             if w.stage_id in sid2order:
                 wk_by_order.setdefault(sid2order[w.stage_id], []).append(w.full_name)
     today = dt.datetime.now(_TZ).date()
+    real_dl: dict[int, dt.datetime] = {}
+    if settings.bot_db:  # haqiqiy muddat — buyurtmada belgilangan (trucks.deadline)
+        from sqlalchemy import text as _sql
+
+        real_dl = {
+            int(r[0]): r[1]
+            for r in await session.execute(_sql("SELECT id, deadline FROM web.products WHERE deadline IS NOT NULL"))
+        }
     rows = []
     for idx, p in enumerate(all_items):
         done = stage_total if p.status == ProductStatus.done else done_by_id.get(p.id, 0)
-        due = p.created_at + dt.timedelta(days=int(stage_total * 1.6)) if p.created_at else None
+        if settings.bot_db:
+            due = real_dl.get(p.id)
+        else:
+            due = p.created_at + dt.timedelta(days=int(stage_total * 1.6)) if p.created_at else None
+        due_day = (due.astimezone(_TZ).date() if due and due.tzinfo else (due.date() if due else None))
         overdue = bool(
-            due and due.date() < today
+            due_day and due_day < today
             and p.status not in (ProductStatus.done, ProductStatus.cancelled)
         )
         worker, worker_more, worker_note = worker_by_id.get(p.id, "—"), 0, ""
@@ -592,6 +606,7 @@ async def products_page(
             "done": done, "pct": round(done / stage_total * 100),
             "worker": worker,
             "due": due, "created": p.created_at,
+            "due_str": due_day.strftime("%d.%m.%Y") if (settings.bot_db and due_day) else None,
         })
 
     ql = (q or "").lower().strip()
@@ -641,11 +656,19 @@ async def products_page(
     ]
     fleet_kpis = await stats_svc.extra_kpis(session)
 
-    list_rows = sorted(filtered, key=lambda r: (r["status"] == "done", r["cur"], r["code"]))
+    if sort == "deadline":  # tayyor bo'lmaganlar, muddati eng yaqini birinchi; muddatsizlar oxirida
+        _far = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
+        list_rows = sorted(
+            [r for r in filtered if r["status"] not in ("done", "cancelled")],
+            key=lambda r: ((r["due"] is None), (r["due"].astimezone(dt.timezone.utc) if r["due"] and r["due"].tzinfo
+                                                else (r["due"].replace(tzinfo=dt.timezone.utc) if r["due"] else _far)), r["code"]),
+        )
+    else:
+        list_rows = sorted(filtered, key=lambda r: (r["status"] == "done", r["cur"], r["code"]))
 
     return await page(
         "products.html", request, session,
-        active="products", view=view, board=board, done_cards=done_cards, kpi5=kpi5,
+        active="products", view=view, sort=sort, board=board, done_cards=done_cards, kpi5=kpi5,
         rows=list_rows, stage_total=stage_total,
         total_count=len(rows), shown=len(filtered),
         status_counts=status_counts, cur_status=status or "", query=q or "",

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Trucklar — Baaz{% endblock %}
 {% block heading %}Trucklar{% endblock %}
-{% block sub %}Ishlab chiqarish liniyasi: trucklar qaysi bosqichda ekanini bir qarashda ko‘ring{% endblock %}
+{% block sub %}{% if sort %}Tayyor bo‘lmagan trucklar: muddati eng yaqini birinchi (muddati belgilanmaganlar oxirida){% else %}Ishlab chiqarish liniyasi: trucklar qaysi bosqichda ekanini bir qarashda ko‘ring{% endif %}{% endblock %}
 {% block body %}
 <style>
   .fleet-line{--purple:#7058e8;--purple2:#8a73f0;--blue:#2f80ed;--green:#11ad68;--orange:#f58914;--red:#ef4755;--panel:#fff;--line:#e7eaf0;--muted:#7f8aa0}.fleet-line .top-tools{display:flex;align-items:center;gap:11px;margin:7px 0 18px}.fleet-line .search{height:40px;width:310px;position:relative;flex:none}.fleet-line .search svg{position:absolute;width:15px;height:15px;left:12px;top:12px;stroke:#9da7b8;fill:none;stroke-width:2}.fleet-line .search input{width:100%;height:100%;padding:0 36px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit;font-size:12px;color:#273149;outline:0}.fleet-line .search:after{content:'⌕';font-size:19px;color:#8792a5;position:absolute;right:12px;top:8px}.fleet-line .filters{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.fleet-line .filters a{padding:8px 12px;border-radius:10px;border:1px solid var(--line);font-size:10.5px;font-weight:750;color:#49566b;background:#fff;white-space:nowrap}.fleet-line .filters a.on{color:#fff;background:linear-gradient(135deg,var(--purple),#5a43dc);border-color:var(--purple);box-shadow:0 5px 13px rgba(99,76,220,.22)}.fleet-line .filters b{margin-left:4px}.fleet-line .view-toggle{margin-left:auto;border:1px solid var(--line);border-radius:9px;padding:4px;display:flex;gap:2px;background:#fff;white-space:nowrap}.fleet-line .view-toggle span{font-size:10px;font-weight:700;color:#8490a4;padding:6px 9px;border-radius:6px}.fleet-line .view-toggle .on{color:var(--purple);background:#f0edff}
@@ -150,7 +150,7 @@
           <td><span class="badge b-{{ r.status }}">{{ r.status_label }}</span></td>
           <td><span class="lt-prog {{ 'full' if r.pct >= 100 }}"><i style="width:{{ r.pct }}%"></i></span>{{ r.done }}/{{ stage_total }}</td>
           <td>{% if r.worker and r.worker != '—' %}<span class="lt-wk"><img src="{{ avatar_url(r.worker) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(r.worker) }}'">{{ r.worker }}</span>{% else %}—{% endif %}</td>
-          <td class="{{ 'lt-over' if r.overdue }}">{{ r.due|dt if r.due else '—' }}</td>
+          <td class="{{ 'lt-over' if r.overdue }}">{{ r.due_str or (r.due|dt if r.due else '—') }}</td>
         </tr>
       {% else %}
         <tr><td colspan="7" class="lt-empty">Truck topilmadi</td></tr>
