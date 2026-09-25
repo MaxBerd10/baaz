@@ -198,6 +198,9 @@
           {% if r.state=='current' %}<small>Jarayonda…</small>
           {% elif r.date %}<small>{{ r.date|dt }}</small>{% endif %}
         </span>
+        {# Tugagan bosqichlar 1 dan hisoblanadi: 1/6, 2/6, ... — bosqichlar ketma-ket o'tadi #}
+        <span class="fr" title="Tugallangan bosqichlar">{% if r.state=='done' %}{{ r.order }}/{{ s.n_stages }}{% endif %}</span>
+        <span class="pc" style="color:var(--c-green)">{% if r.state=='done' %}{{ (r.order / s.n_stages * 100)|round|int }}%{% endif %}</span>
         <span class="badge b-{{ 'done' if r.state=='done' else ('in_production' if r.state=='current' else 'cancelled') }}">{{ r.status_label }}</span>
         {% if r.state=='current' %}
         <div class="cur-wrap">
