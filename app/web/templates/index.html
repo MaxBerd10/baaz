@@ -37,7 +37,7 @@
   .dash1 .col2>*:nth-child(2){flex:1 1 auto;display:flex;flex-direction:column}
   .dash1 .col2>*:nth-child(2) .vstep{flex:1;display:flex;flex-direction:column;justify-content:space-around}
   .dash1 .col3>*:last-child{flex:1 1 auto;display:flex;flex-direction:column}
-  .dash1 .col3>*:last-child .upcs{flex:1;display:flex;flex-direction:column;justify-content:space-around}
+  .dash1 .col3>*:last-child .upcs{flex:1;display:flex;flex-direction:column;justify-content:flex-start}
   .dash1 .tlist{display:flex;flex-direction:column}
   .dash1 .tlist .rows{flex:1;min-height:0;max-height:none}
 
@@ -77,7 +77,7 @@
   .dash1 .lg{gap:6px}
   .dash1 .lg .it{font-size:12px}
   .dash1 .lg .it .s{font-size:11px}
-  .dash1 .upc .it{padding:5px 0}
+  .dash1 .upc .it{padding:9px 0}
   .dash1 .upc .it .bd b{font-size:12px}
   .dash1 .upc .it .bd small{font-size:10.5px}
 
@@ -310,10 +310,14 @@
       {% for u in d.upcoming %}
       <div class="it">
         <span class="ic">{{ icon(u.icon) }}</span>
+        {% if bot_db %}
+        <div class="bd"><b>Model {{ u.model }} · {{ u.code }}</b><small>Muddat: {{ u.date.strftime('%d.%m.%Y') }} · hozir: {{ u.stage }}</small></div>
+        {% else %}
         <div class="bd"><b>Model {{ u.model }} — {{ u.stage }} bosqichi</b><small>{{ u.date|dt }}</small></div>
+        {% endif %}
         <span class="rel rel-{{ u.tone }}">{{ u.rel }}</span>
       </div>
-      {% else %}<div class="empty">Muddat yo'q</div>{% endfor %}
+      {% else %}<div class="empty">{{ 'Muddati belgilangan truck yo‘q' if bot_db else 'Muddat yo‘q' }}</div>{% endfor %}
       </div>
     </div>
   </div>

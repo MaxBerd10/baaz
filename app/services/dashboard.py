@@ -770,7 +770,7 @@ _ST_UI = {
 def _rel_day(target: dt.date) -> tuple[str, str]:
     d = (target - dt.datetime.now(dt.timezone.utc).date()).days
     if d < 0:
-        return f"{-d} kun oldin", "red"
+        return f"{-d} kun kechikdi", "red"
     if d == 0:
         return "Bugun", "amber"
     if d == 1:
@@ -950,12 +950,30 @@ async def home(session: AsyncSession, sel_code: str | None = None, period: str =
     }
 
     # ---- Yaqinlashayotgan muddatlar ----
+    # Bot rejimida — zakazda belgilangan HAQIQIY muddat (trucks.deadline); muddati yo'q trucklar
+    # ko'rsatilmaydi. Demo rejimida muddat maydoni yo'q — taxminiy hisob (yaratilgan sana + bosqich × 1.8 kun).
+    real_deadlines: dict[int, dt.datetime] = {}
+    if settings.bot_db:
+        from sqlalchemy import text
+
+        real_deadlines = {
+            int(r[0]): r[1]
+            for r in await session.execute(
+                text("SELECT id, deadline FROM web.products WHERE deadline IS NOT NULL")
+            )
+        }
     upcoming = []
     for p in prods:
         if p.status == ProductStatus.done:
             continue
-        base = p.created_at or _day0()
-        target = (base + dt.timedelta(days=int(p.current_stage_order * 1.8))).date()
+        if settings.bot_db:
+            dl = real_deadlines.get(p.id)
+            if dl is None:
+                continue
+            target = dl.date()
+        else:
+            base = p.created_at or _day0()
+            target = (base + dt.timedelta(days=int(p.current_stage_order * 1.8))).date()
         rel, tone = _rel_day(target)
         upcoming.append({
             "code": p.code,

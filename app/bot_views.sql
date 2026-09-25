@@ -55,7 +55,8 @@ SELECT t.id,
        (SELECT cu.id FROM public.users cu
          WHERE cu.telegram_id = t.created_by LIMIT 1)              AS created_by_id,
        (t.created_at AT TIME ZONE 'UTC')                           AS created_at,
-       (t.completed_at AT TIME ZONE 'UTC')                         AS finished_at
+       (t.completed_at AT TIME ZONE 'UTC')                         AS finished_at,
+       (t.deadline AT TIME ZONE 'UTC')                             AS deadline
 FROM public.trucks t
 LEFT JOIN public.truck_steps cs
        ON cs.truck_id = t.id AND cs.step_number = t.current_step;
