@@ -10,6 +10,13 @@
   <div class="card kpi"><div class="lbl">Video</div><div class="val num">{{ counts.video }}</div></div>
 </div>
 
+<form method="get" action="/files" style="display:flex;gap:8px;margin:0 0 12px;max-width:520px">
+  {% if cur_stage %}<input type="hidden" name="stage" value="{{ cur_stage }}">{% endif %}{% if cur_type %}<input type="hidden" name="type" value="{{ cur_type }}">{% endif %}
+  <input name="q" value="{{ query }}" placeholder="Truck seriyasi, modeli yoki buyurtmachi bo‘yicha qidirish…" style="flex:1;height:38px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;font-size:13px">
+  <button type="submit" style="height:38px;padding:0 16px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;cursor:pointer">Qidirish</button>
+  {% if query %}<a href="/files" style="align-self:center;font-size:13px;color:var(--brand);font-weight:600">✕ tozalash</a>{% endif %}
+</form>
+
 <div class="filters">
   <a href="/files" class="{{ 'on' if not cur_stage and not cur_type }}">Hammasi</a>
   <a href="/files?type=photo" class="{{ 'on' if cur_type=='photo' }}">Rasm</a>
@@ -37,5 +44,5 @@
   <div class="empty" style="grid-column:1/-1">Fayl yo'q</div>
   {% endfor %}
 </div>
-{% if items|length >= 300 %}<p class="muted" style="text-align:center;margin:14px 0 0;font-size:12.5px">Eng oxirgi 300 ta fayl ko‘rsatilgan. Eskilarini kerakli truck sahifasidan toping.</p>{% endif %}
+{% if pager.pages > 1 %}<div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:18px 0;font-size:13px;color:var(--muted)"><span>{{ pager.from }}–{{ pager.to }} / {{ pager.total }} ta fayl</span>{% if pager.prev %}<a href="{{ pager.prev }}" style="padding:7px 14px;border:1px solid var(--line);border-radius:9px;background:#fff;font-weight:700;color:var(--brand)">‹ Oldingi</a>{% endif %}<span>{{ pager.page }} / {{ pager.pages }}</span>{% if pager.next %}<a href="{{ pager.next }}" style="padding:7px 14px;border:1px solid var(--line);border-radius:9px;background:#fff;font-weight:700;color:var(--brand)">Keyingi ›</a>{% endif %}</div>{% endif %}
 {% endblock %}

@@ -33,7 +33,12 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS photo_path varchar(512);
 CREATE OR REPLACE VIEW web.users AS
 SELECT u.id,
        u.telegram_id,
-       u.full_name,
+       -- Bir xil ismli ishchilar web'da adashtirilmasin (rasm, "mas'ul ishchi"): ismga telefonning oxirgi 4 raqami
+       -- (telefon yo'q bo'lsa — #id) qo'shiladi. Ism yagona bo'lsa — o'zgarishsiz.
+       (CASE WHEN count(*) OVER (PARTITION BY lower(btrim(u.full_name))) > 1
+             THEN btrim(u.full_name) || ' (…' ||
+                  COALESCE(NULLIF(right(regexp_replace(COALESCE(u.phone, ''), '\D', '', 'g'), 4), ''), '#' || u.id::text) || ')'
+             ELSE u.full_name END)::varchar(255)  AS full_name,
        u.username,
        u.role::text                              AS role,
        u.step_number                             AS stage_id,

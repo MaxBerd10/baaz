@@ -1129,15 +1129,33 @@ async def calendar_page(
 # --------------------------------------------------------------------------- #
 @app.get("/files", response_class=HTMLResponse)
 async def files_page(
-    request: Request, stage: int | None = None, type: str | None = None,
+    request: Request, stage: int | None = None, type: str | None = None, q: str | None = None,
+    pg: int = Query(1, alias="p"),
     session: AsyncSession = Depends(get_session), _=Depends(require_login),
 ):
-    items = await stats_svc.media_library(session, stage_order=stage, mtype=type)
+    per = 60
+    q = (q or "").strip()[:60]
+    total = await stats_svc.media_total(session, stage_order=stage, mtype=type, q=q)
+    pages = max(1, -(-total // per))
+    pg = min(max(pg, 1), pages)
+    items = await stats_svc.media_library(session, stage_order=stage, mtype=type, q=q, limit=per, offset=(pg - 1) * per)
     counts = await stats_svc.media_counts(session)
     stages = await stages_svc.list_stages(session)
+
+    def _url(n: int) -> str:
+        qs = {}
+        if stage: qs["stage"] = str(stage)
+        if type: qs["type"] = type
+        if q: qs["q"] = q
+        if n > 1: qs["p"] = str(n)
+        return "/files" + ("?" + _urlp.urlencode(qs) if qs else "")
+
+    pager = {"page": pg, "pages": pages, "total": total,
+             "prev": _url(pg - 1) if pg > 1 else None, "next": _url(pg + 1) if pg < pages else None,
+             "from": (pg - 1) * per + 1 if total else 0, "to": min(pg * per, total)}
     return await page(
         "files.html", request, session, active="files",
-        items=items, counts=counts, stages=stages,
+        items=items, counts=counts, stages=stages, pager=pager, query=q,
         cur_stage=stage or "", cur_type=type or "",
     )
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import calendar as _cal
 import datetime as dt
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from app.db import day
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -408,26 +408,49 @@ async def month_calendar(session: AsyncSession, year: int, month: int) -> dict:
 # --------------------------------------------------------------------------- #
 # Fayllar (media kutubxonasi)
 # --------------------------------------------------------------------------- #
+def _media_filters(stage_order, mtype, q):
+    conds = []
+    if stage_order:
+        conds.append(StageRun.stage_order == stage_order)
+    if mtype in ("photo", "video"):
+        conds.append(Media.type == MediaType(mtype))
+    if q:
+        like = f"%{q.strip()}%"
+        conds.append(or_(Product.code.ilike(like), Product.model.ilike(like), Product.note.ilike(like)))
+    return conds
+
+
+async def media_total(session: AsyncSession, stage_order=None, mtype=None, q: str | None = None) -> int:
+    stmt = (
+        select(func.count())
+        .select_from(Media)
+        .join(Product, Product.id == Media.product_id)
+        .join(StageRun, StageRun.id == Media.stage_run_id)
+        .where(*_media_filters(stage_order, mtype, q))
+    )
+    return int(await session.scalar(stmt) or 0)
+
+
 async def media_library(
     session: AsyncSession,
     stage_order: int | None = None,
     mtype: str | None = None,
-    limit: int = 300,
+    limit: int = 60,
+    offset: int = 0,
+    q: str | None = None,
 ) -> list[dict]:
-    q = (
+    stmt = (
         select(Media, Product.code, Product.name, Product.model, Stage.name, User.full_name)
         .join(Product, Product.id == Media.product_id)
         .join(StageRun, StageRun.id == Media.stage_run_id)
         .join(Stage, Stage.id == StageRun.stage_id)
         .outerjoin(User, User.id == Media.uploaded_by_id)
+        .where(*_media_filters(stage_order, mtype, q))
         .order_by(Media.id.desc())
         .limit(limit)
+        .offset(offset)
     )
-    if stage_order:
-        q = q.where(StageRun.stage_order == stage_order)
-    if mtype in ("photo", "video"):
-        q = q.where(Media.type == MediaType(mtype))
-    rows = (await session.execute(q)).all()
+    rows = (await session.execute(stmt)).all()
     return [
         {
             "id": m.id,

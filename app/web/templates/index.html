@@ -194,6 +194,7 @@
       </a>
       {% else %}<div class="empty">Truck yo'q</div>{% endfor %}
       <div class="empty" id="tl-none" hidden>Hech narsa topilmadi</div>
+      {% if d.trucks_hidden %}<a id="tl-deep" class="empty" hidden style="display:block;color:var(--brand);font-weight:700" href="/products?view=list">Butun bazadan qidirish →</a>{% endif %}
     </div>
     <div class="ft">
       <span id="tl-total" data-all="{{ d.total_count }}">Jami {{ d.total_count }} ta truck</span>
@@ -339,7 +340,7 @@
   }
   /* Trucklar ro'yxati: jonli qidiruv + holat filtri */
   var q=document.getElementById('tl-q'), st=document.getElementById('tl-st');
-  var rows=[].slice.call(document.querySelectorAll('.tlist .trow')), none=document.getElementById('tl-none'), tot=document.getElementById('tl-total');
+  var rows=[].slice.call(document.querySelectorAll('.tlist .trow')), none=document.getElementById('tl-none'), tot=document.getElementById('tl-total'), deep=document.getElementById('tl-deep');
   function apply(){
     var s=(q.value||'').trim().toLowerCase(), f=st.value, n=0;
     rows.forEach(function(r){
@@ -347,6 +348,7 @@
       r.style.display=ok?'':'none'; if(ok)n++;
     });
     if(none) none.hidden=n>0||!rows.length;
+    if(deep){ deep.hidden=!s; if(s){ deep.href='/products?view=list&q='+encodeURIComponent(s); deep.textContent='«'+s+'» ni butun bazadan qidirish →'; } }
     if(tot) tot.textContent=(s||f)?('Topildi: '+n+' / '+tot.getAttribute('data-all')+' ta truck'):('Jami '+tot.getAttribute('data-all')+' ta truck');
   }
   if(q&&st){ q.addEventListener('input',apply); st.addEventListener('change',apply); }
