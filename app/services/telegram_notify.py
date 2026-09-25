@@ -157,3 +157,21 @@ async def notify_new_order(
     out["sent"] = sum(results)
     out["failed"] = len(results) - out["sent"]
     return out
+
+
+_BOT_NAME: dict = {"v": None, "t": 0.0}
+
+
+async def bot_username() -> str | None:
+    """Botning @username'i (Telegram getMe, 1 soat keshlanadi). Token yo'q yoki xato bo'lsa None."""
+    import time
+
+    if not settings.bot_token:
+        return None
+    if _BOT_NAME["v"] and time.monotonic() - _BOT_NAME["t"] < 3600:
+        return _BOT_NAME["v"]
+    r = await asyncio.to_thread(_api, "getMe", {}, None, 6)
+    name = (r.get("result") or {}).get("username") if r.get("ok") else None
+    if name:
+        _BOT_NAME.update(v=name, t=time.monotonic())
+    return name

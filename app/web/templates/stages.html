@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Bosqichlar — Baaz{% endblock %}
 {% block heading %}Ishlab chiqarish bosqichlari{% endblock %}
-{% block sub %}Har bosqich uchun sifat nazorati tekshiruv ro'yxati (Telegram bot orqali tahrirlanadi){% endblock %}
+{% block sub %}{{ 'Har bosqichdagi ishchilar va hozirgi ish yuklamasi' if bot_db else 'Har bosqich uchun sifat nazorati tekshiruv ro\'yxati (Telegram bot orqali tahrirlanadi)' }}{% endblock %}
 {% block body %}
 
 <div class="row" style="grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr))">
@@ -9,6 +9,22 @@
   <div class="card pad">
     <div class="hd"><h3>{{ s.order_no }}. {{ s.name }}</h3></div>
     {% if s.description %}<p class="muted" style="margin:-6px 0 10px">{{ s.description }}</p>{% endif %}
+    {% if bot_db %}
+    {% set i = info[s.id] %}
+    <div style="font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Hozirgi yuklama</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <span class="badge b-in_production">Ishlanmoqda · {{ i.work }}</span>
+      <span class="badge b-qc_pending">QC kutmoqda · {{ i.qc }}</span>
+      <span class="badge b-returned">Qaytarilgan · {{ i.ret }}</span>
+    </div>
+    <div class="muted" style="font-size:12px;margin-bottom:14px">Shu bosqichdan o‘tgan trucklar: <b style="color:var(--ink)">{{ i.done }}</b></div>
+    <div style="font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Ishchilar ({{ i.workers|length }})</div>
+    {% for w in i.workers %}
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line-2);font-size:13px;font-weight:600">
+      <img src="{{ avatar_url(w) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(w) }}'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex:none;background:var(--panel-2)">{{ w }}
+    </div>
+    {% else %}<div class="faint" style="font-size:12.5px">Bu bosqichga hali ishchi biriktirilmagan</div>{% endfor %}
+    {% else %}
     <div style="font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">
       Tekshiruv ro'yxati ({{ checks[s.id]|length }})
     </div>
@@ -17,6 +33,7 @@
       <span class="faint num">{{ it.order_no }}</span><span>{{ it.text }}</span>
     </div>
     {% else %}<div class="faint" style="font-size:12.5px">— punkt yo'q —</div>{% endfor %}
+    {% endif %}
   </div>
   {% endfor %}
 </div>

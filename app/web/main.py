@@ -33,7 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db import SessionLocal, init_db
-from app.enums import PRODUCT_STATUS_LABEL, ROLE_LABEL, ProductStatus, StageRunStatus
+from app.enums import PRODUCT_STATUS_LABEL, ROLE_LABEL, ProductStatus, Role, StageRunStatus
 from app.models import AuditLog, Media, ModelCard, Product, StageRun, User
 from app.services import dashboard as dash_svc
 from app.services import factory as factory_svc
@@ -209,7 +209,8 @@ templates.env.globals["ROLE_LABEL"] = ROLE_LABEL
 templates.env.globals["ProductStatus"] = ProductStatus
 templates.env.globals["ACTION_LABEL"] = _ACTION_LABEL
 
-app = FastAPI(title="Baaz — Ishlab chiqarish nazorati")
+# Production: API hujjatlari (/docs, /redoc, /openapi.json) tashqariga ochiq bo'lmasin.
+app = FastAPI(title="Baaz — Ishlab chiqarish nazorati", docs_url=None, redoc_url=None, openapi_url=None)
 install_redirect_handler(app)
 
 _static = BASE_DIR / "static"
@@ -219,6 +220,16 @@ except OSError:  # read-only FS (Vercel)
     pass
 if _static.is_dir():
     app.mount("/static", StaticFiles(directory=str(_static)), name="static")
+
+
+@app.middleware("http")
+async def _security_headers(request: Request, call_next):
+    resp = await call_next(request)
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("Referrer-Policy", "same-origin")
+    resp.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    return resp
 
 
 @app.middleware("http")
@@ -237,6 +248,13 @@ async def _static_cache(request: Request, call_next):
 _SKIP_INIT = os.getenv("SKIP_INIT_DB", "").lower() in ("1", "true", "yes")
 _AUTO_SEED = os.getenv("AUTO_SEED", "").lower() in ("1", "true", "yes")
 _log = __import__("logging").getLogger("web")
+
+# Production (bot rejimi) xavfsizlik tekshiruvi: standart maxfiy kalit bilan sessiyalarni soxtalash mumkin bo'ladi.
+if settings.bot_db:
+    if settings.secret_key in ("", "change-me"):
+        raise RuntimeError("SECRET_KEY o'rnatilmagan (standart qiymat). `openssl rand -hex 32` bilan yangi kalit yarating.")
+    if settings.web_password.strip().lower() in ("", "admin", "password", "123456", "12345678"):
+        _log.warning("⚠️  WEB_PASSWORD juda oddiy! Production uchun uzun va noyob parol qo'ying.")
 
 _BOOTSTRAPPED = False
 
@@ -278,7 +296,8 @@ async def _startup() -> None:
         _log.warning("startup: %s", exc)
 
 
-_SHOW_ERRORS = os.getenv("SHOW_ERRORS", "1").lower() in ("1", "true", "yes")
+# Xato tafsilotlarini (traceback) brauzerga faqat SHOW_ERRORS=1 bo'lsa ko'rsatamiz (demo). Standart — o'chiq.
+_SHOW_ERRORS = os.getenv("SHOW_ERRORS", "0").lower() in ("1", "true", "yes")
 
 
 @app.middleware("http")
@@ -381,12 +400,35 @@ async def login_form(request: Request):
     return render("login.html", request, error=None)
 
 
+_LOGIN_FAILS: dict[str, list[float]] = {}
+_LOGIN_MAX, _LOGIN_WINDOW = 5, 300.0   # 5 daqiqada 5 ta noto'g'ri urinishdan keyin bloklanadi
+
+
+def _client_ip(request: Request) -> str:
+    fwd = request.headers.get("cf-connecting-ip") or request.headers.get("x-forwarded-for", "")
+    return (fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "?")) or "?"
+
+
 @app.post("/login")
 async def login_submit(request: Request, password: str = Form(...)):
-    if password != settings.web_password:
+    import hmac
+    import time
+
+    ip, now = _client_ip(request), time.monotonic()
+    fails = [t for t in _LOGIN_FAILS.get(ip, []) if now - t < _LOGIN_WINDOW]
+    if len(fails) >= _LOGIN_MAX:
+        _LOGIN_FAILS[ip] = fails
+        resp = render("login.html", request, error="Juda ko'p noto'g'ri urinish. 5 daqiqadan keyin qayta urinib ko'ring.")
+        resp.status_code = 429
+        return resp
+    if not hmac.compare_digest(password.encode(), settings.web_password.encode()):
+        fails.append(now)
+        _LOGIN_FAILS[ip] = fails
         return render("login.html", request, error="Parol noto'g'ri")
+    _LOGIN_FAILS.pop(ip, None)
     resp = RedirectResponse("/", status_code=302)
-    resp.set_cookie(COOKIE_NAME, make_token(), httponly=True, samesite="lax", max_age=60 * 60 * 12)
+    resp.set_cookie(COOKIE_NAME, make_token(), httponly=True, samesite="lax",
+                    secure=request.url.scheme == "https", max_age=60 * 60 * 12)
     return resp
 
 
@@ -797,7 +839,28 @@ async def product_detail(
 async def stages_page(request: Request, session: AsyncSession = Depends(get_session), _=Depends(require_login)):
     stages = await stages_svc.list_stages(session)
     checks = {s.id: await stages_svc.list_check_items(session, s.id) for s in stages}
-    return await page("stages.html", request, session, active="stages", stages=stages, checks=checks)
+    info: dict[int, dict] = {}
+    if settings.bot_db:  # botda tekshiruv ro'yxati yo'q — o'rniga ishchilar va hozirgi yuklama
+        workers = (await session.scalars(
+            select(User).where(User.role == Role.worker, User.is_active.is_(True)).order_by(User.full_name)
+        )).all()
+        live = (await session.execute(
+            select(Product.current_stage_order, Product.status, func.count())
+            .where(Product.status != ProductStatus.done)
+            .group_by(Product.current_stage_order, Product.status)
+        )).all()
+        done = dict((await session.execute(
+            select(StageRun.stage_order, func.count(func.distinct(StageRun.product_id)))
+            .where(StageRun.status == StageRunStatus.approved).group_by(StageRun.stage_order)
+        )).all())
+        for s in stages:
+            counts = {st.value: c for o, st, c in live if o == s.order_no}
+            info[s.id] = {
+                "workers": [w.full_name for w in workers if w.stage_id == s.id],
+                "work": counts.get("in_production", 0), "qc": counts.get("qc_pending", 0),
+                "ret": counts.get("returned", 0), "done": int(done.get(s.order_no, 0)),
+            }
+    return await page("stages.html", request, session, active="stages", stages=stages, checks=checks, info=info)
 
 
 # --------------------------------------------------------------------------- #
@@ -957,7 +1020,8 @@ async def files_page(
 @app.get("/settings", response_class=HTMLResponse)
 async def settings_page(request: Request, session: AsyncSession = Depends(get_session), _=Depends(require_login)):
     cfg = await stats_svc.config_overview(session)
-    return await page("settings.html", request, session, active="settings", cfg=cfg)
+    bot_name = await telegram_notify.bot_username() if settings.bot_db else None
+    return await page("settings.html", request, session, active="settings", cfg=cfg, bot_name=bot_name)
 
 
 _MEDIA_PLACEHOLDER = (

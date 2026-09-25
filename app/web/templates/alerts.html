@@ -7,17 +7,17 @@
 <div class="card table-card">
   <div class="table-wrap">
   <table>
-    <thead><tr><th>Mahsulot</th><th>Liniya</th><th>Bosqich</th><th>Sabab</th></tr></thead>
+    <thead><tr><th>Mahsulot</th>{% if not bot_db %}<th>Liniya</th>{% endif %}<th>Bosqich</th><th>Sabab</th></tr></thead>
     <tbody>
     {% for r in rows %}
     <tr>
-      <td><a href="/products/{{ r.code }}" style="color:var(--brand);font-weight:700">Model {{ r.model }}</a> <span class="muted">{{ r.size or "—" }} m</span></td>
-      <td class="muted">{{ r.line or '—' }}</td>
+      <td><a href="/products/{{ r.code }}" style="color:var(--brand);font-weight:700">Model {{ r.model }}</a> <span class="muted">{{ spec(r.size, None, r.code) }}</span></td>
+      {% if not bot_db %}<td class="muted">{{ r.line or '—' }}</td>{% endif %}
       <td class="num">{{ r.stage }}</td>
       <td><span class="chip {{ 'warn' if r.tone=='amber' else 'warn' }}" style="{{ 'color:var(--c-red);background:#fdecec' if r.tone=='red' }}">{{ r.kind }}</span></td>
     </tr>
     {% else %}
-    <tr><td colspan="4"><div class="empty">Ogohlantirish yo'q 🎉</div></td></tr>
+    <tr><td colspan="{{ 3 if bot_db else 4 }}"><div class="empty">Ogohlantirish yo'q 🎉</div></td></tr>
     {% endfor %}
     </tbody>
   </table>

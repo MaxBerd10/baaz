@@ -1,11 +1,12 @@
 from fastapi import Request
 from fastapi.responses import RedirectResponse
-from itsdangerous import BadSignature, URLSafeSerializer
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from app.config import settings
 
 COOKIE_NAME = "baaz_session"
-_serializer = URLSafeSerializer(settings.secret_key, salt="baaz-web")
+_serializer = URLSafeTimedSerializer(settings.secret_key, salt="baaz-web")
+SESSION_MAX_AGE = 60 * 60 * 12   # token 12 soatdan keyin o'zi yaroqsiz bo'ladi (cookie muddati bilan bir xil)
 
 
 def make_token() -> str:
@@ -16,9 +17,9 @@ def valid(token) -> bool:
     if not token:
         return False
     try:
-        data = _serializer.loads(token)
+        data = _serializer.loads(token, max_age=SESSION_MAX_AGE)
         return bool(data.get("ok"))
-    except BadSignature:
+    except (BadSignature, SignatureExpired):
         return False
 
 

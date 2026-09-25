@@ -97,3 +97,18 @@ Bot repo'sida tuzatilgach, skript o'zini o'tkazib yuboradi; keyin papkani va com
 Ishchi botga yuborgan rasm/videolar web'da (Fayllar bo'limi va truck sahifasi) yuklab olinmaydi — bosilganda sahifaning
 o'zida oynada ochiladi (video pleyer bilan). Fayllar botning `bot_media` papkasidan o'qiladi (web'ga faqat-o'qish rejimida
 ulangan); u yerda bo'lmasa, Telegram'dan olinib `web_media/tgcache` ga keshlanadi.
+
+## Zaxira nusxa (production uchun majburiy)
+`./backup.sh` bazani (`pg_dump`) va rasm/video papkalarini `deploy/backups/` ga yozadi, 14 kundan eskisini o'chiradi.
+Har kecha avtomatik: `crontab -e` va bir qator qo'shing:
+```
+30 3 * * * /home/jarvis/baaz/deploy/backup.sh >> /home/jarvis/baaz/deploy/backups/backup.log 2>&1
+```
+**Tiklash** (bazani): `gunzip -c backups/db_SANA.sql.gz | docker compose exec -T db psql -U truckbot truck_factory`.
+Nusxalarni vaqti-vaqti bilan serverdan tashqariga (masalan boshqa kompyuterga) ko'chirib qo'ying.
+
+## Xavfsizlik (production)
+- `WEB_PASSWORD` uzun va noyob bo'lsin; `SECRET_KEY` — `openssl rand -hex 32`. `SECRET_KEY` standart (`change-me`) bo'lsa web ishga tushmaydi; parol oddiy bo'lsa (`admin`, `123456`…) logda ogohlantirish chiqadi.
+- Parolni 5 daqiqada 5 marta noto'g'ri kiritgan IP vaqtincha bloklanadi; sessiya 12 soatdan keyin tugaydi.
+- `/docs`, `/openapi.json` o'chirilgan; xato tafsilotlari brauzerga chiqmaydi (`SHOW_ERRORS=0`).
+- `.env` fayl huquqi: `chmod 600 deploy/.env`. Postgres va web tashqariga ochilmagan (faqat Cloudflare Tunnel orqali).

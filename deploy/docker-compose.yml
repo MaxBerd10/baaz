@@ -92,6 +92,7 @@ services:
       WEB_PASSWORD: ${WEB_PASSWORD:?WEB_PASSWORD ni .env ga yozing}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY ni .env ga yozing}
       TZ: ${TZ:-Asia/Tashkent}
+      SHOW_ERRORS: "0"         # xato tafsilotlari (traceback) brauzerga chiqmasin
       MEDIA_ROOT: /app/media   # model rasmlari va Telegram keshi shu yerga yoziladi
       BOT_MEDIA_ROOT: /botmedia   # botning ishchilar yuborgan rasm/videolari (faqat o'qish)
       BOT_MEDIA_PREFIX: /app/media
@@ -103,6 +104,12 @@ services:
       sh -c "python -m app.botdb install &&
              exec uvicorn app.web.main:app --host 0.0.0.0 --port 8080
              --proxy-headers --forwarded-allow-ips='*'"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8080/login', timeout=4)"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 40s
     # Faqat shu serverning o'zida (127.0.0.1) ochiladi; tashqariga Cloudflare Tunnel yoki Caddy chiqaradi.
     ports:
       - "127.0.0.1:${WEB_PORT:-8090}:8080"
