@@ -50,7 +50,7 @@
         {% for r in runs %}
           <div class="st-meta" style="margin-top:8px">
             Urinish #{{ r.attempt_no }} ·
-            <span class="badge b-{{ 'done' if r.status.value=='approved' else ('returned' if r.status.value=='returned' else ('qc_pending' if r.status.value=='qc_pending' else 'in_production')) }}">{{ r.status.value }}</span>
+            <span class="badge b-{{ 'done' if r.status.value=='approved' else ('returned' if r.status.value=='returned' else ('qc_pending' if r.status.value=='qc_pending' else 'in_production')) }}">{{ RUN_STATUS_LABEL.get(r.status.value, r.status.value) }}</span>
             {% if r.worker %} · 👷 {{ r.worker.full_name }}{% endif %}
             {% if r.submitted_at %} · yuborildi {{ r.submitted_at|tm }}{% endif %}
             {% if r.decided_at %} · qaror {{ r.decided_at|tm }}{% if r.qc %} ({{ r.qc.full_name }}){% endif %}{% endif %}

@@ -202,6 +202,10 @@ def _spec(size=None, color=None, code=None):
 
 templates.env.globals["spec"] = _spec
 templates.env.globals["bot_db"] = settings.bot_db
+templates.env.globals["RUN_STATUS_LABEL"] = {
+    "in_progress": "Ishlanmoqda", "qc_pending": "Sifat nazoratida",
+    "approved": "Tasdiqlangan", "returned": "Qaytarilgan",
+}
 templates.env.globals["avatar_url"] = _avatar_url
 templates.env.globals["avatar_svg"] = _avatar_svg
 templates.env.globals["PRODUCT_STATUS_LABEL"] = PRODUCT_STATUS_LABEL

@@ -116,7 +116,7 @@ async def build(session: AsyncSession, *, line: str | None = None) -> dict:
          "sub": share(by_status[ProductStatus.returned]), "tone": "amber", "spark": sp_ret, "icon": "hourglass"},
         {"key": "problem", "label": "Muammoli", "value": problem,
          "sub": share(problem), "tone": "red", "spark": sp_ret, "icon": "alert"},
-        {"key": "cycle", "label": "O'rtacha cycle time", "value": f"{kpi['avg_cycle_h']} soat",
+        {"key": "cycle", "label": "O'rtacha ishlab chiqarish vaqti", "value": f"{kpi['avg_cycle_h']} soat",
          "sub": _delta_str(-6), "sub_tone": "good", "tone": "teal", "spark": sp_appr, "icon": "clock"},
     ]
 
@@ -627,7 +627,7 @@ async def _period_kpis(session: AsyncSession, period: str) -> list[dict]:
 
     out = []
     for label, key, up, unit, spark, color, val in [
-        ("QC Pass Rate", "qc", True, "%", sp_a, "var(--c-green)", f"{c['qc']}%"),
+        ("Sifat darajasi", "qc", True, "%", sp_a, "var(--c-green)", f"{c['qc']}%"),
         ("Bajarilish", "done", True, "%", sp_a, "var(--c-blue)", f"{c['done']}%"),
         ("Qaytarilish", "ret", False, "%", sp_r, "var(--c-amber)", f"{c['ret']}%"),
         ("O'rtacha bosqich vaqti", "avg_h", False, " soat", sp_r, "var(--c-red)", f"{c['avg_h']} soat"),
@@ -727,7 +727,7 @@ async def kpi_summary(session: AsyncSession, period: str | None = None) -> list[
     _, sp_cyc = await _daily(session, Product.finished_at, 14)
 
     return [
-        {"label": "QC Pass Rate (o'rtacha)", "value": f"{qc_cur}%",
+        {"label": "Sifat darajasi (o'rtacha)", "value": f"{qc_cur}%",
          "delta": _delta_str(round(qc_cur - qc_prev, 1)), "delta_tone": "good" if qc_cur >= qc_prev else "bad",
          "spark": sp_a, "color": "var(--c-green)"},
         {"label": "Bajarilish (o'rtacha)", "value": f"{bajarilish}%",
@@ -737,7 +737,7 @@ async def kpi_summary(session: AsyncSession, period: str | None = None) -> list[
          "spark": sp_r, "color": "var(--c-amber)"},
         {"label": "O'rtacha kechikish", "value": f"{avg_delay} soat",
          "delta": _delta_str(-0.7, " soat"), "delta_tone": "good", "spark": sp_r, "color": "var(--c-red)"},
-        {"label": "O'rtacha cycle time", "value": f"{cycle_h} soat",
+        {"label": "O'rtacha ishlab chiqarish vaqti", "value": f"{cycle_h} soat",
          "delta": _delta_str(-6), "delta_tone": "good", "spark": sp_cyc, "color": "var(--c-teal)"},
         {"label": "Sifat koeffitsienti", "value": f"{sifat_k}%",
          "delta": _delta_str(3.6), "delta_tone": "good", "spark": sp_a, "color": "var(--c-green)"},
