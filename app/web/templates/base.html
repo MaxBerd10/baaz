@@ -153,6 +153,25 @@
     aside .art{display:none}.c2,.c3{grid-template-columns:1fr}}
   @media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.content{padding:6px 14px 30px}}
 
+  /* Bir ekranga sig'adigan sahifalar (Boshqaruv paneli, Trucklar): kontent ekranning pastigacha
+     to'liq cho'ziladi — balandlik taxmin qilinmaydi, sarlavhadan qolgan joyning hammasini egallaydi. */
+  @media (min-width:1201px) and (min-height:851px){
+    .shell:has(.dash1){height:100vh;min-height:0;overflow:hidden}
+    .shell:has(.dash1) .main{height:100vh;min-height:0}
+    .shell:has(.dash1) .content{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:18px}
+    .content .dash1{flex:1 1 auto;min-height:0;max-height:none;height:auto}
+  }
+  @media (min-width:1201px) and (min-height:851px) and (max-height:980px){
+    .shell:has(.dash1) .topbar{padding:14px 30px 8px}
+    .shell:has(.dash1) .content{padding-bottom:12px}
+  }
+  @media (min-width:1201px) and (min-height:601px){
+    .shell:has(.fleet-line){height:100vh;min-height:0;overflow:hidden}
+    .shell:has(.fleet-line) .main{height:100vh;min-height:0}
+    .shell:has(.fleet-line) .content{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:18px}
+    .content .fleet-line{flex:1 1 auto;min-height:0;height:auto}
+  }
+
   /* ---------- mobile: pastki navigatsiya ---------- */
   .mobnav,.msheet{display:none}
   @media(max-width:820px){
