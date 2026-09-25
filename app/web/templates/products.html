@@ -124,7 +124,7 @@
     .fleet-line .list-wrap{overflow-x:auto}
   }
 </style>
-{% macro truck(c) %}<a class="truck st-{{ c.status }}" href="/products/{{ c.code }}"><img class="tphoto" src="{{ c.image }}" alt="Model {{ c.model }} food truck"><b>Model {{ c.model }}</b><span class="spec">{{ spec(c.size, None, c.code) }}</span>{% if c.color and c.color != '—' %}<span class="color"><i style="--color:{{ c.hex }}"></i>{{ c.color }}</span>{% endif %}<span class="status">{{ c.status_label }}</span><span class="worker">{% if c.worker and c.worker != '—' %}<img class="wav" src="{{ avatar_url(c.worker) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(c.worker) }}'"><strong>{{ c.worker }}</strong>{% if c.worker_more %}<em class="wmore">+{{ c.worker_more }}</em>{% endif %}{% if c.worker_note %}<em class="wmore">{{ c.worker_note }}</em>{% endif %}{% elif bot_db %}<strong class="wnone">Ishchi yo‘q</strong>{% else %}Mas’ul: <strong>biriktirilmagan</strong>{% endif %}</span></a>{% endmacro %}
+{% macro truck(c) %}<a class="truck st-{{ c.status }}" href="/products/{{ c.code }}"><img class="tphoto" src="{{ c.image }}" alt="Model {{ c.model }} food truck"><b>Model {{ c.model }}</b><span class="spec">{{ spec(c.size, None, c.code) }}</span>{% if c.color and c.color != '—' %}<span class="color"><i style="--color:{{ c.hex }}"></i>{{ c.color }}</span>{% endif %}<span class="status">{{ c.status_label }}</span><span class="worker">{% if c.worker and c.worker != '—' %}<img class="wav" src="{{ avatar_url(c.worker) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(c.worker) }}'"><strong>{{ c.worker|wn }}</strong>{% if c.worker_more %}<em class="wmore">+{{ c.worker_more }}</em>{% endif %}{% if c.worker_note %}<em class="wmore">{{ c.worker_note }}</em>{% endif %}{% elif bot_db %}<strong class="wnone">Ishchi yo‘q</strong>{% else %}Mas’ul: <strong>biriktirilmagan</strong>{% endif %}</span></a>{% endmacro %}
 {%- set parts = [] -%}
 {%- if cur_status %}{% set _ = parts.append('status=' ~ cur_status) %}{% endif -%}
 {%- if query %}{% set _ = parts.append('q=' ~ query|urlencode) %}{% endif -%}
@@ -150,7 +150,7 @@
           <td>{{ r.cur }}. {{ r.cur_name }}</td>
           <td><span class="badge b-{{ r.status }}">{{ r.status_label }}</span></td>
           <td><span class="lt-prog {{ 'full' if r.pct >= 100 }}"><i style="width:{{ r.pct }}%"></i></span>{{ r.done }}/{{ stage_total }}</td>
-          <td>{% if r.worker and r.worker != '—' %}<span class="lt-wk"><img src="{{ avatar_url(r.worker) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(r.worker) }}'">{{ r.worker }}</span>{% else %}—{% endif %}</td>
+          <td>{% if r.worker and r.worker != '—' %}<span class="lt-wk"><img src="{{ avatar_url(r.worker) }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(r.worker) }}'">{{ r.worker|wn }}</span>{% else %}—{% endif %}</td>
           <td class="{{ 'lt-over' if r.overdue }}">{{ r.due_str or (r.due|dt if r.due else '—') }}</td>
         </tr>
       {% else %}

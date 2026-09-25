@@ -200,6 +200,22 @@ def _spec(size=None, color=None, code=None):
     return " · ".join(parts) or "—"
 
 
+_WSFX = _re.compile(r"^(.*?) \(…(.+)\)$")
+
+
+def _wname(value):
+    """Ishchi ismi: bir xil ismlarni ajratish uchun qo'shilgan «(…4512)» qismi kichik kulrang yozuvda chiqadi."""
+    from markupsafe import Markup, escape
+
+    if not value:
+        return value
+    m = _WSFX.match(str(value))
+    if not m:
+        return escape(value)
+    return Markup('%s<span class="wsfx">·%s</span>') % (m.group(1), m.group(2))
+
+
+templates.env.filters["wn"] = _wname
 templates.env.filters["dur"] = stats_svc.fmt_hours
 templates.env.globals["spec"] = _spec
 templates.env.globals["bot_db"] = settings.bot_db

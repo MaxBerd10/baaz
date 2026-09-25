@@ -25,8 +25,8 @@
     <tr>
       <td><a href="/products/{{ r.product.code }}" style="color:var(--brand);font-weight:650">Model {{ r.product.model or "—" }}</a></td>
       <td>{{ r.stage_order }} — {{ r.stage.name }}</td>
-      <td class="muted">{{ r.worker.full_name if r.worker else '—' }}</td>
-      <td class="muted">{{ r.qc.full_name if r.qc else '—' }}</td>
+      <td class="muted">{{ (r.worker.full_name|wn) if r.worker else '—' }}</td>
+      <td class="muted">{{ (r.qc.full_name|wn) if r.qc else '—' }}</td>
       <td class="muted num">{{ r.decided_at|dt }}</td>
       <td>{{ r.qc_comment }}</td>
     </tr>
