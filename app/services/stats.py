@@ -125,6 +125,7 @@ async def worker_productivity(session: AsyncSession) -> list[dict]:
             {
                 "name": u.full_name if u else f"#{wid}",
                 "stage": (u.stage.name if u and u.stage else "—"),
+                "stage_order": (u.stage.order_no if u and u.stage else None),
                 "approved": approved.get(wid, 0),
                 "returned": returned.get(wid, 0),
             }

@@ -1,27 +1,50 @@
 {% extends "base.html" %}
 {% block title %}Ishchilar — Baaz{% endblock %}
 {% block heading %}Ishchilar samaradorligi{% endblock %}
-{% block sub %}Har bir ishchi bo'yicha tasdiq / qaytarish va sifat darajasi{% endblock %}
+{% block sub %}{{ 'Bosqich (jamoa) bo\'yicha natija va har bir ishchining yuborgan ishlari' if groups else 'Har bir ishchi bo\'yicha tasdiq / qaytarish va sifat darajasi' }}{% endblock %}
 {% block body %}
+{% macro who(name) %}{% set av = avatar_url(name) %}<span style="display:inline-flex;align-items:center;gap:11px">{% if av.startswith('/media/user/') %}<a href="{{ av }}" data-lb="photo" title="Selfini kattalashtirish" style="display:block;flex:none"><img src="{{ av }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(name) }}'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;display:block;background:var(--panel-2)"></a>{% else %}<img src="{{ av }}" alt="" onerror="this.onerror=null;this.src='{{ avatar_svg(name) }}'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex:none;background:var(--panel-2)">{% endif %}{{ name }}</span>{% endmacro %}
+{% macro bar(pct) %}{% if pct is not none %}<span class="mbar"><span class="tk"><i style="width:{{ pct|round(0) }}%;background:{{ 'var(--c-green)' if pct>=85 else ('var(--c-amber)' if pct>=60 else 'var(--c-red)') }}"></i></span><b>{{ pct|round(0)|int }}%</b></span>{% else %}<span class="faint">—</span>{% endif %}{% endmacro %}
 
-{% if by_stage %}
-<div class="card pad" style="margin-bottom:16px">
-  <div class="hd"><h3>Bosqichlar bo'yicha ishchilar</h3></div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
-    {% for s in by_stage %}
-    <div style="border:1px solid var(--line);border-radius:12px;padding:11px 13px">
-      <div style="font-size:11px;font-weight:750;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">{{ s.order }}. {{ s.name }}</div>
-      {% for n in s.workers %}
-      <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:3px 0"><img src="{{ avatar_url(n) }}" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{{ n }}</div>
-      {% else %}
-      <div style="font-size:12.5px;color:#b42318;font-weight:650">Ishchi biriktirilmagan</div>
-      {% endfor %}
+{% if groups %}
+<p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.5">Har bosqich — bitta jamoa. Jamoa natijasi shu bosqichdagi barcha tasdiq va qaytarishlardan olinadi. Ishchi qatoridagi raqamlar — faqat o‘zi yuborgan ishlar.</p>
+{% for g in groups %}
+<div class="card table-card" style="margin-bottom:16px">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 18px;border-bottom:1px solid var(--line)">
+    <div style="min-width:180px">
+      <div style="font-size:15px;font-weight:800">{% if g.order %}{{ g.order }}. {% endif %}{{ g.name }}</div>
+      <div class="muted" style="font-size:12px;margin-top:2px">{% if g.members %}Jamoada {{ g.members|length }} ta ishchi{% else %}<span style="color:#b42318;font-weight:650">Ishchi biriktirilmagan</span>{% endif %}</div>
     </div>
-    {% endfor %}
+    {% if g.approved is not none %}
+    <div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-left:auto">
+      <div><div class="muted" style="font-size:11px">Tasdiqlangan</div><b style="font-size:18px">{{ g.approved }}</b></div>
+      <div><div class="muted" style="font-size:11px">Qaytarilgan</div><b style="font-size:18px">{{ g.returned }}</b></div>
+      <div style="min-width:170px"><div class="muted" style="font-size:11px;margin-bottom:3px">Jamoa sifat darajasi</div>{{ bar(g.pct) }}</div>
+    </div>
+    {% endif %}
   </div>
+  {% if g.members %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Ishchi</th><th>Yuborgan ishlari</th><th>Tasdiqlangan</th><th>Qaytarilgan</th><th style="width:240px">Sifat darajasi</th></tr></thead>
+    <tbody>
+    {% for r in g.members %}
+    {% set tot = r.approved + r.returned %}
+    <tr>
+      <td style="font-weight:700">{{ who(r.name) }}</td>
+      <td class="num">{{ tot }}</td>
+      <td class="num">{{ r.approved }}</td>
+      <td class="num">{{ r.returned }}</td>
+      <td>{{ bar((r.approved / tot * 100) if tot else none) }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
 </div>
-{% endif %}
-
+{% endfor %}
+{% else %}
 <div class="card table-card">
   <div class="table-wrap">
   <table>
@@ -51,4 +74,5 @@
   </table>
   </div>
 </div>
+{% endif %}
 {% endblock %}

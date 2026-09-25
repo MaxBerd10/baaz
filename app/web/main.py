@@ -919,16 +919,29 @@ async def stages_page(request: Request, session: AsyncSession = Depends(get_sess
 @app.get("/workers", response_class=HTMLResponse)
 async def workers_page(request: Request, session: AsyncSession = Depends(get_session), _=Depends(require_login)):
     rows = await stats_svc.worker_productivity(session)
-    by_stage: list[dict] = []
-    if settings.bot_db:  # bosqichlar bo'yicha kim ishlaydi (Bosqichlar sahifasi o'rniga)
+    groups: list[dict] = []
+    if settings.bot_db:
+        # Jamoa (bosqich) bo'yicha: natija shu bosqichdagi barcha tasdiq/qaytarishlardan olinadi,
+        # ishchi qatorlarida esa faqat ishni yuborgan kishi hisobiga tushgan ishlar.
         stages = await stages_svc.list_stages(session)
-        names: dict[int, list[str]] = {}
-        for w in (await session.scalars(
-            select(User).where(User.role == Role.worker, User.is_active.is_(True)).order_by(User.full_name)
-        )).all():
-            names.setdefault(w.stage_id, []).append(w.full_name)
-        by_stage = [{"order": s.order_no, "name": s.name, "workers": names.get(s.id, [])} for s in stages]
-    return await page("workers.html", request, session, active="workers", rows=rows, by_stage=by_stage)
+        team = {(o, st): c for o, st, c in (await session.execute(
+            select(StageRun.stage_order, StageRun.status, func.count())
+            .where(StageRun.status.in_((StageRunStatus.approved, StageRunStatus.returned)))
+            .group_by(StageRun.stage_order, StageRun.status)
+        )).all()}
+        for s in stages:
+            ap = int(team.get((s.order_no, StageRunStatus.approved), 0))
+            rt = int(team.get((s.order_no, StageRunStatus.returned), 0))
+            groups.append({
+                "order": s.order_no, "name": s.name, "approved": ap, "returned": rt,
+                "pct": round(ap / (ap + rt) * 100) if ap + rt else None,
+                "members": [r for r in rows if r["stage_order"] == s.order_no],
+            })
+        loose = [r for r in rows if r["stage_order"] is None]
+        if loose:
+            groups.append({"order": None, "name": "Bosqichga biriktirilmagan", "approved": None,
+                           "returned": None, "pct": None, "members": loose})
+    return await page("workers.html", request, session, active="workers", rows=rows, groups=groups)
 
 
 # --------------------------------------------------------------------------- #
