@@ -82,6 +82,8 @@
   .dash1 .upc .it .bd small{font-size:10.5px}
 
   @media(max-width:1180px){.dash1 .selfoot{grid-template-columns:auto 1fr 1fr}}
+  /* telefon/planshet: truck ro'yxati butun sahifani cho'zib yubormasin — o'z ichida aylantiriladi */
+  @media(max-width:1100px){.dash1 .tlist .rows{flex:none;max-height:440px;overflow-y:auto}}
   /* past ekranlarda siqmay, oddiy sahifa scroll qilsin */
   @media(min-height:851px) and (max-height:980px){
     .dash1 .homegrid .card.pad{padding:8px 11px}
@@ -195,6 +197,7 @@
     </div>
     <div class="ft">
       <span id="tl-total" data-all="{{ d.total_count }}">Jami {{ d.total_count }} ta truck</span>
+      {% if d.trucks_hidden %}<a href="/products?view=list" style="margin-left:auto;font-weight:700;color:var(--brand)">Hammasi →</a>{% endif %}
     </div>
   </div>
 

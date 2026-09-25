@@ -430,3 +430,28 @@ def _patch_multi_media() -> None:
 
 
 _patch_multi_media()
+
+
+# 7) Trucklar yuzlab bo'lganda ishchi vazifalari va QC navbati tugmalari Telegram chegarasidan (100 ta tugma) oshib
+#    ketmasin: eng muhim 40 tasi ko'rsatiladi (ro'yxat allaqachon prioritet va muddat bo'yicha tartiblangan).
+def _patch_button_caps() -> None:
+    for path, old, new in (
+        ("src/bot/keyboards/worker.py", "    for step in tasks:\n        truck = step.truck", "    for step in tasks[:40]:\n        truck = step.truck"),
+        ("src/bot/keyboards/qc.py", "    for step in steps:\n        truck = step.truck", "    for step in steps[:40]:\n        truck = step.truck"),
+    ):
+        fp = pathlib.Path(path)
+        if not fp.is_file():
+            print(f"patch_bot: {path} topilmadi — tugma chegarasi qo'yilmadi")
+            continue
+        txt = fp.read_text(encoding="utf-8")
+        if new in txt:
+            continue
+        if txt.count(old) != 1:
+            print(f"patch_bot: {path} — kutilgan kod topilmadi, tugma chegarasi qo'yilmadi")
+            continue
+        fp.write_text(txt.replace(old, new), encoding="utf-8")
+        print(f"patch_bot: {path} — ro'yxat 40 tagacha cheklandi")
+
+
+_patch_button_caps()
+

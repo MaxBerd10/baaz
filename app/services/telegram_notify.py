@@ -126,6 +126,16 @@ async def notify_new_order(
 
     ctype = {"png": "image/png", "webp": "image/webp"}.get(image_name.rsplit(".", 1)[-1], "image/jpeg")
 
+    async def call(method: str, fields: dict, file: tuple | None = None) -> dict:
+        """Telegram so'rovi; «Too Many Requests» (429) bo'lsa kutib, ikki martagacha qayta uriniladi."""
+        r: dict = {}
+        for _ in range(3):
+            r = await (asyncio.to_thread(_api, method, fields, file) if file else asyncio.to_thread(_api, method, fields))
+            if r.get("ok") or r.get("error_code") != 429:
+                break
+            await asyncio.sleep(min(float((r.get("parameters") or {}).get("retry_after", 1)), 5) + 0.2)
+        return r
+
     async def send(rec: dict) -> bool:
         text = build_text(rec, model=model, serial=serial, customer=customer, priority=priority,
                           deadline=deadline, description=description, count=count)
@@ -133,11 +143,11 @@ async def notify_new_order(
         if out["file_id"] or image:
             fields = {"chat_id": chat, "caption": text, "parse_mode": "HTML"}
             if out["file_id"]:
-                r = await asyncio.to_thread(_api, "sendPhoto", {**fields, "photo": out["file_id"]})
+                r = await call("sendPhoto", {**fields, "photo": out["file_id"]})
                 if r.get("ok"):
                     return True
             if image:
-                r = await asyncio.to_thread(_api, "sendPhoto", fields, (image_name, ctype, image))
+                r = await call("sendPhoto", fields, (image_name, ctype, image))
                 if r.get("ok"):
                     try:
                         out["file_id"] = r["result"]["photo"][-1]["file_id"]
@@ -145,7 +155,7 @@ async def notify_new_order(
                         pass
                     return True
             # rasm yuborilmadi — hech bo'lmasa matnni yuboramiz
-        r = await asyncio.to_thread(_api, "sendMessage", {"chat_id": chat, "text": text, "parse_mode": "HTML"})
+        r = await call("sendMessage", {"chat_id": chat, "text": text, "parse_mode": "HTML"})
         if not r.get("ok"):
             out["error"] = r.get("description")
         return bool(r.get("ok"))

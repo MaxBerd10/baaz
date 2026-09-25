@@ -986,8 +986,15 @@ async def home(session: AsyncSession, sel_code: str | None = None, period: str =
     upcoming.sort(key=lambda x: x["sort"])
     upcoming = upcoming[:4]
 
+    # Truck ro'yxati (chapdagi panel) og'irlashmasin: hamma faol trucklar (150 tagacha) + eng oxirgi 20 ta tayyor;
+    # qolganlari «Trucklar» sahifasida. Tanlangan truck doim ro'yxatda bo'ladi.
+    _active = [t for t in trucks if t["status"] not in ("done", "cancelled")][:150]
+    _fin = [t for t in trucks if t["status"] in ("done", "cancelled")][:20]
+    _keep = {t["code"] for t in _active} | {t["code"] for t in _fin} | ({sel_p.code} if sel_p is not None else set())
+    shown_trucks = [t for t in trucks if t["code"] in _keep]
+
     return {
-        "kpi5": kpi5, "trucks": trucks, "sel": sel,
+        "kpi5": kpi5, "trucks": shown_trucks, "trucks_hidden": len(trucks) - len(shown_trucks), "sel": sel,
         "summary4": summary4, "donut": dn, "upcoming": upcoming,
         "total_count": total,
     }

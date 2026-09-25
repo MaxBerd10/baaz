@@ -23,7 +23,7 @@ if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
     os.environ["MEDIA_ROOT"] = "/tmp/media"
     os.environ.setdefault("SHOW_ERRORS", "1")
 
-from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -515,14 +515,17 @@ _FLEET_ST = {
 }
 
 
+_LANE_MAX, _DONE_MAX, _LIST_PAGE = 30, 12, 50
+
+
 @app.get("/products", response_class=HTMLResponse)
 async def products_page(
     request: Request, status: str | None = None, q: str | None = None, view: str | None = None,
-    sort: str | None = None,
+    sort: str | None = None, stage: int | None = None, pg: int = Query(1, alias="p"),
     session: AsyncSession = Depends(get_session), _=Depends(require_login),
 ):
     sort = "deadline" if sort == "deadline" else ""
-    view = "list" if (view == "list" or sort) else "line"
+    view = "list" if (view == "list" or sort or stage) else "line"
     status_enum = None
     if status:
         try:
@@ -530,7 +533,7 @@ async def products_page(
         except ValueError:
             status_enum = None
 
-    all_items = await products_svc.list_products(session, limit=300)
+    all_items = await products_svc.list_products(session, limit=50000)
     stages = await stages_svc.list_stages(session)
     stage_total = len(stages) or 1
     stage_names = {s.order_no: s.name for s in stages}
@@ -605,7 +608,7 @@ async def products_page(
                         else stage_names.get(p.current_stage_order, "—"),
             "done": done, "pct": round(done / stage_total * 100),
             "worker": worker,
-            "due": due, "created": p.created_at,
+            "due": due, "created": p.created_at, "finished": p.finished_at,
             "due_str": due_day.strftime("%d.%m.%Y") if (settings.bot_db and due_day) else None,
         })
 
@@ -631,7 +634,16 @@ async def products_page(
             "cards": [r for r in filtered
                       if r["cur"] == s.order_no and r["status"] in ("in_production", "qc_pending", "returned")],
         })
-    done_cards = [r for r in filtered if r["status"] == "done"]
+    # Trucklar ko'paysa sahifa og'irlashmasin: ustunda _LANE_MAX tagacha kartochka, «Tayyor»da eng oxirgi _DONE_MAX ta
+    for col in board:
+        col["total"] = len(col["cards"])
+        col["cards"] = col["cards"][:_LANE_MAX]
+    _done_all = sorted(
+        (r for r in filtered if r["status"] == "done"),
+        key=lambda r: r["finished"].timestamp() if r["finished"] else 0, reverse=True,
+    )
+    done_total = len(_done_all)
+    done_cards = _done_all[:_DONE_MAX]
     if settings.bot_db:
         for col in board:
             col["workers"] = wk_by_order.get(col["order"], [])
@@ -665,11 +677,32 @@ async def products_page(
         )
     else:
         list_rows = sorted(filtered, key=lambda r: (r["status"] == "done", r["cur"], r["code"]))
+    if stage:  # ustundagi «Yana N ta» havolasi: shu bosqichdagi faol trucklar
+        list_rows = [r for r in list_rows if r["cur"] == stage and r["status"] in ("in_production", "qc_pending", "returned")]
+
+    # ro'yxat sahifalanadi (yuzlab truck bo'lganda ham tez ochilsin)
+    list_total = len(list_rows)
+    pages = max(1, -(-list_total // _LIST_PAGE))
+    pg = min(max(pg, 1), pages)
+    list_rows = list_rows[(pg - 1) * _LIST_PAGE : pg * _LIST_PAGE]
+
+    def _pg_url(n: int) -> str:
+        qs = {"view": "list"}
+        if status: qs["status"] = status
+        if q: qs["q"] = q
+        if sort: qs["sort"] = sort
+        if stage: qs["stage"] = str(stage)
+        if n > 1: qs["p"] = str(n)
+        return "/products?" + _urlp.urlencode(qs)
+
+    pager = {"page": pg, "pages": pages, "total": list_total,
+             "prev": _pg_url(pg - 1) if pg > 1 else None, "next": _pg_url(pg + 1) if pg < pages else None,
+             "from": (pg - 1) * _LIST_PAGE + 1 if list_total else 0, "to": min(pg * _LIST_PAGE, list_total)}
 
     return await page(
         "products.html", request, session,
         active="products", view=view, sort=sort, board=board, done_cards=done_cards, kpi5=kpi5,
-        rows=list_rows, stage_total=stage_total,
+        rows=list_rows, stage_total=stage_total, pager=pager, done_total=done_total, lane_max=_LANE_MAX,
         total_count=len(rows), shown=len(filtered),
         status_counts=status_counts, cur_status=status or "", query=q or "",
         fleet_kpis=fleet_kpis,

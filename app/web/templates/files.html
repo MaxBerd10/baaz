@@ -37,4 +37,5 @@
   <div class="empty" style="grid-column:1/-1">Fayl yo'q</div>
   {% endfor %}
 </div>
+{% if items|length >= 300 %}<p class="muted" style="text-align:center;margin:14px 0 0;font-size:12.5px">Eng oxirgi 300 ta fayl ko‘rsatilgan. Eskilarini kerakli truck sahifasidan toping.</p>{% endif %}
 {% endblock %}
