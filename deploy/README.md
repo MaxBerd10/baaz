@@ -67,11 +67,11 @@ ID avtomatik admin bo'ladi; keyin botdan ishchi/QC uchun taklif havolalari yarat
   (inline) Dockerfile'ini ishlatadi. Bot manbasi GitHub'dan olinadi; lokal nusxadan qurish uchun `.env` da `BOT_SRC`.
 - Vercel'dagi demo sayt bundan mustaqil — o'zgarmaydi.
 
-## Web'dan zakaz berish (yangi)
+## Web'dan buyurtma berish (yangi)
 1. **Modellar** bo'limi → model qo'shing (nom, **rasm**, tavsif). Rasm serverda `web_media` papkasida saqlanadi.
-2. **Yangi zakaz** (yuqori o'ngdagi tugma yoki Trucklar → «＋ Truck qo'shish»): model, buyurtmachi, prioritet, muddat →
-   **Zakaz yaratish**. Truck botning bazasiga yoziladi (6 bosqich bilan) va botdagi **barcha faol foydalanuvchilarga**
-   (ishchi, QC, admin) o'z tilida «yangi zakaz keldi» xabari ketadi, model rasmi bilan.
+2. **Yangi buyurtma** (yuqori o'ngdagi tugma yoki Trucklar → «＋ Truck qo'shish»): model, buyurtmachi, prioritet, muddat →
+   **Buyurtma yaratish**. Truck botning bazasiga yoziladi (6 bosqich bilan) va botdagi **barcha faol foydalanuvchilarga**
+   (ishchi, QC, admin) o'z tilida «yangi buyurtma keldi» xabari ketadi, model rasmi bilan.
    1-bosqich ishchilariga «Vazifalarim»ni bosib ishni boshlash aytiladi; qolganlarga ma'lumot uchun.
 3. Xabar `BOT_TOKEN` orqali web'dan yuboriladi (compose o'zi beradi). Natija truck sahifasida ko'rinadi
    («N kishiga yuborildi, M tasiga yetmadi» — botni bloklaganlar yetmaydi).

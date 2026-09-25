@@ -1,6 +1,6 @@
 """Web'dan Telegram'ga xabar yuborish (botning tokeni orqali, qo'shimcha kutubxonasiz).
 
-Yangi zakaz haqida hammaga (ishchi, QC, admin) o'z tilida xabar ketadi; model rasmi bo'lsa
+Yangi buyurtma haqida hammaga (ishchi, QC, admin) o'z tilida xabar ketadi; model rasmi bo'lsa
 rasm bilan. Rasm Telegram'ga bir marta yuklanadi, keyin `file_id` bilan yuboriladi.
 """
 from __future__ import annotations
@@ -23,7 +23,7 @@ PRIORITY = {
 
 T = {
     "uz": {
-        "title": "🆕 <b>Yangi zakaz keldi!</b>", "model": "Model", "serial": "Seriya",
+        "title": "🆕 <b>Yangi buyurtma keldi!</b>", "model": "Model", "serial": "Seriya",
         "customer": "Buyurtmachi", "priority": "Prioritet", "deadline": "Muddat",
         "step1": "Karkas", "tasks": "📋 Vazifalarim", "queue": "🔔 Tekshirish navbati",
         "worker1": "👷 1-bosqich (<b>{step}</b>) sizning navbatingiz. «{btn}» ni bosib ishni boshlang!",
@@ -32,7 +32,7 @@ T = {
         "admin": "👑 Jarayonni web panelda kuzatib boring.",
     },
     "uz_cyrl": {
-        "title": "🆕 <b>Янги заказ келди!</b>", "model": "Модель", "serial": "Серия",
+        "title": "🆕 <b>Янги буюртма келди!</b>", "model": "Модель", "serial": "Серия",
         "customer": "Буюртмачи", "priority": "Приоритет", "deadline": "Муддат",
         "step1": "Каркас", "tasks": "📋 Вазифаларим", "queue": "🔔 Текшириш навбати",
         "worker1": "👷 1-босқич (<b>{step}</b>) сизнинг навбатингиз. «{btn}» ни босиб ишни бошланг!",
@@ -111,7 +111,7 @@ async def notify_new_order(
     deadline: str | None, description: str | None,
     image: bytes | None = None, image_name: str = "model.jpg", tg_file_id: str | None = None,
 ) -> dict:
-    """Hammaga yangi zakaz xabarini yuboradi. {sent, failed, total, file_id, error} qaytaradi."""
+    """Hammaga yangi buyurtma xabarini yuboradi. {sent, failed, total, file_id, error} qaytaradi."""
     out = {"sent": 0, "failed": 0, "total": len(recips), "file_id": tg_file_id, "error": None}
     if not settings.bot_token:
         out.update(failed=len(recips), error="BOT_TOKEN sozlanmagan")

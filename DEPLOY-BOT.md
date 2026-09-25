@@ -3,7 +3,7 @@
 ```
 Ishchi/QC/Admin ──Telegram──▶  BOT (src.main)  ──yozadi──▶  ┐
                                                             │  Postgres (Neon)
-Rahbar ──brauzer──▶  WEB  ──o'qiydi (+ zakaz yaratadi)──◀───┘
+Rahbar ──brauzer──▶  WEB  ──o'qiydi (+ buyurtma yaratadi)──◀───┘
                           │
                           └─ rasmlar: Telegram file_id orqali (BOT_TOKEN)
 ```
@@ -89,10 +89,10 @@ worker'iga ko'chirsa bo'ladi — baza Neon'da bo'lgani uchun web'ga ta'sir qilma
   tarixi yo'q — "Ogohlantirishlar"da hozir qaytarilgan trucklar ko'rsatiladi.
 - Video 4 MB dan katta bo'lsa (Vercel javob limiti) o'rniga rasm-belgi chiqadi. Rasmlarda muammo yo'q.
 
-## Web'dan zakaz berish va Telegram xabari
+## Web'dan buyurtma berish va Telegram xabari
 Bot rejimida web endi **yozadi ham**: `web.create_truck(...)` SQL funksiyasi botning `create_truck` servisi bilan bir xil
 ishni qiladi (truck + 6 ta `pending` bosqich), shuning uchun bot truckni darrov o'z ro'yxatida ko'radi (prioritet/muddat
 bo'yicha tartiblab). Model katalogi (`web.model_cards`) — web'ning o'z jadvali; bot jadvallariga tegilmaydi.
-Yangi zakazda web `BOT_TOKEN` bilan botdagi hamma faol foydalanuvchiga xabar yuboradi (model rasmi bilan).
-Cheklov: ishchi botda vazifani ochganda model rasmi hozircha chiqmaydi — rasm faqat «yangi zakaz» xabarida keladi
+Yangi buyurtmada web `BOT_TOKEN` bilan botdagi hamma faol foydalanuvchiga xabar yuboradi (model rasmi bilan).
+Cheklov: ishchi botda vazifani ochganda model rasmi hozircha chiqmaydi — rasm faqat «yangi buyurtma» xabarida keladi
 (bot kodida `web.model_cards.tg_file_id` dan foydalanib qo'shish mumkin).

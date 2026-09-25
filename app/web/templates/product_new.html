@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Yangi zakaz — Baaz{% endblock %}
-{% block heading %}Yangi zakaz{% endblock %}
+{% block title %}Yangi buyurtma — Baaz{% endblock %}
+{% block heading %}Yangi buyurtma{% endblock %}
 {% block sub %}Truck yaratiladi va ishchilarga Telegram orqali xabar yuboriladi{% endblock %}
 {% block body %}
 <style>
@@ -46,8 +46,8 @@
         </select>
       </div>
     </div>
-    <label class="chk"><input type="checkbox" name="notify" value="1" {{ 'checked' if (not form) or form.get('notify') }}> Telegramda hammaga «yangi zakaz keldi» xabarini yuborish</label>
-    <button class="btn" type="submit" {{ 'disabled' if not models }}>Zakaz yaratish</button>
+    <label class="chk"><input type="checkbox" name="notify" value="1" {{ 'checked' if (not form) or form.get('notify') }}> Telegramda hammaga «yangi buyurtma keldi» xabarini yuborish</label>
+    <button class="btn" type="submit" {{ 'disabled' if not models }}>Buyurtma yaratish</button>
   </form>
 
   <div class="card pv">

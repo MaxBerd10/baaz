@@ -950,7 +950,7 @@ async def home(session: AsyncSession, sel_code: str | None = None, period: str =
     }
 
     # ---- Yaqinlashayotgan muddatlar ----
-    # Bot rejimida — zakazda belgilangan HAQIQIY muddat (trucks.deadline); muddati yo'q trucklar
+    # Bot rejimida — buyurtmada belgilangan HAQIQIY muddat (trucks.deadline); muddati yo'q trucklar
     # ko'rsatilmaydi. Demo rejimida muddat maydoni yo'q — taxminiy hisob (yaratilgan sana + bosqich × 1.8 kun).
     real_deadlines: dict[int, dt.datetime] = {}
     if settings.bot_db:
