@@ -829,11 +829,19 @@ async def reports_page(request: Request, session: AsyncSession = Depends(get_ses
     max_fail = max([f["count"] for f in top_failed] + [1])
     workers = await stats_svc.worker_productivity(session)
     audit = list(
-        (await session.scalars(select(AuditLog).order_by(AuditLog.id.desc()).limit(60))).all()
+        (await session.scalars(
+            select(AuditLog).order_by(AuditLog.created_at.desc(), AuditLog.id.desc()).limit(60)
+        )).all()
     )
+    # audit qatorlarida ichki raqam o'rniga truckning modeli/seriyasi ko'rsatilsin
+    pids = {a.product_id for a in audit if a.product_id}
+    prod_map = {
+        p.id: p for p in (await session.scalars(select(Product).where(Product.id.in_(pids)))).all()
+    } if pids else {}
     return await page(
         "reports.html", request, session, active="reports",
         defects=defects, top_failed=top_failed, max_fail=max_fail, workers=workers, audit=audit,
+        prod_map=prod_map,
     )
 
 

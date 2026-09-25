@@ -136,7 +136,7 @@ WHERE ts.reviewed_at IS NOT NULL AND ts.status::text IN ('approved', 'rejected')
 UNION ALL
 SELECT t.id * 10 + 3,
        cu.id,
-       cu.full_name,
+       COALESCE(cu.full_name, CASE WHEN t.created_by IS NULL THEN 'Web panel' END),
        'product_created'::varchar(64),
        t.id,
        NULL::int,

@@ -4,7 +4,8 @@
 {% block sub %}Kamchiliklar, ishchilar samaradorligi va amallar tarixi{% endblock %}
 {% block body %}
 
-<div class="row c2">
+<div class="row {{ '' if bot_db else 'c2' }}">
+  {% if not bot_db %}{# tekshiruv punktlari (checklist) faqat demo rejimida bor; bot rejimida bo'lmaydi #}
   <div class="card pad">
     <div class="hd"><h3>Eng ko'p yiqiladigan tekshiruv punktlari</h3></div>
     {% for f in top_failed %}
@@ -16,12 +17,13 @@
     </div>
     {% else %}<div class="empty">Ma'lumot yo'q</div>{% endfor %}
   </div>
+  {% endif %}
 
   <div class="card pad table-card">
     <div class="hd"><h3>Ishchilar samaradorligi</h3><a class="lnk" href="/workers">Batafsil</a></div>
     <div class="table-wrap">
     <table>
-      <thead><tr><th>Ishchi</th><th>Bosqich</th><th>✅</th><th>🔴</th><th>Sifat %</th></tr></thead>
+      <thead><tr><th>Ishchi</th><th>Bosqich</th><th>Tasdiqlangan</th><th>Qaytarilgan</th><th>Sifat %</th></tr></thead>
       <tbody>
       {% for r in workers %}
       {% set tot = r.approved + r.returned %}
@@ -71,7 +73,8 @@
       <td class="muted num">{{ r.created_at|dt }}</td>
       <td style="font-weight:600">{{ r.actor_name or '—' }}</td>
       <td><span class="chip ok">{{ ACTION_LABEL.get(r.action, r.action) }}</span></td>
-      <td class="num">{{ r.product_id or '' }}</td>
+      {% set p = prod_map.get(r.product_id) %}
+      <td>{% if p %}<a href="/products/{{ p.code }}" style="color:var(--brand);font-weight:700">Model {{ p.model or "—" }}</a>{% if bot_db %} <span class="muted">{{ p.code }}</span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
       <td class="muted">{{ (r.details or '')|nopr }}</td>
     </tr>
     {% endfor %}
