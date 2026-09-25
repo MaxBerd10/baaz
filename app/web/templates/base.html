@@ -91,6 +91,14 @@
   .topbar .ctl{display:flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--line);
     border-radius:11px;background:var(--panel);font-size:12.5px;color:var(--ink);font-weight:550}
   .topbar .ctl svg{width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2}
+  .topbar .today{display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);white-space:nowrap}
+  .topbar .today .ic{width:36px;height:36px;border-radius:10px;background:var(--brand-soft);color:var(--brand);
+    display:grid;place-items:center;flex:none}
+  .topbar .today .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+  .topbar .today .tx{display:flex;flex-direction:column;line-height:1.2}
+  .topbar .today .wd{font-size:10px;font-weight:800;color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+  .topbar .today .dt{font-size:13.5px;font-weight:750;color:var(--ink)}
   .topbar .ctl.plain{border:0;background:none;box-shadow:none;padding:9px 4px;color:var(--muted);font-weight:600;cursor:default}
   .topbar .ctl .cv{color:var(--faint);font-size:9px}
   .topbar .notif{position:relative}
@@ -132,7 +140,7 @@
     .topbar .htxt h1{font-size:20px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .topbar .htxt p{display:none}
     .topbar .sp{display:none}
-    .topbar .ctl{display:none}
+    .topbar .ctl,.topbar .today{display:none}
     .btn{padding:10px 12px}
     .btn .txt{display:none}
     .topbar .notif{margin-left:auto}
@@ -704,7 +712,10 @@
         <p>{% block sub %}{% endblock %}</p>
       </div>
       <span class="sp"></span>
-      <span class="ctl plain"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>{{ now_str }}</span>
+      <div class="today" aria-label="Bugungi sana">
+        <span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+        <span class="tx"><span class="wd">{{ today_wd }}</span><span class="dt">{{ today_dt }}</span></span>
+      </div>
       {% block topctl %}{% endblock %}
       <div class="notif" id="notif">
         <button type="button" class="bell" aria-label="Ogohlantirishlar"

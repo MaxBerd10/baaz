@@ -72,6 +72,17 @@ _ACTION_LABEL = {
 }
 
 
+_UZ_WEEKDAYS = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba"]
+_UZ_MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust",
+              "sentabr", "oktabr", "noyabr", "dekabr"]
+
+
+def _today_uz() -> tuple[str, str]:
+    """('Juma', '25 sentabr 2026') — sarlavhadagi «bugun» kartasi uchun."""
+    n = dt.datetime.now(_TZ)
+    return _UZ_WEEKDAYS[n.weekday()], f"{n.day} {_UZ_MONTHS[n.month - 1]} {n.year}"
+
+
 def _fmt_dt(value):
     if not value:
         return "—"
@@ -319,6 +330,8 @@ async def _side_data(session: AsyncSession) -> tuple[list, dict]:
 
 async def page(name: str, request: Request, session: AsyncSession, **ctx):
     ctx.setdefault("now_str", dt.datetime.now(_TZ).strftime("%d.%m.%Y"))
+    ctx.setdefault("today_wd", _today_uz()[0])
+    ctx.setdefault("today_dt", _today_uz()[1])
     _al, _counts = await _side_data(session)
     if "alerts_list" not in ctx or "alerts_count" not in ctx:
         ctx.setdefault("alerts_count", len(_al))
@@ -329,6 +342,8 @@ async def page(name: str, request: Request, session: AsyncSession, **ctx):
 
 def render(name: str, request: Request, **ctx):
     ctx.setdefault("now_str", dt.datetime.now(_TZ).strftime("%d.%m.%Y"))
+    ctx.setdefault("today_wd", _today_uz()[0])
+    ctx.setdefault("today_dt", _today_uz()[1])
     ctx.setdefault("alerts_count", 0)
     ctx.setdefault("alerts_list", [])
     return templates.TemplateResponse(name, {"request": request, **ctx})
