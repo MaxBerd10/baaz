@@ -31,6 +31,7 @@
 
   <div class="cal-grid">
     {% for wd in weekdays %}<div class="wd {{ 'we' if loop.index0 >= 5 }}">{{ wd }}</div>{% endfor %}
+    <div class="wd wk-h">Jami</div>
     {% for week in cal.weeks %}
       {% for cell in week %}
         {% if cell is none %}
@@ -40,7 +41,10 @@
         <a class="cal-cell {{ 'today' if cell.iso==today }} {{ 'sel' if cell.iso==sel_day }} {{ 'we' if cell.weekend }} {{ 'has' if has else 'noev' }}"
            {% if has %}href="/calendar?month={{ '%04d-%02d'|format(cal.year, cal.month) }}&day={{ cell.iso }}"{% endif %}
            title="{{ cell.total }} ta hodisa" aria-label="{{ cell.day }}-kun, {{ cell.total }} ta hodisa">
-          <span class="d">{{ cell.day }}</span>
+          <span class="top">
+            <span class="d">{{ cell.day }}</span>
+            {% if has %}<span class="tot">{{ cell.total }}<small>hodisa</small></span>{% endif %}
+          </span>
           {% if has %}
           <span class="evs">
             {% if cell.created %}<span class="ev c">{{ cell.created }}</span>{% endif %}
@@ -52,6 +56,7 @@
         </a>
         {% endif %}
       {% endfor %}
+      <div class="wk-total"><b>{{ cal.week_totals[loop.index0] }}</b><span>jami</span></div>
     {% endfor %}
   </div>
 </div>

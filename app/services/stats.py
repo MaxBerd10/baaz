@@ -372,6 +372,7 @@ async def month_calendar(session: AsyncSession, year: int, month: int) -> dict:
     )
 
     weeks: list[list] = []
+    week_totals: list[int] = []
     week: list = [None] * dt.date(year, month, 1).weekday()  # Monday-first
     for dnum in range(1, ndays + 1):
         iso = dt.date(year, month, dnum).isoformat()
@@ -390,8 +391,10 @@ async def month_calendar(session: AsyncSession, year: int, month: int) -> dict:
         )
         if len(week) == 7:
             weeks.append(week)
+            week_totals.append(sum(d["total"] for d in week if d))
             week = []
     if week:
+        week_totals.append(sum(d["total"] for d in week if d))
         week += [None] * (7 - len(week))
         weeks.append(week)
 
@@ -399,6 +402,8 @@ async def month_calendar(session: AsyncSession, year: int, month: int) -> dict:
         "year": year,
         "month": month,
         "weeks": weeks,
+        "week_totals": week_totals,
+        "max_total": max([d["total"] for wk in weeks for d in wk if d] or [1]),
         "totals": {
             "created": sum(created.values()),
             "finished": sum(finished.values()),
