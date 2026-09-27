@@ -564,3 +564,43 @@ async def process_phone(message: Message, state: FSMContext):
 
 _patch_phone_required()
 
+
+# 9) Telegramda "axlat": har menyu tugmasi bosilganda eski javob chatda qolib, yangisi ostiga
+#    qo'shilib boraveradi. NavCleanupMiddleware oldingi menyu-javobini o'chirib, faqat oxirgisini
+#    qoldiradi (bildirishnomalarga tegmaydi).
+def _patch_nav_cleanup() -> None:
+    src_ = here / "nav_cleanup.py"
+    dst = pathlib.Path("src/services/nav_cleanup.py")
+    mp = pathlib.Path("src/main.py")
+    if not (src_.is_file() and dst.parent.is_dir() and mp.is_file()):
+        print("patch_bot: nav_cleanup — kerakli fayl/papka topilmadi")
+        return
+    ms = mp.read_text(encoding="utf-8")
+    if "NavCleanupMiddleware" in ms:
+        print("patch_bot: nav_cleanup — allaqachon qo'shilgan")
+        return
+    old_import = "from src.bot.middlewares.user import UserMiddleware\n"
+    old_reg = "    dp.update.middleware(UserMiddleware())\n"
+    if ms.count(old_import) != 1 or ms.count(old_reg) != 1:
+        print("patch_bot: nav_cleanup — kutilgan kod topilmadi, o'zgartirilmadi")
+        return
+    dst.write_text(src_.read_text(encoding="utf-8"), encoding="utf-8")
+    ms = ms.replace(old_import, old_import + "from src.services.nav_cleanup import NavCleanupMiddleware\n", 1)
+    ms = ms.replace(old_reg, old_reg + "    dp.update.middleware(NavCleanupMiddleware())\n", 1)
+    backup = mp.read_text(encoding="utf-8")
+    mp.write_text(ms, encoding="utf-8")
+    try:
+        import py_compile
+
+        py_compile.compile(str(mp), doraise=True)
+        py_compile.compile(str(dst), doraise=True)
+    except Exception as e:  # noqa: BLE001 — bot yiqilmasin
+        mp.write_text(backup, encoding="utf-8")
+        dst.unlink(missing_ok=True)
+        print(f"patch_bot: nav_cleanup — kompilyatsiya xatosi ({e}); qaytarildi")
+        return
+    print("patch_bot: nav_cleanup qo'shildi (menyu tugmalarida eski javob avtomatik o'chadi)")
+
+
+_patch_nav_cleanup()
+

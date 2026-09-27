@@ -122,3 +122,11 @@ Jurnal yoqilishidan OLDINGI rad etishlar tiklanmaydi (faqat oxirgi holat).
 `deploy/reset-data.sh` — faqat adminlar qoladi (ishchilar, QC, trucklar, takliflar, rasm/videolar o'chadi; model katalogi qoladi).
 Avval `./reset-data.sh --dry` bilan nimalar o'chishini ko'ring; haqiqiy tozalashdan oldin avtomatik zaxira olinadi va «TOZALASH» yozish so'raladi.
 
+## Telegram chatdagi "axlat"ni tozalash
+Pastdagi menyu tugmalari («📋 Vazifalarim», «📤 Ish yuborish», «📜 Tarixim», «📊 Statistika», «🔔 Sozlamalar», «🏠 Asosiy menyu» va h.k.)
+bosilganda, bot javobi endi OLDINGI shunday javobning o'rnini oladi — eski ekran avtomatik o'chiriladi, chatda faqat oxirgi
+ekran qoladi (`deploy/bot-fixes/nav_cleanup.py`, `NavCleanupMiddleware`). Bildirishnomalar (yangi ish keldi, tasdiqlandi/rad etildi)
+va foydalanuvchining o'z yozgan xabarlari (masalan rad etish sababi) tegilmaydi — ular alohida yo'l bilan yuboriladi, tarix
+sifatida chatda qolaveradi. Xotira ichida saqlanadi (chat_id -> oxirgi ekran xabar id'si), bot qayta ishga tushsa tozalanadi
+(zararsiz — birinchi tugma bosilganda hech narsa o'chirilmaydi, shunchaki qayta hisoblanadi).
+
