@@ -375,14 +375,17 @@ async def month_calendar(session: AsyncSession, year: int, month: int) -> dict:
     week: list = [None] * dt.date(year, month, 1).weekday()  # Monday-first
     for dnum in range(1, ndays + 1):
         iso = dt.date(year, month, dnum).isoformat()
+        c, fi, re_, ap = created.get(iso, 0), finished.get(iso, 0), returned.get(iso, 0), approved.get(iso, 0)
         week.append(
             {
                 "day": dnum,
                 "iso": iso,
-                "created": created.get(iso, 0),
-                "finished": finished.get(iso, 0),
-                "returned": returned.get(iso, 0),
-                "approved": approved.get(iso, 0),
+                "created": c,
+                "finished": fi,
+                "returned": re_,
+                "approved": ap,
+                "total": c + fi + re_ + ap,
+                "weekend": dt.date(year, month, dnum).weekday() >= 5,
             }
         )
         if len(week) == 7:

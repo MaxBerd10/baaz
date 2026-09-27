@@ -413,14 +413,16 @@ def _delta_str(v: float, unit: str = "%") -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Ikonka nomlari base.html dagi SVG sprite'da mavjud bo'lgan nomlar bilan cheklangan (grep 'id="i-'
+# base.html`` orqali to'liq ro'yxatni ko'rish mumkin).
 ACTION_ICON = {
-    "product_created": ("plus", "blue"),
-    "submitted_to_qc": ("send", "blue"),
+    "product_created": ("box", "blue"),
+    "submitted_to_qc": ("hourglass", "blue"),
     "qc_approved": ("check", "green"),
-    "stage_advanced": ("arrow", "blue"),
+    "stage_advanced": ("gauge", "blue"),
     "qc_returned": ("back", "red"),
-    "product_finished": ("flag", "green"),
-    "media_added": ("image", "slate"),
+    "product_finished": ("truckcheck", "green"),
+    "media_added": ("file", "slate"),
 }
 
 
@@ -491,7 +493,7 @@ async def _format_audit(session: AsyncSession, rows: list) -> list[dict]:
             text = f"{code} — {det}"
         else:
             text = f"{code} — {r.action}"
-        icon, tone = ACTION_ICON.get(r.action, ("dot", "slate"))
+        icon, tone = ACTION_ICON.get(r.action, ("clock", "slate"))
         out.append({
             "text": text,
             "meta": r.actor_name or "",

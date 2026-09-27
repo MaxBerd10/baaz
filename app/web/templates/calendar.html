@@ -13,37 +13,43 @@
 
 <div class="card pad">
   <div class="cal-top">
-    <h2>{{ month_label }}</h2>
-    <span class="cal-nav">
-      <a href="/calendar?month={{ prev_month }}">‹</a>
-      <a href="/calendar?month={{ next_month }}">›</a>
-    </span>
-    <span class="sp" style="flex:1"></span>
-    <span class="legend2" style="margin:0">
-      <span><span class="ev c">🆕</span> yaratildi</span>
-      <span><span class="ev f">🟢</span> tayyor</span>
-      <span><span class="ev a">✅</span> tasdiq</span>
-      <span><span class="ev r">🔴</span> qaytdi</span>
+    <div class="cal-title">
+      <h2>{{ month_label }}</h2>
+      <span class="cal-nav">
+        <a href="/calendar?month={{ prev_month }}" aria-label="Oldingi oy">‹</a>
+        <a href="/calendar?month={{ next_month }}" aria-label="Keyingi oy">›</a>
+      </span>
+      {% if not is_cur_month %}<a class="cal-today" href="/calendar?month={{ cur_month }}">Bugun</a>{% endif %}
+    </div>
+    <span class="legend2">
+      <span><i class="dot c"></i>yaratildi</span>
+      <span><i class="dot f"></i>tayyor</span>
+      <span><i class="dot a"></i>tasdiq</span>
+      <span><i class="dot r"></i>qaytdi</span>
     </span>
   </div>
 
   <div class="cal-grid">
-    {% for wd in weekdays %}<div class="wd">{{ wd }}</div>{% endfor %}
+    {% for wd in weekdays %}<div class="wd {{ 'we' if loop.index0 >= 5 }}">{{ wd }}</div>{% endfor %}
     {% for week in cal.weeks %}
       {% for cell in week %}
         {% if cell is none %}
         <div class="cal-cell empty"></div>
         {% else %}
-        <div class="cal-cell {{ 'today' if cell.iso==today }} {{ 'sel' if cell.iso==sel_day }}">
+        {% set has = cell.total > 0 %}
+        <a class="cal-cell {{ 'today' if cell.iso==today }} {{ 'sel' if cell.iso==sel_day }} {{ 'we' if cell.weekend }} {{ 'has' if has else 'noev' }}"
+           {% if has %}href="/calendar?month={{ '%04d-%02d'|format(cal.year, cal.month) }}&day={{ cell.iso }}"{% endif %}
+           title="{{ cell.total }} ta hodisa" aria-label="{{ cell.day }}-kun, {{ cell.total }} ta hodisa">
           <span class="d">{{ cell.day }}</span>
-          {% if cell.created %}<span class="ev c">🆕 {{ cell.created }}</span>{% endif %}
-          {% if cell.finished %}<span class="ev f">🟢 {{ cell.finished }}</span>{% endif %}
-          {% if cell.approved %}<span class="ev a">✅ {{ cell.approved }}</span>{% endif %}
-          {% if cell.returned %}<span class="ev r">🔴 {{ cell.returned }}</span>{% endif %}
-          {% if cell.created or cell.finished or cell.approved or cell.returned %}
-          <a class="d-link" href="/calendar?month={{ '%04d-%02d'|format(cal.year, cal.month) }}&day={{ cell.iso }}">batafsil</a>
+          {% if has %}
+          <span class="evs">
+            {% if cell.created %}<span class="ev c">{{ cell.created }}</span>{% endif %}
+            {% if cell.finished %}<span class="ev f">{{ cell.finished }}</span>{% endif %}
+            {% if cell.approved %}<span class="ev a">{{ cell.approved }}</span>{% endif %}
+            {% if cell.returned %}<span class="ev r">{{ cell.returned }}</span>{% endif %}
+          </span>
           {% endif %}
-        </div>
+        </a>
         {% endif %}
       {% endfor %}
     {% endfor %}
@@ -52,13 +58,19 @@
 
 {% if sel_day %}
 <div class="card pad" style="margin-top:16px">
-  <div class="hd"><h3>{{ sel_day }} — hodisalar ({{ events|length }})</h3></div>
+  <div class="hd">
+    <h3>{{ sel_day_label }} <span class="muted" style="font-weight:600;font-size:12.5px">— {{ events|length }} ta hodisa</span></h3>
+    <a class="lnk" href="/calendar?month={{ '%04d-%02d'|format(cal.year, cal.month) }}" title="Yopish" aria-label="Yopish">✕</a>
+  </div>
   <div class="feed">
     {% for f in events %}
-    <div class="it" style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-2)">
-      <div class="bd" style="flex:1"><div class="t1" style="font-size:12.5px;font-weight:600">{{ f.text }}</div>
-        {% if f.meta %}<div class="t2" style="font-size:11px;color:var(--faint)">Xodim: {{ f.meta }}</div>{% endif %}</div>
-      <span class="tm" style="font-size:11px;color:var(--faint)">{{ f.time|tm }}</span>
+    <div class="it">
+      <span class="ic tone-{{ f.tone }}">{{ icon(f.icon) }}</span>
+      <div class="bd">
+        <div class="t1">{{ f.text }}</div>
+        {% if f.meta %}<div class="t2">{{ f.meta }}</div>{% endif %}
+      </div>
+      <span class="tm">{{ f.time|tm }}</span>
     </div>
     {% else %}<div class="empty">Bu kunda hodisa yo'q</div>{% endfor %}
   </div>

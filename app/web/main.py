@@ -1147,12 +1147,20 @@ async def calendar_page(
     events = await dash_svc.day_feed(session, day) if day else []
     prev_m = dt.date(y, m, 1) - dt.timedelta(days=1)
     next_m = dt.date(y, m, 1) + dt.timedelta(days=32)
+    sel_day_label = ""
+    if day:
+        try:
+            sd = dt.date.fromisoformat(day)
+            sel_day_label = f"{sd.day} {_UZ_MONTHS[sd.month - 1]} — {_UZ_WEEKDAYS[sd.weekday()]}"
+        except ValueError:
+            sel_day_label = day
     return await page(
         "calendar.html", request, session, active="calendar",
-        cal=cal, sel_day=day, events=events, today=today.isoformat(),
-        month_label=f"{_MONTHS_UZ[m - 1]} {y}",
+        cal=cal, sel_day=day, sel_day_label=sel_day_label, events=events, today=today.isoformat(),
+        month_label=f"{_MONTHS_UZ[m - 1]} {y}", is_cur_month=(y == today.year and m == today.month),
         prev_month=f"{prev_m.year}-{prev_m.month:02d}",
         next_month=f"{next_m.year}-{next_m.month:02d}",
+        cur_month=f"{today.year}-{today.month:02d}",
         weekdays=_WD_UZ,
     )
 
