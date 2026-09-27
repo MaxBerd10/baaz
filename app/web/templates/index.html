@@ -210,7 +210,7 @@
     <div class="selhead">
       <span class="photo"><img src="{{ s.image }}" alt="Model {{ s.model }} food truck"></span>
       <div style="flex:1;min-width:0">
-        <div class="h1">Model {{ s.model }} <span class="badge b-{{ s.status }}">{{ s.status_label }}</span></div>
+        <div class="h1"><span class="nm">Model {{ s.model }}</span> <span class="badge b-{{ s.status }}">{{ s.status_label }}</span></div>
         <div class="spec">
           {% if s.size %}<span>{{ s.size }} metr</span>{% endif %}
           {% if s.color and s.color != '—' %}<span class="dot"><i style="background:{{ s.hex }};border:1px solid var(--line)"></i>{{ s.color }} rang</span>{% endif %}
