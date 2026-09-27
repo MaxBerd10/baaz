@@ -20,21 +20,50 @@
   .pv .bd{padding:14px 16px}
   .pv h3{margin:0 0 6px;font-size:16px}
   .pv p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.5;white-space:pre-line}
-  @media(max-width:900px){.nz{grid-template-columns:1fr}.pv{position:static}.pv .ph{aspect-ratio:16/9}}
+  .mp-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .mp-head h3{margin:0;font-size:15px}
+  .mp-head .mp-q{margin-left:auto;width:220px;max-width:100%}
+  .mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .mp{position:relative;display:block;cursor:pointer;border:2px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;transition:border-color .12s,box-shadow .12s,transform .12s}
+  .mp:hover{border-color:#c9c3fb;transform:translateY(-1px)}
+  .mp input{position:absolute;opacity:0;pointer-events:none}
+  .mp .im{display:grid;place-items:center;aspect-ratio:4/3;background:#eef1f6;color:var(--faint);font-size:11px;overflow:hidden}
+  .mp .im img{width:100%;height:100%;object-fit:cover;display:block}
+  .mp b{display:block;padding:9px 10px 10px;font-size:13px;text-align:center;letter-spacing:-.01em}
+  .mp .ck{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;display:none;place-items:center;font-style:normal;font-size:13px;font-weight:800;box-shadow:0 2px 8px rgba(109,93,246,.45)}
+  .mp.on{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .mp.on .ck{display:grid}
+  .mp input:focus-visible ~ b{color:var(--brand);text-decoration:underline}
+  .mp-none{grid-column:1/-1;text-align:center;color:var(--faint);padding:18px;font-size:13px}
+  .selline{margin:0 0 16px;padding:10px 12px;border-radius:11px;background:var(--brand-soft);color:var(--ink);font-size:13px;display:flex;align-items:center;gap:8px}
+  @media(max-width:900px){.nz{grid-template-columns:1fr}.pv{position:static}.pv .ph{aspect-ratio:16/9}.mp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mp-head .mp-q{margin-left:0;width:100%}}
 </style>
+
+{% set selected = form.get('model') or (models[0].name if models else '') %}
+<div class="card pad" style="margin-bottom:16px">
+  <div class="mp-head">
+    <h3>1. Modelni tanlang</h3>
+    {% if models|length > 6 %}<input class="fi mp-q" id="mp-q" type="search" placeholder="Model nomi bo‘yicha qidirish…" autocomplete="off">{% endif %}
+  </div>
+  {% if not models %}
+    <div class="err" style="margin:0;padding:10px 14px;border-radius:11px;background:#fff0f1;color:#c0303a;font-weight:650;font-size:12.5px">Avval model qo‘shing: <a href="/models" style="text-decoration:underline">Modellar</a> bo‘limida rasmi bilan.</div>
+  {% endif %}
+  <div class="mp-grid" id="mp-grid" role="radiogroup" aria-label="Model">
+    {% for m in models %}
+    <label class="mp {{ 'on' if selected == m.name }}" data-name="{{ m.name|lower }}">
+      <input type="radio" name="model" value="{{ m.name }}" form="nzform" required {{ 'checked' if selected == m.name }}>
+      <span class="im">{% if meta[m.name].img %}<img src="{{ meta[m.name].img }}" alt="" loading="lazy">{% else %}rasm yo‘q{% endif %}</span>
+      <b>{{ m.name }}</b><i class="ck">✓</i>
+    </label>
+    {% endfor %}
+    <div class="mp-none" id="mp-none" hidden>Bunday model topilmadi</div>
+  </div>
+</div>
 
 <div class="nz">
   <form class="card pad" method="post" action="/products/new" id="nzform">
     {% if error %}<div class="err">{{ error }}</div>{% endif %}
-    {% if not models %}
-      <div class="err">Avval model qo‘shing: <a href="/models" style="text-decoration:underline">Modellar</a> bo‘limida rasmi bilan.</div>
-    {% endif %}
-    <div class="fld">
-      <label>Model *</label>
-      <select class="fi" name="model" id="f-model" required>
-        {% for m in models %}<option value="{{ m.name }}" {{ 'selected' if form.get('model')==m.name }}>{{ m.name }}</option>{% endfor %}
-      </select>
-    </div>
+    <div class="selline">Tanlangan model: <b id="sel-name">{{ selected or '—' }}</b></div>
     <div class="row2">
       <div class="fld"><label>Seriya raqami (ixtiyoriy)</label><input class="fi" name="serial" id="f-serial" maxlength="32" value="{{ form.get('serial','') }}" placeholder="avtomatik">
         <div class="hint">Bo‘sh qoldiring — tizim o‘zi keyingi noyob raqamni beradi. Har bir truckning seriyasi noyob bo‘ladi; bir modeldan istagancha buyurtma berish mumkin.</div></div>
@@ -62,18 +91,39 @@
 <script>
 (function(){
   var M = {{ meta|tojson }};
-  var sel = document.getElementById('f-model'), ser = document.getElementById('f-serial');
+  var ser = document.getElementById('f-serial');
+  var radios = [].slice.call(document.querySelectorAll('.mp input'));
   var dirty = {{ 'true' if form.get('serial') else 'false' }};
   ser.addEventListener('input', function(){ dirty = ser.value.trim() !== ''; });
+  function cur(){ var c = radios.filter(function(r){return r.checked;})[0]; return c ? c.value : ''; }
   function upd(){
-    var m = M[sel.value]; if(!m) return;
-    document.getElementById('pv-name').textContent = sel.value;
+    var name = cur(), m = M[name];
+    radios.forEach(function(r){ r.closest('.mp').classList.toggle('on', r.checked); });
+    document.getElementById('sel-name').textContent = name || '—';
+    if(!m) return;
+    document.getElementById('pv-name').textContent = name;
     document.getElementById('pv-ds').textContent = m.ds;
     var ph = document.getElementById('pv-ph');
     ph.innerHTML = m.img ? '<img src="'+m.img+'" alt="">' : 'rasm yo‘q';
     if(!dirty) ser.placeholder = m.serial || 'avtomatik';
   }
-  sel.addEventListener('change', upd); upd();
+  radios.forEach(function(r){ r.addEventListener('change', function(){
+    upd();
+    // telefonda: model tanlangach forma ko'rinadigan joyga o'tamiz
+    if (window.innerWidth <= 900) { var t = document.querySelector('.selline'); if (t) t.scrollIntoView({behavior:'smooth', block:'start'}); }
+  }); });
+  upd();
+  var q = document.getElementById('mp-q');
+  if(q){
+    q.addEventListener('input', function(){
+      var s = q.value.trim().toLowerCase(), n = 0;
+      document.querySelectorAll('.mp').forEach(function(l){
+        var ok = !s || l.getAttribute('data-name').indexOf(s) > -1;
+        l.style.display = ok ? '' : 'none'; if(ok) n++;
+      });
+      document.getElementById('mp-none').hidden = n > 0;
+    });
+  }
 })();
 </script>
 {% endblock %}
