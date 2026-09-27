@@ -435,8 +435,8 @@
   .h5 .sp{margin:8px -16px -1px}
   .h5 .sp svg{width:100%;height:44px;display:block}
 
-  .homegrid{display:grid;grid-template-columns:256px minmax(0,1fr) 336px;gap:16px}
-  @media(max-width:1200px){.homegrid{grid-template-columns:250px minmax(0,1fr)}.homegrid .col3{grid-column:1/-1;
+  .homegrid{display:grid;grid-template-columns:300px minmax(0,1fr) 336px;gap:16px}
+  @media(max-width:1200px){.homegrid{grid-template-columns:290px minmax(0,1fr)}.homegrid .col3{grid-column:1/-1;
     display:grid;grid-template-columns:1fr 1fr;gap:16px}}
   @media(max-width:980px){.homegrid{grid-template-columns:1fr}.homegrid .col3{grid-template-columns:1fr}}
   .homegrid .col2,.homegrid .col3{display:flex;flex-direction:column;gap:16px;min-width:0}
@@ -444,18 +444,18 @@
   /* truck ro'yxati */
   .tlist .hd{padding:15px 16px;border-bottom:1px solid var(--line-2)}
   .tlist .rows{max-height:640px;overflow-y:auto}
-  .trow{display:flex;align-items:center;gap:11px;padding:12px 14px;border-bottom:1px solid var(--line-2);cursor:pointer}
+  .trow{display:flex;align-items:center;gap:9px;padding:11px 12px;border-bottom:1px solid var(--line-2);cursor:pointer}
   .trow:hover{background:var(--panel-2)}
   .trow.on{background:var(--brand-soft);box-shadow:inset 3px 0 0 var(--brand)}
-  .trow .van{width:50px;height:38px;border-radius:9px;flex:none;display:grid;place-items:center;
+  .trow .van{width:42px;height:34px;border-radius:9px;flex:none;display:grid;place-items:center;
     background:linear-gradient(135deg,#eef0f7,#f6f7fb);border:1px solid var(--line-2)}
-  .trow .van svg{width:40px;height:26px}
+  .trow .van svg{width:33px;height:23px}
   .trow .mid{flex:1;min-width:0}
   .trow .mid b{font-size:13px;font-weight:800;color:var(--brand);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .trow .mid small{display:block;color:var(--muted);font-size:10.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .trow .rt{text-align:right;flex:none}
-  .trow .rt .fr{font-size:13px;font-weight:800;display:block}
-  .trow .rt .pc{font-size:11px;font-weight:700;margin-top:2px;display:block}
+  .trow .rt{text-align:right;flex:none;min-width:0}
+  .trow .rt .fr{font-size:12.5px;font-weight:800;display:block;white-space:nowrap}
+  .trow .rt .pc{font-size:10.5px;font-weight:700;margin-top:2px;display:block;white-space:nowrap}
   .tlist .ft{padding:11px 14px;border-top:1px solid var(--line-2);display:flex;align-items:center;
     justify-content:space-between;font-size:11px;color:var(--muted)}
   .tlist .ft .pg{display:inline-flex;gap:4px}
