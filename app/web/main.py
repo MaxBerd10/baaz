@@ -1,4 +1,5 @@
 import datetime as dt
+import asyncio
 import os
 from pathlib import Path
 
@@ -812,13 +813,19 @@ async def models_delete(model_id: int, session: AsyncSession = Depends(get_sessi
 
 
 @app.get("/media/model/{model_id}")
-async def model_image(model_id: int, request: Request, session: AsyncSession = Depends(get_session)):
+async def model_image(model_id: int, request: Request, s: str | None = None,
+                      session: AsyncSession = Depends(get_session)):
     if not valid(request.cookies.get(COOKIE_NAME)):
         return RedirectResponse("/login", status_code=302)
     card = await factory_svc.get_model(session, model_id)
     path = abs_path(card.image_file) if card and card.image_file else None
     if path is not None and path.is_file():
-        return FileResponse(str(path))
+        headers = {"Cache-Control": "private, max-age=86400"}  # URL'dagi ?v= rasm almashsa o'zgaradi
+        if s == "sm":  # ro'yxat/kartochkalar uchun kichraytirilgan nusxa
+            small = await asyncio.to_thread(factory_svc.make_thumb, card.image_file)
+            if small is not None:
+                return FileResponse(str(small), media_type="image/jpeg", headers=headers)
+        return FileResponse(str(path), headers=headers)
     return Response(content=_MEDIA_PLACEHOLDER, media_type="image/svg+xml")
 
 
@@ -841,10 +848,18 @@ async def user_photo(user_id: int, request: Request, session: AsyncSession = Dep
 
 
 async def _new_truck_ctx(session: AsyncSession) -> dict:
+    from sqlalchemy import text as _t
+
     models = await factory_svc.list_models(session, only_active=True)
+    # Ko'p buyurtma qilingan modellar birinchi turadi (modellar ko'p bo'lganda kerakligi tez topilsin)
+    used = {r[0]: int(r[1]) for r in await session.execute(
+        _t("SELECT model, count(*) FROM public.trucks WHERE model IS NOT NULL GROUP BY model"))}
+    models.sort(key=lambda m: (-used.get(m.name, 0), (m.name or "").lower()))
     serials = {m.name: await factory_svc.suggest_serial(session, m.name) for m in models}
-    imgs = await factory_svc.image_map(session)
-    meta = {m.name: {"img": imgs.get(m.name), "ds": m.description or "", "serial": serials[m.name]}
+    imgs = await factory_svc.image_map(session, thumb=False)
+    thumbs = await factory_svc.image_map(session, thumb=True)
+    meta = {m.name: {"img": imgs.get(m.name), "thumb": thumbs.get(m.name), "ds": m.description or "",
+                     "serial": serials[m.name], "used": used.get(m.name, 0)}
             for m in models}
     return {"models": models, "serials": serials, "imgs": imgs, "meta": meta,
             "priorities": factory_svc.PRIORITIES, "priority_label": factory_svc.PRIORITY_LABEL}

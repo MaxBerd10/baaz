@@ -23,7 +23,7 @@
   .mp-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
   .mp-head h3{margin:0;font-size:15px}
   .mp-head .mp-q{margin-left:auto;width:220px;max-width:100%}
-  .mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+  .mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;max-height:470px;overflow-y:auto;padding:4px;margin:-4px;overscroll-behavior:contain}
   .mp{position:relative;display:block;cursor:pointer;border:2px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;transition:border-color .12s,box-shadow .12s,transform .12s}
   .mp:hover{border-color:#c9c3fb;transform:translateY(-1px)}
   .mp input{position:absolute;opacity:0;pointer-events:none}
@@ -55,7 +55,7 @@
     {% for m in models %}
     <label class="mp {{ 'on' if selected == m.name }}" data-name="{{ m.name|lower }}">
       <input type="radio" name="model" value="{{ m.name }}" form="nzform" required {{ 'checked' if selected == m.name }}>
-      <span class="im"{% if meta[m.name].img %} style="--bg:url('{{ meta[m.name].img }}')"{% endif %}>{% if meta[m.name].img %}<img src="{{ meta[m.name].img }}" alt="" loading="lazy">{% else %}rasm yo‘q{% endif %}</span>
+      <span class="im"{% if meta[m.name].thumb %} style="--bg:url('{{ meta[m.name].thumb }}')"{% endif %}>{% if meta[m.name].thumb %}<img src="{{ meta[m.name].thumb }}" alt="" loading="lazy" decoding="async">{% else %}rasm yo‘q{% endif %}</span>
       <b>{{ m.name }}</b><i class="ck">✓</i>
     </label>
     {% endfor %}
@@ -116,6 +116,7 @@
     if (window.innerWidth <= 900) { var t = document.querySelector('.selline'); if (t) t.scrollIntoView({behavior:'smooth', block:'start'}); }
   }); });
   upd();
+  var on = document.querySelector('.mp.on'); if (on) { var g = document.getElementById('mp-grid'); g.scrollTop = Math.max(0, on.offsetTop - g.offsetTop - 8); }
   var q = document.getElementById('mp-q');
   if(q){
     q.addEventListener('input', function(){

@@ -43,13 +43,50 @@ async def get_model_by_name(session: AsyncSession, name: str | None) -> ModelCar
     return await session.scalar(select(ModelCard).where(ModelCard.name == name))
 
 
-async def image_map(session: AsyncSession) -> dict[str, str]:
-    """{model nomi: rasm URL'i} — faqat rasmi bor modellar."""
+async def image_map(session: AsyncSession, thumb: bool = True) -> dict[str, str]:
+    """{model nomi: rasm URL'i} — faqat rasmi bor modellar. thumb=True — kichraytirilgan nusxa (ro'yxat/kartochkalar
+    uchun; 8 MB lik asl rasmlarni har safar yuklab olmaslik uchun), False — asl rasm (katta ko'rinish)."""
     rows = (await session.execute(
         select(ModelCard.name, ModelCard.id, ModelCard.image_file).where(ModelCard.image_file.is_not(None))
     )).all()
     # ?v= — rasm almashtirilganda brauzer keshi yangilansin
-    return {n: f"/media/model/{i}?v={Path(f).stem[:8]}" for n, i, f in rows}
+    sfx = "&s=sm" if thumb else ""
+    return {n: f"/media/model/{i}?v={Path(f).stem[:8]}{sfx}" for n, i, f in rows}
+
+
+THUMB_MAX = 640  # kichraytirilgan nusxaning eng katta tomoni (px)
+
+
+def thumb_path(rel_path: str) -> Path:
+    return MEDIA_ROOT / "models" / "thumbs" / f"{Path(rel_path).stem}_{THUMB_MAX}.jpg"
+
+
+def make_thumb(rel_path: str | None) -> Path | None:
+    """Model rasmining kichraytirilgan JPEG nusxasini (bir marta) yaratadi va yo'lini qaytaradi.
+    Pillow yo'q yoki rasm o'qilmasa — None (chaqiruvchi asl rasmni beradi)."""
+    if not rel_path:
+        return None
+    dst = thumb_path(rel_path)
+    if dst.is_file():
+        return dst
+    try:
+        from PIL import Image, ImageOps
+
+        with Image.open(abs_path(rel_path)) as im:
+            im = ImageOps.exif_transpose(im)
+            if im.mode in ("RGBA", "LA", "P"):
+                im = im.convert("RGBA")
+                bg = Image.new("RGB", im.size, (255, 255, 255))
+                bg.paste(im, mask=im.split()[-1])
+                im = bg
+            else:
+                im = im.convert("RGB")
+            im.thumbnail((THUMB_MAX, THUMB_MAX))
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            im.save(dst, "JPEG", quality=82, optimize=True)
+        return dst
+    except Exception:  # noqa: BLE001 — Pillow o'rnatilmagan yoki fayl buzuq
+        return None
 
 
 def sniff_image(data: bytes) -> str | None:
@@ -74,6 +111,7 @@ def save_image(data: bytes) -> str:
     rel = Path("models") / f"{uuid.uuid4().hex}.{ext}"
     (MEDIA_ROOT / "models").mkdir(parents=True, exist_ok=True)
     (MEDIA_ROOT / rel).write_bytes(data)
+    make_thumb(str(rel))  # kichik nusxa oldindan tayyor bo'lsin (xato bo'lsa — birinchi so'rovda yaratiladi)
     return str(rel)
 
 
@@ -82,6 +120,7 @@ def delete_image(rel_path: str | None) -> None:
         return
     try:
         abs_path(rel_path).unlink(missing_ok=True)
+        thumb_path(rel_path).unlink(missing_ok=True)
     except OSError:
         pass
 
