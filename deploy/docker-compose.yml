@@ -54,7 +54,7 @@ services:
   migrate:
     build: *bot-build
     image: baaz-bot:local
-    command: sh -c "alembic upgrade head && psql -v ON_ERROR_STOP=1 -q -f /compat.sql"
+    command: sh -c "alembic upgrade head && psql -v ON_ERROR_STOP=1 -q -f /compat.sql -f /events.sql"
     environment:
       <<: *bot-env
       PGHOST: db
@@ -63,6 +63,7 @@ services:
       PGDATABASE: ${POSTGRES_DB:-truck_factory}
     volumes:
       - ./bot-compat.sql:/compat.sql:ro
+      - ../app/bot_events.sql:/events.sql:ro   # bosqich voqealari jurnali (trigger): statistikaning aniqligi uchun
     depends_on:
       db:
         condition: service_healthy

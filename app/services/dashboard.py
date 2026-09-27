@@ -328,55 +328,76 @@ async def build(session: AsyncSession, *, line: str | None = None) -> dict:
 
 
 async def alerts(session: AsyncSession) -> list[dict]:
-    """Ogohlantirishlar: 2+ marta qaytgan yoki uzoq turib qolgan mahsulotlar."""
+    """Ogohlantirishlar. Bot rejimida (haqiqiy ma'lumot): hozir qaytarilgan trucklar, bir bosqichda 2+ marta
+    qaytarilganlar, muddati o'tganlar va QC 2+ kun kutayotganlar — har sabab alohida qator."""
+    out: list[dict] = []
+
+    def row(p, kind, tone, sort=0):
+        return {"code": p.code, "name": p.name, "model": p.model or "—", "size": p.size_m,
+                "line": p.line, "stage": p.current_stage_order, "kind": kind, "tone": tone, "sort": sort}
+
+    if settings.bot_db:
+        from sqlalchemy import text as _t
+
+        prods = {p.id: p for p in (await session.scalars(
+            select(Product).where(Product.status != ProductStatus.done))).all()}
+        # 1) hozir qaytarilgan (ishchi qayta qilishi kerak)
+        for p in prods.values():
+            if p.status == ProductStatus.returned:
+                out.append(row(p, "Qaytarilgan — qayta qilinishi kerak", "red", 0))
+        # 2) bir bosqichda 2+ marta rad etilgan
+        rep = (await session.execute(
+            select(StageRun.product_id, StageRun.stage_order, func.count())
+            .where(StageRun.status == StageRunStatus.returned)
+            .group_by(StageRun.product_id, StageRun.stage_order)
+            .having(func.count() >= 2)
+        )).all()
+        for pid, so, cnt in rep:
+            p = prods.get(pid)
+            if p is not None:
+                out.append(row(p, f"{so}-bosqich {cnt} marta qaytarilgan", "red", 1))
+        # 3) muddati o'tgan
+        today = dt.datetime.now(dt.timezone.utc).date()
+        for pid, dl in (await session.execute(_t("SELECT id, deadline FROM web.products WHERE deadline IS NOT NULL"))).all():
+            p = prods.get(int(pid))
+            if p is not None and dl.date() < today:
+                out.append(row(p, f"Muddat o'tgan: {(today - dl.date()).days} kun", "red", 2))
+        # 4) QC uzoq kutayotgan
+        stale_before = _day0() - dt.timedelta(days=2)
+        for p in (await session.scalars(
+            select(Product).join(StageRun, StageRun.product_id == Product.id)
+            .where(Product.status == ProductStatus.qc_pending, StageRun.status == StageRunStatus.qc_pending,
+                   StageRun.submitted_at < stale_before).distinct()
+        )).all():
+            out.append(row(p, "QC 2+ kun kutmoqda", "amber", 3))
+        out.sort(key=lambda r: (r["sort"], r["code"]))
+        return out
+
     prob_sub = (
         select(StageRun.product_id)
         .where(StageRun.status == StageRunStatus.returned)
         .group_by(StageRun.product_id)
-        .having(func.count() >= (1 if settings.bot_db else 2))
+        .having(func.count() >= 2)
     )
-    rows = list(
-        (
-            await session.scalars(
-                select(Product)
-                .where(Product.id.in_(prob_sub), Product.status != ProductStatus.done)
-                .order_by(Product.id.desc())
-            )
-        ).all()
-    )
-    out = [
-        {"code": p.code, "name": p.name, "model": p.model or "—", "size": p.size_m,
-         "line": p.line, "stage": p.current_stage_order,
-         "kind": "Qaytarilgan" if settings.bot_db else "Ko'p marta qaytarilgan", "tone": "red"}
-        for p in rows
-    ]
+    rows = list((await session.scalars(
+        select(Product).where(Product.id.in_(prob_sub), Product.status != ProductStatus.done)
+        .order_by(Product.id.desc()))).all())
+    out = [row(p, "Ko'p marta qaytarilgan", "red") for p in rows]
 
     # uzoq QC kutayotganlar (>2 kun)
     stale_before = _day0() - dt.timedelta(days=2)
-    stale = list(
-        (
-            await session.scalars(
-                select(Product)
-                .join(StageRun, StageRun.product_id == Product.id)
-                .where(
-                    Product.status == ProductStatus.qc_pending,
-                    StageRun.status == StageRunStatus.qc_pending,
-                    StageRun.submitted_at < stale_before,
-                )
-                .distinct()
-            )
-        ).all()
-    )
+    stale = list((await session.scalars(
+        select(Product).join(StageRun, StageRun.product_id == Product.id)
+        .where(Product.status == ProductStatus.qc_pending, StageRun.status == StageRunStatus.qc_pending,
+               StageRun.submitted_at < stale_before).distinct())).all())
     for p in stale:
         if not any(o["code"] == p.code for o in out):
-            out.append({"code": p.code, "name": p.name, "model": p.model or "—", "size": p.size_m,
-                        "line": p.line, "stage": p.current_stage_order,
-                        "kind": "QC 2+ kun kutmoqda", "tone": "amber"})
+            out.append(row(p, "QC 2+ kun kutmoqda", "amber"))
     return out
 
 
 async def alerts_count(session: AsyncSession) -> int:
-    return len(await alerts(session))
+    return len({r["code"] for r in await alerts(session)})
 
 
 def _pct(n: int, total: int) -> float:
@@ -577,8 +598,15 @@ PERIODS = {"today": "Bugun", "7d": "7 kun", "30d": "30 kun", "all": "Hammasi"}
 
 
 async def _period_kpis(session: AsyncSession, period: str) -> list[dict]:
-    """Tanlangan davr (Bugun / 7 kun / 30 kun / Hammasi) uchun 4 ta asosiy ko'rsatkich.
-    O'zgarish (delta) — undan oldingi shunday davr bilan solishtirma; 'Hammasi' da delta yo'q."""
+    """Tanlangan davr (Bugun / 7 kun / 30 kun / Hammasi) uchun 4 ta asosiy ko'rsatkich — hammasi haqiqiy hisob.
+    O'zgarish (delta) — undan oldingi shunday davr bilan solishtirma; oldingi davrda ma'lumot bo'lmasa yoki
+    'Hammasi' tanlansa ko'rsatilmaydi (soxta foiz chiqarilmaydi).
+
+      Sifat darajasi   = tasdiqlangan / (tasdiqlangan + qaytarilgan) — davrda QC chiqargan qarorlar bo'yicha
+      Tayyor bo'ldi    = davrda tugallangan (oxirgi bosqichi tasdiqlangan) trucklar soni
+      Qaytarishlar     = davrda QC rad etgan urinishlar soni
+      O'rtacha bosqich vaqti = davrda tasdiqlangan bosqichlar uchun: bosqich ishchiga kelgandan tasdiqqacha
+    """
     now0 = _day0()
     end = now0 + dt.timedelta(days=1)
     days = {"today": 1, "7d": 7, "30d": 30}.get(period)
@@ -590,50 +618,55 @@ async def _period_kpis(session: AsyncSession, period: str) -> list[dict]:
 
     async def stats(lo, hi):
         def rng(col):
-            conds = []
-            if lo is not None:
-                conds += [col >= lo, col < hi]
-            return conds
+            return [col >= lo, col < hi] if lo is not None else []
 
         a = int(await session.scalar(select(func.count()).select_from(StageRun).where(
             StageRun.status == StageRunStatus.approved, *rng(StageRun.decided_at))) or 0)
         r = int(await session.scalar(select(func.count()).select_from(StageRun).where(
             StageRun.status == StageRunStatus.returned, *rng(StageRun.decided_at))) or 0)
+        fin = int(await session.scalar(select(func.count()).select_from(Product).where(
+            Product.finished_at.is_not(None), *rng(Product.finished_at))) or 0)
         durs = (await session.execute(select(StageRun.started_at, StageRun.decided_at).where(
             StageRun.status == StageRunStatus.approved, StageRun.decided_at.is_not(None),
             *rng(StageRun.decided_at)))).all()
         hh = [h for s_, e_ in durs if (h := _hours(s_, e_)) is not None]
-        started = int(await session.scalar(select(func.count()).select_from(StageRun).where(
-            *rng(StageRun.started_at))) or 0)
-        started_ok = int(await session.scalar(select(func.count()).select_from(StageRun).where(
-            StageRun.status == StageRunStatus.approved, *rng(StageRun.started_at))) or 0)
         return {
-            "qc": round(a / (a + r) * 100, 1) if (a + r) else 0.0,
-            "ret": round(r / (a + r) * 100, 1) if (a + r) else 0.0,
-            "done": round(started_ok / started * 100, 1) if started else 0.0,
-            "avg_h": round(sum(hh) / len(hh), 1) if hh else 0.0,
+            "qc": round(a / (a + r) * 100, 1) if (a + r) else None,
+            "fin": fin, "ret": r,
+            "avg_h": round(sum(hh) / len(hh), 2) if hh else None,
         }
 
     c = await stats(*cur)
     p = await stats(*prev) if prev else None
-    _, sp_a = await _daily(session, StageRun.decided_at, 14, StageRun.status == StageRunStatus.approved)
+    _, sp_fin = await _daily(session, Product.finished_at, 14)
     _, sp_r = await _daily(session, StageRun.decided_at, 14, StageRun.status == StageRunStatus.returned)
 
     def delta(key, good_when_up, unit="%"):
-        if p is None:
+        """(matn, ohang). Oldingi davr bo'lmasa yoki solishtirib bo'lmasa — bo'sh."""
+        if p is None or c[key] is None or p[key] is None:
+            return "", "good"
+        if key in ("fin", "ret") and c[key] == 0 and p[key] == 0:
             return "", "good"
         d = round(c[key] - p[key], 1)
-        return _delta_str(d, unit), ("good" if (d >= 0) == good_when_up else "bad")
+        if key == "avg_h":
+            # soatlarda: o'qishga qulay ko'rinishda (masalan «+2 soat 10 daq»)
+            txt = ("+" if d > 0 else "−" if d < 0 else "") + stats_svc.fmt_hours(abs(d)) if d else "0"
+        else:
+            txt = _delta_str(int(d) if unit == "" else d, unit)
+        return txt, ("good" if (d >= 0) == good_when_up else "bad")
+
+    def val(key, fmt):
+        return fmt(c[key]) if c[key] is not None else "—"
 
     out = []
-    for label, key, up, unit, spark, color, val in [
-        ("Sifat darajasi", "qc", True, "%", sp_a, "var(--c-green)", f"{c['qc']}%"),
-        ("Bajarilish", "done", True, "%", sp_a, "var(--c-blue)", f"{c['done']}%"),
-        ("Qaytarilish", "ret", False, "%", sp_r, "var(--c-amber)", f"{c['ret']}%"),
-        ("O'rtacha bosqich vaqti", "avg_h", False, " soat", sp_r, "var(--c-red)", stats_svc.fmt_hours(c['avg_h'])),
+    for label, key, up, unit, spark, color, text in [
+        ("Sifat darajasi", "qc", True, "%", [], "var(--c-green)", val("qc", lambda x: f"{x}%")),
+        ("Tayyor bo'ldi", "fin", True, "", sp_fin, "var(--c-blue)", val("fin", lambda x: f"{x} ta")),
+        ("Qaytarishlar", "ret", False, "", sp_r, "var(--c-amber)", val("ret", lambda x: f"{x} ta")),
+        ("O'rtacha bosqich vaqti", "avg_h", False, "", [], "var(--c-red)", val("avg_h", stats_svc.fmt_hours)),
     ]:
         d, tone = delta(key, up, unit)
-        out.append({"label": label, "value": val, "delta": d, "delta_tone": tone,
+        out.append({"label": label, "value": text, "delta": d, "delta_tone": tone,
                     "spark": spark, "color": color})
     return out
 
@@ -806,10 +839,10 @@ async def home(session: AsyncSession, sel_code: str | None = None, period: str =
          "tone": "violet", "icon": "foodtruck", "spark": sp_all},
         {"label": "Ishlab chiqarishda", "value": by_status[ProductStatus.in_production],
          "sub": f"{pct(by_status[ProductStatus.in_production])}% jami",
-         "tone": "blue", "icon": "gear", "spark": sp_ap},
+         "tone": "blue", "icon": "gear", "spark": []},
         {"label": "QC kutmoqda", "value": by_status[ProductStatus.qc_pending],
          "sub": f"{pct(by_status[ProductStatus.qc_pending])}% jami",
-         "tone": "amber", "icon": "shield", "spark": sp_re},
+         "tone": "amber", "icon": "shield", "spark": []},
         {"label": "Qaytarilgan", "value": by_status[ProductStatus.returned],
          "sub": f"{pct(by_status[ProductStatus.returned])}% jami",
          "tone": "red", "icon": "back", "spark": sp_re},
@@ -903,8 +936,16 @@ async def home(session: AsyncSession, sel_code: str | None = None, period: str =
                 "status_label": {"done": "Tugallangan", "current": "Ishlab chiqarishda",
                                  "todo": "Kutilmoqda"}[state],
                 "started": ref.started_at if (state == "current" and ref) else None,
+                "elapsed": (stats_svc.fmt_hours(_hours(ref.started_at, dt.datetime.now(dt.timezone.utc)))
+                            if (state == "current" and ref and ref.started_at) else None),
             })
 
+        sel_deadline = None
+        if settings.bot_db:
+            from sqlalchemy import text as _t
+
+            sel_deadline = await session.scalar(
+                _t("SELECT deadline FROM web.products WHERE id = :i"), {"i": sel_p.id})
         workers = {r.worker.full_name for r in runs if r.worker}
         last_up = max([r.decided_at or r.submitted_at or r.started_at for r in runs] or [sel_p.created_at])
         lbl, tone = _ST_UI.get(sel_p.status.value, ("—", "slate"))
@@ -915,13 +956,13 @@ async def home(session: AsyncSession, sel_code: str | None = None, period: str =
             "color": sel_p.color or "—", "hex": color_hex(sel_p.color),
             "status": sel_p.status.value, "status_label": lbl, "tone": tone,
             "started": sel_p.created_at,
-            "due": (sel_p.created_at + dt.timedelta(days=int(n * 1.6))) if sel_p.created_at else None,
+            "due": sel_deadline if settings.bot_db else ((sel_p.created_at + dt.timedelta(days=int(n * 1.6))) if sel_p.created_at else None),
             "cur": cur, "cur_name": stage_names.get(cur, "—"),
             "progress": prog,
             "workers": sorted(workers), "worker_extra": max(0, len(workers) - 3),
-            "line": sel_p.line or "Liniya 1",
+            "line": None if settings.bot_db else (sel_p.line or "Liniya 1"),
             "last_update": last_up,
-            "next_plan": (last_up + dt.timedelta(days=1)) if last_up else None,
+            "next_plan": None if settings.bot_db else ((last_up + dt.timedelta(days=1)) if last_up else None),
             "n_stages": n,
             "timeline": tl,
         }

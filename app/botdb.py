@@ -17,6 +17,7 @@ import asyncpg
 from app.db import _connect_args, _url
 
 SQL_FILE = Path(__file__).with_name("bot_views.sql")
+EVENTS_FILE = Path(__file__).with_name("bot_events.sql")
 VIEWS = ["stages", "users", "products", "stage_runs", "media", "audit_logs",
          "stage_check_items", "stage_run_checks", "truck_models"]
 
@@ -41,6 +42,7 @@ async def install() -> None:
         if missing:
             sys.exit(f"Bot jadvallari topilmadi: {sorted(missing)}. "
                      "Avval botda `alembic upgrade head` ni ishga tushiring.")
+        await conn.execute(EVENTS_FILE.read_text(encoding="utf-8"))  # voqealar jurnali (trigger) — ko'rinishlardan oldin
         await conn.execute(SQL_FILE.read_text(encoding="utf-8"))
         print("✅ web ko'rinishlari o'rnatildi:", ", ".join(VIEWS))
     finally:

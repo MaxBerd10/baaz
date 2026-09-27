@@ -73,34 +73,65 @@ FROM public.trucks t
 LEFT JOIN public.truck_steps cs
        ON cs.truck_id = t.id AND cs.step_number = t.current_step;
 
--- truck_steps -> "bosqich sikli" (bot bitta qatorni qayta ishlatadi, urinishlar tarixi yo'q)
+-- Ustun turlari o'zgargani uchun (CREATE OR REPLACE ruxsat bermaydi) eski ko'rinishlar o'chirib qayta yaratiladi.
+DROP VIEW IF EXISTS web.audit_logs, web.media, web.stage_runs;
+
+-- Bosqich urinishlari. Botda bitta `truck_steps` qatori qayta ishlatiladi, shuning uchun urinishlar tarixi
+-- `truck_step_events` jurnalidan (app/bot_events.sql) olinadi: har «yuborildi» voqeasi — bitta urinish,
+-- uning natijasi (tasdiqlandi/rad etildi) keyingi qaror voqeasidan. Hali yuborilmagan (ishlanayotgan) bosqich
+-- alohida `in_progress` qator bo'ladi. id: urinishlar 1_000_000 + voqea id, ishlanayotganlar — truck_steps.id.
+--
+-- started_at = ish shu bosqichga kelgan payt: oldingi bosqich tasdiqlangan vaqt (1-bosqichda — buyurtma yaratilgan payt).
+-- (Botdagi started_at — ishchi «Ish yuborish»ni bosgan payt, ya'ni ish tugagach; u bilan o'lchasak faqat QC kutish vaqti chiqadi.)
+-- Shu sababli tasdiqlangan urinishning (decided_at - started_at) — qaytarishlar bilan birga BUTUN bosqich davomiyligi.
 CREATE OR REPLACE VIEW web.stage_runs AS
+SELECT (1000000 + s.id)::int                 AS id,
+       s.truck_id                            AS product_id,
+       s.step_number                         AS stage_id,
+       s.step_number                         AS stage_order,
+       s.attempt_no::int                     AS attempt_no,
+       s.worker_id,
+       d.qc_id,
+       (CASE d.event WHEN 'approved' THEN 'approved'
+                     WHEN 'rejected' THEN 'returned'
+                     ELSE 'qc_pending' END)::varchar(32) AS status,
+       s.comment                             AS worker_comment,
+       CASE WHEN d.event = 'rejected' THEN d.comment END AS qc_comment,
+       (COALESCE(CASE WHEN s.step_number = 1 THEN t0.created_at ELSE prev.reviewed_at END,
+                 ts.started_at, s.created_at) AT TIME ZONE 'UTC') AS started_at,
+       (s.created_at AT TIME ZONE 'UTC')     AS submitted_at,
+       (d.created_at AT TIME ZONE 'UTC')     AS decided_at
+FROM (SELECT e.*, row_number() OVER (PARTITION BY e.step_id ORDER BY e.id) AS attempt_no
+        FROM public.truck_step_events e WHERE e.event = 'submitted') s
+JOIN public.truck_steps ts ON ts.id = s.step_id
+JOIN public.trucks t0 ON t0.id = s.truck_id
+LEFT JOIN public.truck_steps prev ON prev.truck_id = s.truck_id AND prev.step_number = s.step_number - 1
+LEFT JOIN LATERAL (
+    SELECT d0.event, d0.qc_id, d0.comment, d0.created_at
+    FROM public.truck_step_events d0
+    WHERE d0.step_id = s.step_id AND d0.id > s.id AND d0.event IN ('approved', 'rejected')
+      AND NOT EXISTS (SELECT 1 FROM public.truck_step_events n
+                       WHERE n.step_id = s.step_id AND n.event = 'submitted' AND n.id > s.id AND n.id < d0.id)
+    ORDER BY d0.id LIMIT 1
+) d ON true
+UNION ALL
 SELECT ts.id,
-       ts.truck_id                           AS product_id,
-       ts.step_number                        AS stage_id,
-       ts.step_number                        AS stage_order,
-       1                                     AS attempt_no,
-       ts.worker_id,
-       ts.qc_id,
-       (CASE ts.status::text
-             WHEN 'in_review' THEN 'qc_pending'
-             WHEN 'approved'  THEN 'approved'
-             WHEN 'rejected'  THEN 'returned'
-             ELSE 'in_progress' END)::varchar(32) AS status,
-       ts.worker_comment,
-       ts.qc_comment,
-       -- Bosqich "boshlangan" vaqti = ish shu bosqichga kelgan payt: oldingi bosqich QC tasdiqlagan vaqt
-       -- (1-bosqich uchun — buyurtma yaratilgan payt). Botdagi started_at ishchi "Ish yuborish"ni bosgan
-       -- payt, ya'ni ish tugagandan keyin; u bilan o'lchasak faqat QC kutish vaqti chiqadi.
+       ts.truck_id, ts.step_number, ts.step_number,
+       ((SELECT count(*) FROM public.truck_step_events e WHERE e.step_id = ts.id AND e.event = 'submitted') + 1)::int,
+       ts.worker_id, NULL::int,
+       'in_progress'::varchar(32),
+       NULL::text, NULL::text,
        (COALESCE(CASE WHEN ts.step_number = 1 THEN t0.created_at ELSE prev.reviewed_at END,
-                 ts.started_at, ts.submitted_at, ts.created_at) AT TIME ZONE 'UTC') AS started_at,
-       (ts.submitted_at AT TIME ZONE 'UTC')  AS submitted_at,
-       (ts.reviewed_at  AT TIME ZONE 'UTC')  AS decided_at
+                 ts.started_at, ts.created_at) AT TIME ZONE 'UTC'),
+       NULL::timestamp, NULL::timestamp
 FROM public.truck_steps ts
 JOIN public.trucks t0 ON t0.id = ts.truck_id
-LEFT JOIN public.truck_steps prev
-       ON prev.truck_id = ts.truck_id AND prev.step_number = ts.step_number - 1
-WHERE ts.status::text <> 'pending' OR ts.started_at IS NOT NULL;
+LEFT JOIN public.truck_steps prev ON prev.truck_id = ts.truck_id AND prev.step_number = ts.step_number - 1
+WHERE ts.started_at IS NOT NULL
+  AND ( ts.status::text = 'pending'
+        OR (ts.status::text = 'rejected'
+            AND ts.started_at > COALESCE((SELECT max(e.created_at) FROM public.truck_step_events e
+                                           WHERE e.step_id = ts.id AND e.event = 'rejected'), '-infinity')) );
 
 -- Bir bosqichga bir nechta rasm/video: `truck_step_media` (bot yozadi; deploy/bot-compat.sql ham shuni yaratadi).
 -- Hujjatlar (document) web'da ko'rsatilmaydi.
@@ -120,7 +151,8 @@ CREATE INDEX IF NOT EXISTS ix_truck_step_media_step ON public.truck_step_media (
 -- Eski (jadvalgacha yuborilgan) ishlar uchun truck_steps.media_* ishlatiladi.
 CREATE OR REPLACE VIEW web.media AS
 SELECT ts.id,
-       ts.id                                             AS stage_run_id,
+       COALESCE((SELECT 1000000 + max(e.id) FROM public.truck_step_events e
+                  WHERE e.step_id = ts.id AND e.event = 'submitted'), ts.id) AS stage_run_id,
        ts.truck_id                                       AS product_id,
        (CASE WHEN ts.media_type::text = 'video' THEN 'video' ELSE 'photo' END)::varchar(16) AS type,
        COALESCE(ts.media_local_path, '')::varchar(512)   AS file_path,
@@ -133,7 +165,8 @@ WHERE ts.media_file_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM public.truck_step_media m WHERE m.step_id = ts.id AND NOT m.draft)
 UNION ALL
 SELECT (1000000000 + m.id)::int                          AS id,
-       m.step_id                                         AS stage_run_id,
+       COALESCE((SELECT 1000000 + max(e.id) FROM public.truck_step_events e
+                  WHERE e.step_id = m.step_id AND e.event = 'submitted'), m.step_id) AS stage_run_id,
        ts.truck_id                                       AS product_id,
        (CASE WHEN m.media_type = 'video' THEN 'video' ELSE 'photo' END)::varchar(16) AS type,
        COALESCE(m.local_path, '')::varchar(512)          AS file_path,
@@ -145,36 +178,24 @@ JOIN public.truck_steps ts ON ts.id = m.step_id
 WHERE NOT m.draft
   AND m.media_type IN ('photo', 'video');
 
--- Faoliyat lentasi: botning audit_logs'iga bog'lanmay, aniq voqealardan yig'iladi.
+-- Faoliyat lentasi: `truck_step_events` jurnalidan (har yuborish, tasdiq va rad etish alohida qator) + truck yaratilishi/tugashi.
 CREATE OR REPLACE VIEW web.audit_logs AS
-SELECT ts.id * 10 + 1                                AS id,
-       ts.worker_id                                  AS actor_id,
-       w.full_name                                   AS actor_name,
-       'submitted_to_qc'::varchar(64)                AS action,
-       ts.truck_id                                   AS product_id,
-       ts.id                                         AS stage_run_id,
+SELECT (1000000 + e.id)::int                         AS id,
+       COALESCE(e.qc_id, e.worker_id)                AS actor_id,
+       COALESCE(qu.full_name, wu.full_name)          AS actor_name,
+       (CASE e.event WHEN 'submitted' THEN 'submitted_to_qc'
+                     WHEN 'approved'  THEN 'qc_approved'
+                     ELSE 'qc_returned' END)::varchar(64) AS action,
+       e.truck_id                                    AS product_id,
+       NULL::int                                     AS stage_run_id,
        ('Model ' || COALESCE(NULLIF(t.model, ''), t.serial_number) || ' — '
-          || ts.step_number || '-bosqich')::text     AS details,
-       (ts.submitted_at AT TIME ZONE 'UTC')          AS created_at
-FROM public.truck_steps ts
-JOIN public.trucks t ON t.id = ts.truck_id
-LEFT JOIN public.users w ON w.id = ts.worker_id
-WHERE ts.submitted_at IS NOT NULL
-UNION ALL
-SELECT ts.id * 10 + 2,
-       ts.qc_id,
-       q.full_name,
-       (CASE ts.status::text WHEN 'approved' THEN 'qc_approved' ELSE 'qc_returned' END)::varchar(64),
-       ts.truck_id,
-       ts.id,
-       ('Model ' || COALESCE(NULLIF(t.model, ''), t.serial_number) || ' — '
-          || ts.step_number || '-bosqich'
-          || COALESCE(': ' || ts.qc_comment, ''))::text,
-       (ts.reviewed_at AT TIME ZONE 'UTC')
-FROM public.truck_steps ts
-JOIN public.trucks t ON t.id = ts.truck_id
-LEFT JOIN public.users q ON q.id = ts.qc_id
-WHERE ts.reviewed_at IS NOT NULL AND ts.status::text IN ('approved', 'rejected')
+          || e.step_number || '-bosqich'
+          || CASE WHEN e.event = 'rejected' AND e.comment IS NOT NULL THEN ': ' || e.comment ELSE '' END)::text AS details,
+       (e.created_at AT TIME ZONE 'UTC')             AS created_at
+FROM public.truck_step_events e
+JOIN public.trucks t ON t.id = e.truck_id
+LEFT JOIN public.users wu ON wu.id = e.worker_id
+LEFT JOIN public.users qu ON qu.id = e.qc_id
 UNION ALL
 SELECT t.id * 10 + 3,
        cu.id,

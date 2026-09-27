@@ -99,3 +99,26 @@ bo'yicha tartiblab). Model katalogi (`web.model_cards`) — web'ning o'z jadvali
 Yangi buyurtmada web `BOT_TOKEN` bilan botdagi hamma faol foydalanuvchiga xabar yuboradi (model rasmi bilan).
 Cheklov: ishchi botda vazifani ochganda model rasmi hozircha chiqmaydi — rasm faqat «yangi buyurtma» xabarida keladi
 (bot kodida `web.model_cards.tg_file_id` dan foydalanib qo'shish mumkin).
+
+## Ko'rsatkichlar qanday hisoblanadi (aniq hisob)
+Bot bitta bosqichni rad etilgach qayta ishlatadi va eski rad etish izini o'chiradi. Shuning uchun baza triggeri
+(`app/bot_events.sql`) har bir holat o'zgarishini `truck_step_events` jurnaliga yozib boradi (yuborildi / tasdiqlandi / rad etildi).
+Barcha ko'rsatkichlar shu jurnaldan hisoblanadi (`web.stage_runs` — har bir yuborish alohida «urinish»):
+
+| Ko'rsatkich | Hisob |
+|---|---|
+| Sifat darajasi | tasdiqlangan / (tasdiqlangan + qaytarilgan) — QC qarorlari bo'yicha |
+| Qaytarishlar | QC rad etgan urinishlar soni (bir truck necha marta qaytgan bo'lsa, shuncha) |
+| Tayyor bo'ldi | oxirgi bosqichi tasdiqlangan trucklar soni (davr bo'yicha) |
+| O'rtacha bosqich vaqti | bosqich ishchiga kelgan paytdan (oldingi bosqich tasdiqlangan; 1-bosqich — buyurtma yaratilgan) tasdiqlangunicha; qaytarishlar vaqti ham ichida |
+| Jamoa natijasi | bosqichdagi barcha tasdiq/qaytarishlar (kim yuborganidan qat'i nazar) |
+| Ishchining «Yuborgan ishlari» | faqat o'zi yuborgan urinishlar |
+| Muddat | buyurtmada belgilangan haqiqiy muddat; belgilanmagan bo'lsa ko'rsatilmaydi |
+
+O'zgarish foizlari (↑/↓) oldingi shunday davr bilan solishtiriladi; oldingi davrda ma'lumot bo'lmasa ko'rsatilmaydi.
+Jurnal yoqilishidan OLDINGI rad etishlar tiklanmaydi (faqat oxirgi holat).
+
+## Production'dan oldin test ma'lumotlarini tozalash
+`deploy/reset-data.sh` — faqat adminlar qoladi (ishchilar, QC, trucklar, takliflar, rasm/videolar o'chadi; model katalogi qoladi).
+Avval `./reset-data.sh --dry` bilan nimalar o'chishini ko'ring; haqiqiy tozalashdan oldin avtomatik zaxira olinadi va «TOZALASH» yozish so'raladi.
+

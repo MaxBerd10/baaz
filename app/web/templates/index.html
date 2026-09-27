@@ -218,7 +218,7 @@
         </div>
         <div class="selmeta">
           <div class="m"><div class="k">Boshlanish sanasi</div><div class="v num">📅 {{ s.started|dt }}</div></div>
-          <div class="m"><div class="k">Kutilgan tugash</div><div class="v num">📅 {{ s.due|dt }}</div></div>
+          <div class="m"><div class="k">{{ 'Buyurtma muddati' if bot_db else 'Kutilgan tugash' }}</div><div class="v num">📅 {{ (s.due.strftime('%d.%m.%Y') if bot_db and s.due else s.due|dt) if s.due else '—' }}</div></div>
           <div class="m"><div class="k">Joriy bosqich</div><div class="v">{{ s.cur }}-bosqich · {{ s.cur_name }}</div></div>
           <div class="m"><div class="k">Umumiy progress</div><div class="v">◔ {{ s.progress }}%</div></div>
         </div>
@@ -244,8 +244,8 @@
         <span class="badge b-{{ 'done' if r.state=='done' else ('in_production' if r.state=='current' else 'cancelled') }}">{{ r.status_label }}</span>
         {% if r.state=='current' %}
         <div class="cur-wrap">
-          <div style="font-size:10.5px;color:var(--faint)">Boshlangan: {{ r.started|dt }}</div>
-          <div class="cur-bar"><i style="width:{{ r.pct }}%"></i></div>
+          <div style="font-size:10.5px;color:var(--faint)">Bosqichga kelgan: {{ r.started|dt }}{% if r.elapsed %} · {{ r.elapsed }} bo‘ldi{% endif %}</div>
+          {% if not bot_db %}<div class="cur-bar"><i style="width:{{ r.pct }}%"></i></div>{% endif %}
         </div>
         {% endif %}
       </div>
@@ -263,9 +263,9 @@
           {% if not s.workers %}<span class="v">—</span>{% endif %}
         </div>
       </div>
-      <div class="cell"><div class="k">Liniya</div><div class="v">{{ s.line }}</div></div>
+      {% if not bot_db %}<div class="cell"><div class="k">Liniya</div><div class="v">{{ s.line }}</div></div>{% endif %}
       <div class="cell"><div class="k">Oxirgi yangilanish</div><div class="v num">{{ s.last_update|dt }}</div></div>
-      <div class="cell"><div class="k">Keyingi reja</div><div class="v num">{{ s.next_plan|dt }}</div></div>
+      {% if not bot_db %}<div class="cell"><div class="k">Keyingi reja</div><div class="v num">{{ s.next_plan|dt }}</div></div>{% endif %}
     </div>
   </div>
   {% else %}

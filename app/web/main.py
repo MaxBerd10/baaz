@@ -1076,6 +1076,8 @@ async def alerts_page(request: Request, session: AsyncSession = Depends(get_sess
 # --------------------------------------------------------------------------- #
 @app.get("/analytics", response_class=HTMLResponse)
 async def analytics_page(request: Request, session: AsyncSession = Depends(get_session), _=Depends(require_login)):
+    if settings.bot_db:  # bu sahifadagi ba'zi ko'rsatkichlar namunaviy edi; haqiqiy ko'rsatkichlar Boshqaruv paneli va Hisobotlarda
+        return RedirectResponse("/", status_code=302)
     d = await dash_svc.build(session)
     dy = d["dyn"]
     dyn_svg = Markup(charts.dynamics(dy["labels"], dy["plan"], dy["fact"], dy["ready"], width=900, height=280))
