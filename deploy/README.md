@@ -7,7 +7,7 @@ Bitta `docker compose up` bilan: **Postgres**, **Telegram bot**, **web panel**. 
 ```
 brauzer ─https─▶ Cloudflare ─tunnel─▶ cloudflared ─▶ 127.0.0.1:8090 (web) ─▶ Postgres ◀─ bot ◀─▶ Telegram
 ```
-Port ochish, A-yozuv, sertifikat kerak emas. Tunnel sozlamasida: Public hostname `panel.max.co.uz` → `http://localhost:8090`.
+Port ochish, A-yozuv, sertifikat kerak emas. Tunnel sozlamasida: Public hostname `factory.baaztrucks.uz` → `http://localhost:8090`.
 
 **B) Caddy (agar tunnel yo'q bo'lsa):** `docker compose --profile caddy up -d --build`, `.env` da `DOMAIN=...`,
 A-yozuv serverga qarasin, 80/443 ochiq bo'lsin.
@@ -41,7 +41,7 @@ Birinchi qurish 3–5 daqiqa oladi. Keyin:
 docker compose ps                 # migrate = Exited (0), qolganlari Up
 docker compose logs -f bot        # "Bot tasdiqlandi: @..." ko'rinsin
 ```
-Serverning o'zida `curl -I http://127.0.0.1:8090/login` → `200`. So'ng tunnelga hostname qo'shing va `https://panel.max.co.uz` → `WEB_PASSWORD` bilan kiring. Telegram'da botga `/start` yozing — `ADMIN_IDS` dagi
+Serverning o'zida `curl -I http://127.0.0.1:8090/login` → `200`. So'ng tunnelga hostname qo'shing va `https://factory.baaztrucks.uz` → `WEB_PASSWORD` bilan kiring. Telegram'da botga `/start` yozing — `ADMIN_IDS` dagi
 ID avtomatik admin bo'ladi; keyin botdan ishchi/QC uchun taklif havolalari yarating.
 
 ## Kundalik
@@ -119,3 +119,12 @@ Nusxalarni vaqti-vaqti bilan serverdan tashqariga (masalan boshqa kompyuterga) k
   aniq xato va taklif chiqadi.
 - **Nechta truck** (1–10): bir modeldan bir nechta buyurtma bir bosishda yaratiladi (seriyalar ketma-ket, avtomatik). Telegram'ga bitta
   xabar ketadi: «Soni: 3 ta, seriya T2-2026-007 … T2-2026-009».
+
+## Domen: factory.baaztrucks.uz (2026-10-10)
+Sayt `https://factory.baaztrucks.uz` da. `baaztrucks.uz` boshqa Cloudflare akkauntida bo'lgani uchun bu domen uchun ALOHIDA tunnel
+(`factory`) va alohida xizmat ishlatiladi: `cloudflared-baaz.service` (sozlama: `/etc/cloudflared-baaz/config.yml`).
+Eski `cloudflared.service` (boshqa loyihalar uchun) o'zgarmagan.
+DNS: Cloudflare (`baaztrucks.uz`) da `factory` CNAME -> `<tunnel-uuid>.cfargotunnel.com` (Proxied). Serverdan Cloudflare API'ga IPv6 orqali
+ulanib bo'lmaydi (IPv4 ishlaydi), shu sabab `cloudflared tunnel list/route dns` osilib qolishi mumkin — DNS yozuvini saytda qo'lda qo'shing.
+Holat/log: `systemctl status cloudflared-baaz` / `journalctl -u cloudflared-baaz -n 30`.
+
