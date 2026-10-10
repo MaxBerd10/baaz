@@ -245,6 +245,16 @@ if _static.is_dir():
 
 
 @app.middleware("http")
+async def _force_https(request: Request, call_next):
+    """Proksi (Cloudflare) «http» deb yuborgan so'rovni https'ga yo'naltiradi — parol ochiq ketmasin.
+    Proksisiz to'g'ridan-to'g'ri (healthcheck, lokal) so'rovlarda `X-Forwarded-Proto` yo'q, shuning uchun tegilmaydi."""
+    if request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower() == "http":
+        url = request.url.replace(scheme="https")
+        return RedirectResponse(str(url), status_code=308)
+    return await call_next(request)
+
+
+@app.middleware("http")
 async def _security_headers(request: Request, call_next):
     resp = await call_next(request)
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
