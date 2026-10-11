@@ -86,7 +86,10 @@ async def api_auth(request: Request, session: AsyncSession = Depends(get_db)):
 
 @router.get("/app/api/home")
 async def api_home(user: dict = Depends(current_user), session: AsyncSession = Depends(get_db)):
-    return {"user": _public_user(user), "counts": await mini.counts(session, user)}
+    out = {"user": _public_user(user), "counts": await mini.counts(session, user)}
+    if user["role"] == "admin":
+        out["deadlines"] = await mini.deadlines(session, user)
+    return out
 
 
 # --------------------------------------------------------------------------- #

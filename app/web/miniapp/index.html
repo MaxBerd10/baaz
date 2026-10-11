@@ -36,12 +36,25 @@ h1{font-size:22px;margin:0;letter-spacing:-.01em} h2{font-size:19px;margin:0}
 .chip.warn{background:rgba(245,158,11,.18);color:#b97500} .chip.info{background:rgba(59,130,246,.15);color:var(--info)}
 .list{display:grid;gap:12px}
 .card{background:var(--card);border-radius:var(--r);box-shadow:0 1px 6px rgba(0,0,0,.06);overflow:hidden}
-.task{display:block;width:100%;text-align:left}
-.task .img{height:150px;background:linear-gradient(135deg,#e9ebf5,#f6f7fb);display:grid;place-items:center;font-size:52px;position:relative;overflow:hidden}
+.task{display:flex;gap:13px;width:100%;text-align:left;padding:12px;align-items:flex-start}
+.task .img{flex:none;width:96px;height:96px;border-radius:14px;background:linear-gradient(135deg,#e9ebf5,#f6f7fb);display:grid;place-items:center;font-size:38px;position:relative;overflow:hidden}
 .task .img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.task .body{padding:13px 15px 15px}
-.task .ttl{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.task .ttl b{font-size:20px} .task .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.task .body{flex:1;min-width:0}
+.task .ttl{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.task .ttl b{font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .task .go{color:var(--hint);font-size:26px;line-height:1}
+.task .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.task .chip{font-size:13px;padding:3px 9px}
+.steps{display:flex;align-items:center;gap:4px;margin-top:9px}
+.steps i{flex:0 1 24px;min-width:10px;height:6px;border-radius:3px;background:var(--line)}
+.steps i.d{background:var(--ok)} .steps i.c{background:var(--accent)}
+.steps span{font-size:13px;color:var(--hint);margin-left:5px;white-space:nowrap;font-weight:600}
+.sk{background:linear-gradient(90deg,rgba(120,128,150,.13) 25%,rgba(120,128,150,.25) 37%,rgba(120,128,150,.13) 63%);background-size:400% 100%;animation:shim 1.3s ease infinite;border-radius:10px}
+@keyframes shim{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.skc{display:flex;gap:13px;padding:12px;align-items:flex-start} .skc .sk:first-child{width:96px;height:96px;border-radius:14px;flex:none}
+.skc>div{flex:1} .skc .sk+.sk{height:14px;margin-bottom:9px}
+.dl{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line)} .dl:first-child{border-top:0}
+.dl .who{flex:1;min-width:0} .dl b{display:block} .dl small{color:var(--hint)}
+.sub{margin:18px 2px 8px;color:var(--hint);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .banner{margin:10px 0 0;padding:10px 12px;border-radius:12px;font-size:15px;background:rgba(229,72,77,.12);color:var(--bad);font-weight:600}
 .empty{text-align:center;padding:44px 20px;color:var(--hint)} .empty .big{font-size:54px;margin-bottom:8px}
 .tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 8px calc(6px + var(--safe));z-index:5}
@@ -124,6 +137,7 @@ const T = {
     in_tg: "Bu ilova Telegram ichida ishlaydi", in_tg_hint: "Botdagi «📱 Ilova» tugmasini bosing.",
     not_registered: "Siz ro'yxatdan o'tmagansiz", not_registered_hint: "Botga o'ting va rahbardan olgan havola orqali ro'yxatdan o'ting.",
     inactive: "Hisobingiz faol emas", inactive_hint: "Rahbarga murojaat qiling.",
+    today_title: "Bugun", today_sent: "yuborildi", today_ok: "tasdiqlandi", today_rej: "qaytarildi", near_deadlines: "Muddati yaqinlar",
     active: "Jarayonda", done: "Tayyor", review: "Tekshiruvda", returned_n: "Qaytarilgan", open_panel: "Boshqaruv panelini ochish",
     done_ok: "Tasdiqlandi ✅", rejected_ok: "Rad etildi", truck_ready: "Truck tayyor!", unsent: "Yuborilmagan fayllar bor. Chiqib ketsangizmi?",
     wait_upload: "Fayllar yuklanguncha kuting", fix_err: "Xato bo'lgan fayllarni o'chiring yoki qayta yuklang", loading: "Yuklanmoqda…",
@@ -154,6 +168,7 @@ const T = {
     in_tg: "Бу илова Телеграм ичида ишлайди", in_tg_hint: "Ботдаги «📱 Илова» тугмасини босинг.",
     not_registered: "Сиз рўйхатдан ўтмагансиз", not_registered_hint: "Ботга ўтинг ва раҳбардан олган ҳавола орқали рўйхатдан ўтинг.",
     inactive: "Ҳисобингиз фаол эмас", inactive_hint: "Раҳбарга мурожаат қилинг.",
+    today_title: "Бугун", today_sent: "юборилди", today_ok: "тасдиқланди", today_rej: "қайтарилди", near_deadlines: "Муддати яқинлар",
     active: "Жараёнда", done: "Тайёр", review: "Текширувда", returned_n: "Қайтарилган", open_panel: "Бошқарув панелини очиш",
     done_ok: "Тасдиқланди ✅", rejected_ok: "Рад этилди", truck_ready: "Truck тайёр!", unsent: "Юборилмаган файллар бор. Чиқиб кетасизми?",
     wait_upload: "Файллар юклангунча кутинг", fix_err: "Хато бўлган файлларни ўчиринг ёки қайта юкланг", loading: "Юкланмоқда…",
@@ -184,6 +199,7 @@ const T = {
     in_tg: "Это приложение работает внутри Telegram", in_tg_hint: "Нажмите кнопку «📱 Ilova» в боте.",
     not_registered: "Вы не зарегистрированы", not_registered_hint: "Перейдите в бота и зарегистрируйтесь по ссылке от руководителя.",
     inactive: "Ваш аккаунт не активен", inactive_hint: "Обратитесь к руководителю.",
+    today_title: "Сегодня", today_sent: "отправлено", today_ok: "принято", today_rej: "возвращено", near_deadlines: "Ближайшие сроки",
     active: "В работе", done: "Готово", review: "На проверке", returned_n: "Возвращено", open_panel: "Открыть панель управления",
     done_ok: "Принято ✅", rejected_ok: "Отклонено", truck_ready: "Truck готов!", unsent: "Есть неотправленные файлы. Выйти?",
     wait_upload: "Дождитесь загрузки файлов", fix_err: "Удалите файлы с ошибкой или загрузите заново", loading: "Загрузка…",
@@ -294,7 +310,15 @@ async function goBack() {
 }
 if (tg && tg.BackButton) tg.BackButton.onClick(goBack);
 
-function loading() { render(`<div class="center"><div class="spin"></div><div class="hint">${t("loading")}</div></div>`); }
+function loading() {
+  const card = `<div class="card skc"><div class="sk"></div><div><div class="sk" style="width:62%"></div><div class="sk" style="width:85%"></div><div class="sk" style="width:48%;margin-bottom:0"></div></div></div>`;
+  render(`<div class="wrap" aria-busy="true"><div class="top"><div class="sk" style="width:46px;height:46px;border-radius:50%"></div><div class="who"><div class="sk" style="height:18px;width:50%;margin-bottom:7px"></div><div class="sk" style="height:13px;width:30%"></div></div></div>
+    <div class="sk" style="height:26px;width:36%;margin-bottom:14px"></div><div class="list">${card}${card}${card}${card}</div></div>`);
+}
+function stepper(n, approved) {
+  const done = approved ? n : n - 1;
+  return `<div class="steps">${[1, 2, 3, 4, 5, 6].map((k) => `<i class="${k <= done ? "d" : k === n ? "c" : ""}"></i>`).join("")}<span>${n}/6</span></div>`;
+}
 function errorScreen(e, retryFn) {
   render(`<div class="center"><div class="big">⚠️</div><h2>${esc(errText(e))}</h2>
     ${retryFn ? `<button class="btn" id="retry" style="max-width:260px;margin-top:10px">↻ ${t("retry")}</button>` : ""}</div>`);
@@ -354,25 +378,36 @@ function emptyBlock(tab) {
 }
 function taskCard(it) {
   const isQc = S.user.role === "qc";
-  const img = it.has_image ? `<img loading="lazy" src="${modelUrl(it.model_id)}" alt="">` : "🚚";
+  const src = isQc && it.preview_id ? mediaUrl(it.preview_id, true) : it.has_image ? modelUrl(it.model_id) : "";
+  const img = "🚚" + (src ? `<img loading="lazy" src="${src}" alt="" onerror="this.remove()">` : "");
   const rej = it.status === "rejected" && it.qc_comment && S.tab !== "history" ? `<div class="banner">↩️ ${t("reason")}: ${esc(it.qc_comment)}</div>` : "";
   const who = isQc && it.worker_name ? `<span class="chip">👷 ${esc(it.worker_name)}</span>` : "";
   const wait = isQc && S.tab === "queue" && it.submitted_at ? `<span class="chip warn">⏱ ${t("waiting", { t: ago(it.submitted_at) })}</span>` : "";
-  const files = it.media_count ? `<span class="chip">📎 ${t("files", { n: it.media_count })}</span>` : "";
+  const files = it.media_count ? `<span class="chip">📎 ${it.media_count}</span>` : "";
   return `<button class="card task" data-step="${it.step_id}"><div class="img">${img}</div><div class="body">
-    <div class="ttl"><b>${esc(it.serial_number)}</b><span class="hint">${esc(stepName(it.step_number))}</span></div>
-    <div class="hint">${esc(it.model || "")}${it.customer ? " · " + esc(it.customer) : ""}</div>
-    <div class="meta">${S.tab === "history" ? statusChip(it.status) : ""}${deadlineChip(it.deadline)}${prioChip(it.priority)}${who}${wait}${files}</div>${rej}</div></button>`;
+    <div class="ttl"><b>${esc(it.serial_number)}</b><span class="go">›</span></div>
+    <div class="hint">${esc(stepName(it.step_number))} · ${esc(it.model || "")}${it.customer ? " · " + esc(it.customer) : ""}</div>
+    <div class="meta">${S.tab === "history" ? statusChip(it.status) : ""}${deadlineChip(it.deadline)}${prioChip(it.priority)}${who}${wait}${files}</div>
+    ${stepper(it.step_number, it.status === "approved")}${rej}</div></button>`;
 }
 async function adminHome() {
   try {
     loading();
     const h = await api("/app/api/home"); const c = h.counts;
+    const dl = (h.deadlines || []).map((x) => `<div class="dl"><div class="who"><b>${esc(x.serial_number)}</b><small>${esc(stepName(x.current_step))}${x.customer ? " · " + esc(x.customer) : ""}</small></div>${deadlineChip(x.deadline)}</div>`).join("");
     render(`<div class="wrap">${topBar()}<h1 style="margin-bottom:12px">Baaz Trucks</h1>
       <div class="tiles">
         <div class="card tile"><b>${c.active}</b><span>${t("active")}</span></div><div class="card tile"><b>${c.done}</b><span>${t("done")}</span></div>
         <div class="card tile"><b>${c.review}</b><span>${t("review")}</span></div><div class="card tile"><b>${c.returned}</b><span>${t("returned_n")}</span></div>
-      </div><div class="actions"><button class="btn" id="panel">🖥 ${t("open_panel")}</button></div></div>`);
+      </div>
+      <div class="sub">${t("today_title")}</div>
+      <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
+        <div class="card tile" style="padding:14px 10px"><b style="font-size:28px">${c.submitted_today}</b><span style="font-size:13px">${t("today_sent")}</span></div>
+        <div class="card tile" style="padding:14px 10px"><b style="font-size:28px;color:var(--ok)">${c.approved_today}</b><span style="font-size:13px">${t("today_ok")}</span></div>
+        <div class="card tile" style="padding:14px 10px"><b style="font-size:28px;color:var(--bad)">${c.rejected_today}</b><span style="font-size:13px">${t("today_rej")}</span></div>
+      </div>
+      ${dl ? `<div class="sub">${t("near_deadlines")}</div><div class="card">${dl}</div>` : ""}
+      <div class="actions"><button class="btn" id="panel">🖥 ${t("open_panel")}</button></div></div>`);
     bindTabs();
     document.getElementById("panel").onclick = () => { const u = location.origin + "/"; tg && tg.openLink ? tg.openLink(u) : window.open(u, "_blank"); };
   } catch (e) { errorScreen(e, adminHome); }
@@ -394,7 +429,7 @@ async function openStep(id) {
     else if (d.can_review) actions = `<div class="row2"><button class="btn bad" id="rej">❌ ${t("reject")}</button><button class="btn ok" id="appr">✅ ${t("approve")}</button></div>`;
     render(`<div class="wrap"><div class="card"><div class="hero">${hero}</div>
       <div class="sect"><div class="ttl" style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><h1>${esc(d.serial_number)}</h1>${statusChip(d.status)}</div>
-        <div class="hint">${esc(stepName(d.step_number))}</div>${rej}</div>
+        <div class="hint">${esc(stepName(d.step_number))}</div>${stepper(d.step_number, d.status === "approved")}${rej}</div>
       ${media ? `<div class="sect" style="padding-bottom:4px">${media}</div>` : ""}
       <div class="sect"><div class="kv"><span>${t("model")}</span><b>${esc(d.model || "—")}</b></div>
         ${d.customer ? `<div class="kv"><span>${t("customer")}</span><b>${esc(d.customer)}</b></div>` : ""}

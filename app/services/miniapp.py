@@ -17,6 +17,7 @@ from pathlib import Path
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.services.media_store import MEDIA_ROOT, ensure_root
 
 TOTAL_STEPS = 6
@@ -70,7 +71,11 @@ SELECT ts.id AS step_id, ts.step_number, ts.status::text AS status, ts.qc_commen
        t.id AS truck_id, t.serial_number, t.model, t.customer, t.deadline, t.priority::text AS priority,
        mc.id AS model_id, (mc.image_file IS NOT NULL) AS has_image,
        w.full_name AS worker_name, w.id AS worker_id, (w.photo_file_id IS NOT NULL OR w.photo_path IS NOT NULL) AS worker_photo,
-       (SELECT count(*) FROM public.truck_step_media m WHERE m.step_id = ts.id AND NOT m.draft) AS media_count
+       (SELECT count(*) FROM public.truck_step_media m WHERE m.step_id = ts.id AND NOT m.draft) AS media_count,
+       COALESCE((SELECT 'm' || m.id FROM public.truck_step_media m
+                  WHERE m.step_id = ts.id AND NOT m.draft AND m.media_type = 'photo' ORDER BY m.id LIMIT 1),
+                CASE WHEN ts.media_type::text = 'photo' AND (ts.media_file_id IS NOT NULL OR ts.media_local_path IS NOT NULL)
+                     THEN 's' || ts.id END) AS preview_id
 FROM public.truck_steps ts
 JOIN public.trucks t ON t.id = ts.truck_id
 LEFT JOIN web.model_cards mc ON mc.name = t.model
@@ -123,12 +128,28 @@ async def counts(session: AsyncSession, user: dict) -> dict:
     if user["role"] == "qc":
         n = await session.scalar(text("SELECT count(*) FROM public.truck_steps WHERE status = 'in_review'"))
         return {"queue": int(n or 0)}
+    tz = settings.timezone
+    today = "(e.created_at AT TIME ZONE :tz)::date = (now() AT TIME ZONE :tz)::date"
     rows = (await session.execute(text(
         "SELECT (SELECT count(*) FROM public.trucks WHERE status = 'in_progress') AS active, "
         "(SELECT count(*) FROM public.trucks WHERE status = 'completed') AS done, "
         "(SELECT count(*) FROM public.truck_steps WHERE status = 'in_review') AS review, "
-        "(SELECT count(*) FROM public.truck_steps WHERE status = 'rejected') AS returned"))).mappings().first()
+        "(SELECT count(*) FROM public.truck_steps WHERE status = 'rejected') AS returned, "
+        f"(SELECT count(*) FROM public.truck_step_events e WHERE e.event = 'submitted' AND {today}) AS submitted_today, "
+        f"(SELECT count(*) FROM public.truck_step_events e WHERE e.event = 'approved' AND {today}) AS approved_today, "
+        f"(SELECT count(*) FROM public.truck_step_events e WHERE e.event = 'rejected' AND {today}) AS rejected_today"),
+        {"tz": tz})).mappings().first()
     return dict(rows)
+
+
+async def deadlines(session: AsyncSession, user: dict, limit: int = 6) -> list[dict]:
+    """Muddati eng yaqin tayyor bo'lmagan trucklar (admin ekrani uchun)."""
+    _need_role(user, "admin")
+    rows = (await session.execute(text(
+        "SELECT t.id AS truck_id, t.serial_number, t.model, t.customer, t.deadline, t.current_step "
+        "FROM public.trucks t WHERE t.status = 'in_progress' AND t.deadline IS NOT NULL "
+        "ORDER BY t.deadline ASC LIMIT :n"), {"n": limit})).mappings().all()
+    return [clean(r) for r in rows]
 
 
 # --------------------------------------------------------------------------- #
