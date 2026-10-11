@@ -450,7 +450,7 @@ async function openStep(id) {
       d.customer ? `<div class="fact wide"><small>${t("customer")}</small><b>${esc(d.customer)}</b></div>` : "",
       isQc && d.worker_name ? `<div class="fact wide"><small>${t("worker")}</small><b class="who2">${avatar(d.worker_id, d.worker_name, d.worker_photo)}${esc(d.worker_name)}</b></div>` : "",
     ].join("");
-    render(`<div class="wrap"><div class="card"><div class="hero pic">${hero}</div>
+    render(`<div class="wrap"><div class="card">${d.has_image ? `<div class="hero pic">${hero}</div>` : ""}
       <div class="sect"><h1 class="serial">${esc(d.serial_number)}</h1>
         <div class="tline" style="margin-top:4px"><div class="hint">${esc(stepName(d.step_number))}${d.model ? " · " + esc(d.model) : ""}</div>${d.status === "pending" ? "" : statusChip(d.status)}</div>${stepper(d.step_number, d.status === "approved", true)}${rej}</div>
       ${media ? `<div class="sect" style="padding-bottom:4px">${media}</div>` : ""}
