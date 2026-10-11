@@ -130,3 +130,8 @@ va foydalanuvchining o'z yozgan xabarlari (masalan rad etish sababi) tegilmaydi 
 sifatida chatda qolaveradi. Xotira ichida saqlanadi (chat_id -> oxirgi ekran xabar id'si), bot qayta ishga tushsa tozalanadi
 (zararsiz — birinchi tugma bosilganda hech narsa o'chirilmaydi, shunchaki qayta hisoblanadi).
 
+## Tungi tinch rejim (veb xabarlari)
+Veb'dan yuboriladigan «yangi buyurtma» xabari 22:00–07:00 (Toshkent) oralig'ida **ovozsiz** ketadi (Telegram `disable_notification`).
+Soatlar: `QUIET_FROM` (standart 22) va `QUIET_TO` (standart 7) muhit o'zgaruvchilari; ikkalasi teng bo'lsa — o'chiq.
+Botning o'z xabarlari («Yangi vazifa», «Yangi ish keldi») bunga kirmaydi.
+

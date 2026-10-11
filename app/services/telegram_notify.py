@@ -10,10 +10,32 @@ import html
 import json
 import urllib.error
 import urllib.request
+import os
 import uuid
+import datetime as dt
+from zoneinfo import ZoneInfo
 
 from app.config import settings
 from app.services.media_store import _TG_API
+
+# Tungi tinch rejim: shu soatlar oralig'ida xabar yuboriladi, lekin OVOZSIZ (odamni uyg'otmaydi).
+# Muhit o'zgaruvchilari bilan sozlanadi: QUIET_FROM=22, QUIET_TO=7 (soat, mahalliy vaqt). QUIET_FROM=QUIET_TO — o'chiq.
+def _hour_env(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, default)) % 24
+    except ValueError:
+        return default
+
+
+def quiet_now(now: dt.datetime | None = None) -> bool:
+    start, end = _hour_env("QUIET_FROM", 22), _hour_env("QUIET_TO", 7)
+    if start == end:
+        return False
+    try:
+        h = (now or dt.datetime.now(ZoneInfo(settings.timezone))).hour
+    except Exception:  # noqa: BLE001 — noma'lum vaqt mintaqasi
+        h = (now or dt.datetime.now()).hour
+    return (start <= h or h < end) if start > end else (start <= h < end)
 
 PRIORITY = {
     "uz": {"low": "🟢 Past", "normal": "🔵 Oddiy", "high": "🟠 Yuqori", "urgent": "🔴 Shoshilinch"},
@@ -129,6 +151,8 @@ async def notify_new_order(
     async def call(method: str, fields: dict, file: tuple | None = None) -> dict:
         """Telegram so'rovi; «Too Many Requests» (429) bo'lsa kutib, ikki martagacha qayta uriniladi."""
         r: dict = {}
+        if quiet_now():
+            fields = {**fields, "disable_notification": "true" if file else True}
         for _ in range(3):
             r = await (asyncio.to_thread(_api, method, fields, file) if file else asyncio.to_thread(_api, method, fields))
             if r.get("ok") or r.get("error_code") != 429:
