@@ -1,1 +1,616 @@
-<!doctype html><title>Baaz</title><p>yuklanmoqda…
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="color-scheme" content="light dark">
+<title>Baaz</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:var(--tg-theme-secondary-bg-color,#f2f3f8);
+  --card:var(--tg-theme-bg-color,#ffffff);
+  --text:var(--tg-theme-text-color,#14172a);
+  --hint:var(--tg-theme-hint-color,#6b7287);
+  --accent:var(--tg-theme-button-color,#6d5df6);
+  --accent-text:var(--tg-theme-button-text-color,#ffffff);
+  --line:rgba(120,128,150,.22);
+  --ok:#17a870; --bad:#e5484d; --warn:#f59e0b; --info:#3b82f6;
+  --r:18px; --safe:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:17px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+body{min-height:100vh;padding-bottom:calc(86px + var(--safe))}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+img,video{max-width:100%;display:block}
+.wrap{max-width:560px;margin:0 auto;padding:14px 14px 0}
+h1{font-size:22px;margin:0;letter-spacing:-.01em} h2{font-size:19px;margin:0}
+.hint{color:var(--hint);font-size:15px}
+.top{display:flex;align-items:center;gap:12px;margin:2px 0 14px}
+.top .who{flex:1;min-width:0}
+.top .who b{display:block;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avatar{width:46px;height:46px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:grid;place-items:center;font-weight:700;font-size:19px;object-fit:cover;flex:none}
+.iconbtn{width:44px;height:44px;border-radius:50%;background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.08);font-size:20px;flex:none}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:99px;font-size:14px;font-weight:650;background:rgba(120,128,150,.16)}
+.chip.ok{background:rgba(23,168,112,.15);color:var(--ok)} .chip.bad{background:rgba(229,72,77,.15);color:var(--bad)}
+.chip.warn{background:rgba(245,158,11,.18);color:#b97500} .chip.info{background:rgba(59,130,246,.15);color:var(--info)}
+.list{display:grid;gap:12px}
+.card{background:var(--card);border-radius:var(--r);box-shadow:0 1px 6px rgba(0,0,0,.06);overflow:hidden}
+.task{display:block;width:100%;text-align:left}
+.task .img{height:150px;background:linear-gradient(135deg,#e9ebf5,#f6f7fb);display:grid;place-items:center;font-size:52px;position:relative;overflow:hidden}
+.task .img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.task .body{padding:13px 15px 15px}
+.task .ttl{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.task .ttl b{font-size:20px} .task .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.banner{margin:10px 0 0;padding:10px 12px;border-radius:12px;font-size:15px;background:rgba(229,72,77,.12);color:var(--bad);font-weight:600}
+.empty{text-align:center;padding:44px 20px;color:var(--hint)} .empty .big{font-size:54px;margin-bottom:8px}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 8px calc(6px + var(--safe));z-index:5}
+.tabs button{flex:1;padding:9px 6px;border-radius:14px;color:var(--hint);font-size:14px;font-weight:650;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button .ic{font-size:24px;line-height:1} .tabs button.on{color:var(--accent)}
+.tabs .badge{position:absolute;margin:-4px 0 0 22px;background:var(--bad);color:#fff;border-radius:99px;font-size:12px;padding:1px 6px;min-width:19px;text-align:center}
+.btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:58px;border-radius:16px;background:var(--accent);color:var(--accent-text);font-size:19px;font-weight:700;padding:12px 18px}
+.btn.ok{background:var(--ok);color:#fff} .btn.bad{background:var(--bad);color:#fff}
+.btn.ghost{background:var(--card);color:var(--text);box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.hero{height:210px;position:relative;background:linear-gradient(135deg,#e9ebf5,#f6f7fb);display:grid;place-items:center;font-size:64px}
+.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sect{padding:14px 16px;border-top:1px solid var(--line)} .sect:first-child{border-top:0}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:5px 0} .kv span:first-child{color:var(--hint)} .kv b{text-align:right}
+.note{white-space:pre-wrap;font-size:16px}
+.actions{display:grid;gap:12px;margin-top:14px;position:sticky;bottom:calc(10px + var(--safe));padding:10px 0 4px;background:linear-gradient(to top,var(--bg) 70%,transparent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pick{min-height:92px;flex-direction:column;gap:4px;font-size:17px;background:var(--card);color:var(--text);box-shadow:inset 0 0 0 2px var(--accent);border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:700;padding:10px}
+.pick .ic{font-size:34px;line-height:1}
+.pick[disabled]{opacity:.4;pointer-events:none;box-shadow:inset 0 0 0 2px var(--line)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.thumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#e4e6ef}
+.thumb img,.thumb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.thumb .x{position:absolute;top:4px;right:4px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.62);color:#fff;font-size:17px;line-height:30px}
+.thumb .vid{position:absolute;left:5px;bottom:5px;background:rgba(0,0,0,.6);color:#fff;border-radius:7px;padding:1px 7px;font-size:13px}
+.thumb .ov{position:absolute;inset:0;background:rgba(0,0,0,.45);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px;text-align:center;padding:4px}
+.thumb .ov.err{background:rgba(229,72,77,.82)}
+.bar{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.35)} .bar i{display:block;height:100%;background:#fff}
+textarea{width:100%;min-height:84px;border:1.5px solid var(--line);border-radius:14px;background:var(--card);color:var(--text);font:inherit;padding:12px;resize:vertical}
+.cnt{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.gal{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:12px 14px;margin:0 -14px}
+.gal>*{flex:0 0 82%;scroll-snap-align:center;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:4/3;position:relative}
+.gal img,.gal video{width:100%;height:100%;object-fit:contain;background:#111}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;display:flex;align-items:flex-end}
+.sheet{background:var(--card);width:100%;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + var(--safe));max-height:90vh;overflow:auto}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chips button{padding:10px 14px;border-radius:99px;background:var(--bg);font-size:16px;font-weight:600}
+.chips button.on{background:var(--accent);color:var(--accent-text)}
+.viewer{position:fixed;inset:0;background:#000;z-index:30;display:flex;align-items:center;justify-content:center}
+.viewer img,.viewer video{max-width:100%;max-height:100%} .viewer .close{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font-size:24px}
+.toast{position:fixed;left:14px;right:14px;bottom:calc(98px + var(--safe));background:#1b1e2e;color:#fff;border-radius:14px;padding:13px 16px;z-index:40;font-weight:600;text-align:center}
+.toast.bad{background:var(--bad)} .toast.ok{background:var(--ok)}
+.center{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:10px}
+.center .big{font-size:64px}
+.spin{width:38px;height:38px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--accent);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{padding:18px 16px} .tile b{display:block;font-size:34px;line-height:1.1} .tile span{color:var(--hint);font-size:15px}
+.who2{display:flex;align-items:center;gap:10px}
+.who2 .avatar{width:38px;height:38px;font-size:16px}
+</style>
+</head>
+<body>
+<div id="app"><div class="center"><div class="spin"></div></div></div>
+<script>
+"use strict";
+/* ============================== Tarjimalar ============================== */
+const STEPS = {
+  uz: ["Karkas", "Kuzov o'rnatish", "Ichki qoplama", "Bo'yash", "Eshik-deraza", "Yig'ish"],
+  uz_cyrl: ["Каркас", "Кузов ўрнатиш", "Ички қоплама", "Бўяш", "Эшик-дераза", "Йиғиш"],
+  ru: ["Каркас", "Установка кузова", "Внутренняя отделка", "Покраска", "Двери и окна", "Сборка"],
+};
+const T = {
+  uz: {
+    tasks: "Vazifalar", history: "Tarix", queue: "Navbat", panel: "Panel", hello: "Salom", stage: "Bosqich",
+    no_tasks: "Hozircha vazifa yo'q", no_tasks_hint: "Yangi vazifa kelganda botda xabar olasiz.",
+    no_queue: "Tekshirish uchun ish yo'q", no_queue_hint: "Ishchilar ish yuborganda shu yerda ko'rinadi.",
+    no_hist: "Tarix hozircha bo'sh", deadline: "Muddat", today: "Bugun", tomorrow: "Ertaga", overdue: "{n} kun kechikdi",
+    prio_label: "Muhimlik", prio_low: "Past", prio_normal: "Oddiy", prio_high: "Yuqori", prio_urgent: "Shoshilinch",
+    customer: "Buyurtmachi", model: "Model", what_to_do: "Nima qilish kerak", returned: "Qaytarilgan", reason: "Sabab",
+    send_work: "Ish yuborish", add_photo: "Rasm", add_video: "Video", photos: "Rasm", videos: "Video",
+    comment_ph: "Izoh (ixtiyoriy)", submit: "Yuborish", uploading: "Yuklanmoqda…", sending: "Yuborilmoqda…",
+    sent_title: "Ish yuborildi!", sent_hint: "Sifat nazoratchisi tekshiradi. Natijani Telegramda yozamiz.", back_tasks: "Vazifalarga qaytish",
+    approve: "Tasdiqlash", reject: "Rad etish", approve_q: "Ishni tasdiqlaysizmi?", reject_title: "Rad etish sababi",
+    reject_ph: "Sababni yozing…", send_reject: "Rad etib yuborish", cancel: "Bekor qilish",
+    reasons: ["Rasm aniq emas", "Sifat past", "Ish tugallanmagan", "Boshqa burchakdan rasm kerak"],
+    s_pending: "Boshlanmagan", s_in_review: "Tekshiruvda", s_approved: "Tasdiqlangan", s_rejected: "Qaytarilgan",
+    waiting: "{t} kutmoqda", worker: "Ishchi", files: "{n} ta fayl", retry: "Qayta", remove: "O'chirish",
+    just_now: "hozirgina", min_ago: "{n} daqiqa", hour_ago: "{n} soat", day_ago: "{n} kun",
+    in_tg: "Bu ilova Telegram ichida ishlaydi", in_tg_hint: "Botdagi «📱 Ilova» tugmasini bosing.",
+    not_registered: "Siz ro'yxatdan o'tmagansiz", not_registered_hint: "Botga o'ting va rahbardan olgan havola orqali ro'yxatdan o'ting.",
+    inactive: "Hisobingiz faol emas", inactive_hint: "Rahbarga murojaat qiling.",
+    active: "Jarayonda", done: "Tayyor", review: "Tekshiruvda", returned_n: "Qaytarilgan", open_panel: "Boshqaruv panelini ochish",
+    done_ok: "Tasdiqlandi ✅", rejected_ok: "Rad etildi", truck_ready: "Truck tayyor!", unsent: "Yuborilmagan fayllar bor. Chiqib ketsangizmi?",
+    wait_upload: "Fayllar yuklanguncha kuting", fix_err: "Xato bo'lgan fayllarni o'chiring yoki qayta yuklang", loading: "Yuklanmoqda…",
+    err_auth: "Qaytadan kiring (ilovani yoping va oching)", err_forbidden: "Bu amalga ruxsat yo'q", err_not_found: "Topilmadi",
+    err_not_available: "Bu ish hozir mavjud emas (boshqa kishi yuborgan bo'lishi mumkin)", err_limit_photos: "Ko'pi bilan {n} ta rasm yuborish mumkin",
+    err_limit_videos: "Ko'pi bilan {n} ta video yuborish mumkin", err_bad_file: "Fayl turi mos emas (rasm yoki video yuboring)",
+    err_too_big: "Fayl juda katta (video 95 MB gacha)", err_no_media: "Kamida bitta rasm yoki video qo'shing",
+    err_reason_short: "Sababni batafsilroq yozing", err_not_in_review: "Bu ish allaqachon ko'rib chiqilgan",
+    err_network: "Internet bilan muammo. Qayta urinib ko'ring", err_server: "Xatolik yuz berdi. Qayta urinib ko'ring",
+    err_inactive: "Hisobingiz faol emas", err_bad_init: "Kirish tasdiqlanmadi. Ilovani yopib, qayta oching",
+  },
+  uz_cyrl: {
+    tasks: "Вазифалар", history: "Тарих", queue: "Навбат", panel: "Панель", hello: "Салом", stage: "Босқич",
+    no_tasks: "Ҳозирча вазифа йўқ", no_tasks_hint: "Янги вазифа келганда ботда хабар оласиз.",
+    no_queue: "Текшириш учун иш йўқ", no_queue_hint: "Ишчилар иш юборганда шу ерда кўринади.",
+    no_hist: "Тарих ҳозирча бўш", deadline: "Муддат", today: "Бугун", tomorrow: "Эртага", overdue: "{n} кун кечикди",
+    prio_label: "Муҳимлик", prio_low: "Паст", prio_normal: "Оддий", prio_high: "Юқори", prio_urgent: "Шошилинч",
+    customer: "Буюртмачи", model: "Модель", what_to_do: "Нима қилиш керак", returned: "Қайтарилган", reason: "Сабаб",
+    send_work: "Иш юбориш", add_photo: "Расм", add_video: "Видео", photos: "Расм", videos: "Видео",
+    comment_ph: "Изоҳ (ихтиёрий)", submit: "Юбориш", uploading: "Юкланмоқда…", sending: "Юборилмоқда…",
+    sent_title: "Иш юборилди!", sent_hint: "Сифат назоратчиси текширади. Натижани Телеграмда ёзамиз.", back_tasks: "Вазифаларга қайтиш",
+    approve: "Тасдиқлаш", reject: "Рад этиш", approve_q: "Ишни тасдиқлайсизми?", reject_title: "Рад этиш сабаби",
+    reject_ph: "Сабабни ёзинг…", send_reject: "Рад этиб юбориш", cancel: "Бекор қилиш",
+    reasons: ["Расм аниқ эмас", "Сифат паст", "Иш тугалланмаган", "Бошқа бурчакдан расм керак"],
+    s_pending: "Бошланмаган", s_in_review: "Текширувда", s_approved: "Тасдиқланган", s_rejected: "Қайтарилган",
+    waiting: "{t} кутмоқда", worker: "Ишчи", files: "{n} та файл", retry: "Қайта", remove: "Ўчириш",
+    just_now: "ҳозиргина", min_ago: "{n} дақиқа", hour_ago: "{n} соат", day_ago: "{n} кун",
+    in_tg: "Бу илова Телеграм ичида ишлайди", in_tg_hint: "Ботдаги «📱 Илова» тугмасини босинг.",
+    not_registered: "Сиз рўйхатдан ўтмагансиз", not_registered_hint: "Ботга ўтинг ва раҳбардан олган ҳавола орқали рўйхатдан ўтинг.",
+    inactive: "Ҳисобингиз фаол эмас", inactive_hint: "Раҳбарга мурожаат қилинг.",
+    active: "Жараёнда", done: "Тайёр", review: "Текширувда", returned_n: "Қайтарилган", open_panel: "Бошқарув панелини очиш",
+    done_ok: "Тасдиқланди ✅", rejected_ok: "Рад этилди", truck_ready: "Truck тайёр!", unsent: "Юборилмаган файллар бор. Чиқиб кетасизми?",
+    wait_upload: "Файллар юклангунча кутинг", fix_err: "Хато бўлган файлларни ўчиринг ёки қайта юкланг", loading: "Юкланмоқда…",
+    err_auth: "Қайтадан киринг (иловани ёпиб очинг)", err_forbidden: "Бу амалга рухсат йўқ", err_not_found: "Топилмади",
+    err_not_available: "Бу иш ҳозир мавжуд эмас (бошқа киши юборган бўлиши мумкин)", err_limit_photos: "Кўпи билан {n} та расм юбориш мумкин",
+    err_limit_videos: "Кўпи билан {n} та видео юбориш мумкин", err_bad_file: "Файл тури мос эмас (расм ёки видео юборинг)",
+    err_too_big: "Файл жуда катта (видео 95 МБ гача)", err_no_media: "Камида битта расм ёки видео қўшинг",
+    err_reason_short: "Сабабни батафсилроқ ёзинг", err_not_in_review: "Бу иш аллақачон кўриб чиқилган",
+    err_network: "Интернет билан муаммо. Қайта уриниб кўринг", err_server: "Хатолик юз берди. Қайта уриниб кўринг",
+    err_inactive: "Ҳисобингиз фаол эмас", err_bad_init: "Кириш тасдиқланмади. Иловани ёпиб, қайта очинг",
+  },
+  ru: {
+    tasks: "Задачи", history: "История", queue: "Очередь", panel: "Панель", hello: "Здравствуйте", stage: "Этап",
+    no_tasks: "Пока нет задач", no_tasks_hint: "Когда появится новая задача, придёт сообщение в боте.",
+    no_queue: "Нет работ для проверки", no_queue_hint: "Когда рабочие отправят работу, она появится здесь.",
+    no_hist: "История пока пуста", deadline: "Срок", today: "Сегодня", tomorrow: "Завтра", overdue: "просрочено на {n} дн.",
+    prio_label: "Приоритет", prio_low: "Низкий", prio_normal: "Обычный", prio_high: "Высокий", prio_urgent: "Срочный",
+    customer: "Заказчик", model: "Модель", what_to_do: "Что нужно сделать", returned: "Возвращено", reason: "Причина",
+    send_work: "Отправить работу", add_photo: "Фото", add_video: "Видео", photos: "Фото", videos: "Видео",
+    comment_ph: "Комментарий (необязательно)", submit: "Отправить", uploading: "Загрузка…", sending: "Отправка…",
+    sent_title: "Работа отправлена!", sent_hint: "Контролёр проверит. Результат придёт в Telegram.", back_tasks: "К задачам",
+    approve: "Принять", reject: "Отклонить", approve_q: "Принять работу?", reject_title: "Причина отказа",
+    reject_ph: "Напишите причину…", send_reject: "Отклонить", cancel: "Отмена",
+    reasons: ["Фото нечёткое", "Низкое качество", "Работа не закончена", "Нужно фото с другого ракурса"],
+    s_pending: "Не начато", s_in_review: "На проверке", s_approved: "Принято", s_rejected: "Возвращено",
+    waiting: "ждёт {t}", worker: "Рабочий", files: "файлов: {n}", retry: "Ещё раз", remove: "Удалить",
+    just_now: "только что", min_ago: "{n} мин", hour_ago: "{n} ч", day_ago: "{n} дн",
+    in_tg: "Это приложение работает внутри Telegram", in_tg_hint: "Нажмите кнопку «📱 Ilova» в боте.",
+    not_registered: "Вы не зарегистрированы", not_registered_hint: "Перейдите в бота и зарегистрируйтесь по ссылке от руководителя.",
+    inactive: "Ваш аккаунт не активен", inactive_hint: "Обратитесь к руководителю.",
+    active: "В работе", done: "Готово", review: "На проверке", returned_n: "Возвращено", open_panel: "Открыть панель управления",
+    done_ok: "Принято ✅", rejected_ok: "Отклонено", truck_ready: "Truck готов!", unsent: "Есть неотправленные файлы. Выйти?",
+    wait_upload: "Дождитесь загрузки файлов", fix_err: "Удалите файлы с ошибкой или загрузите заново", loading: "Загрузка…",
+    err_auth: "Войдите заново (закройте и откройте приложение)", err_forbidden: "Нет доступа к этому действию", err_not_found: "Не найдено",
+    err_not_available: "Эта работа сейчас недоступна (возможно, её уже отправили)", err_limit_photos: "Не больше {n} фото",
+    err_limit_videos: "Не больше {n} видео", err_bad_file: "Неподходящий тип файла (фото или видео)",
+    err_too_big: "Файл слишком большой (видео до 95 МБ)", err_no_media: "Добавьте хотя бы одно фото или видео",
+    err_reason_short: "Опишите причину подробнее", err_not_in_review: "Эта работа уже рассмотрена",
+    err_network: "Проблема с интернетом. Попробуйте ещё раз", err_server: "Произошла ошибка. Попробуйте ещё раз",
+    err_inactive: "Ваш аккаунт не активен", err_bad_init: "Не удалось подтвердить вход. Закройте и откройте приложение",
+  },
+};
+
+/* ================================ Holat ================================= */
+const tg = (window.Telegram && window.Telegram.WebApp) || null;
+const S = { token: "", user: null, counts: {}, tab: "main", stack: [], lang: "uz", timer: null };
+const qs = new URLSearchParams(location.search);
+const DEV = ["localhost", "127.0.0.1"].includes(location.hostname);
+const $app = document.getElementById("app");
+const HAPTIC = (k) => { try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(k); } catch (e) {} };
+const t = (k, v) => {
+  const s = (T[S.lang] && T[S.lang][k]) ?? T.uz[k] ?? k;
+  return typeof s === "string" && v ? s.replace(/\{(\w+)\}/g, (_, n) => (v[n] ?? "")) : s;
+};
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const stepName = (n) => (STEPS[S.lang] || STEPS.uz)[n - 1] || `#${n}`;
+
+class ApiError extends Error { constructor(code, status) { super(code); this.code = code; this.status = status; } }
+const errText = (e) => {
+  const code = e && e.code ? e.code : "server";
+  return t("err_" + code, { n: code === "limit_photos" ? 10 : 5 }) || t("err_server");
+};
+
+function toast(msg, kind = "") {
+  document.querySelectorAll(".toast").forEach((x) => x.remove());
+  const d = document.createElement("div");
+  d.className = "toast " + kind; d.textContent = msg; document.body.appendChild(d);
+  setTimeout(() => d.remove(), 3200);
+}
+
+/* ============================== API so'rovlar ============================== */
+async function authenticate() {
+  const init = (DEV && qs.get("init")) || (tg && tg.initData) || "";
+  if (!init) throw new ApiError("no_telegram", 0);
+  const r = await fetch("/app/api/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ init_data: init }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new ApiError(j.error || "server", r.status), { name_: j.name });
+  S.token = j.token; S.user = j.user; S.counts = j.counts || {}; S.lang = j.user.lang || "uz";
+  document.documentElement.lang = S.lang === "ru" ? "ru" : "uz";
+  return j;
+}
+
+async function api(path, opts = {}, retry = true) {
+  const o = { method: opts.method || "GET", headers: { Authorization: "Bearer " + S.token } };
+  if (opts.json !== undefined) { o.headers["Content-Type"] = "application/json"; o.body = JSON.stringify(opts.json); }
+  let r;
+  try { r = await fetch(path, o); } catch (e) { throw new ApiError("network", 0); }
+  if (r.status === 401 && retry) { await authenticate(); return api(path, opts, false); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new ApiError(j.error || "server", r.status);
+  return j;
+}
+const mediaUrl = (id, small) => `/app/media/${id}?k=${encodeURIComponent(S.token)}${small ? "&s=sm" : ""}`;
+const modelUrl = (id) => `/app/model/${id}?k=${encodeURIComponent(S.token)}`;
+const userUrl = (id) => `/app/user/${id}?k=${encodeURIComponent(S.token)}`;
+
+/* ============================== Yordamchilar ============================== */
+function ago(iso) {
+  if (!iso) return "";
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (m < 1) return t("just_now");
+  if (m < 60) return t("min_ago", { n: m });
+  if (m < 1440) return t("hour_ago", { n: Math.round(m / 60) });
+  return t("day_ago", { n: Math.round(m / 1440) });
+}
+function deadlineChip(iso) {
+  if (!iso) return "";
+  const d = new Date(iso), now = new Date();
+  const a = new Date(d.getFullYear(), d.getMonth(), d.getDate()), b = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((a - b) / 86400000);
+  const fmt = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+  if (diff < 0) return `<span class="chip bad">📅 ${t("overdue", { n: -diff })}</span>`;
+  if (diff === 0) return `<span class="chip warn">📅 ${t("today")}</span>`;
+  if (diff === 1) return `<span class="chip warn">📅 ${t("tomorrow")}</span>`;
+  return `<span class="chip">📅 ${fmt}</span>`;
+}
+const prioChip = (p) => (!p || p === "normal") ? "" :
+  `<span class="chip ${p === "urgent" ? "bad" : p === "high" ? "warn" : ""}">${p === "urgent" ? "🔴" : p === "high" ? "🟠" : "🟢"} ${t("prio_" + p)}</span>`;
+const statusChip = (s) => ({
+  pending: `<span class="chip">${t("s_pending")}</span>`, in_review: `<span class="chip info">⏳ ${t("s_in_review")}</span>`,
+  approved: `<span class="chip ok">✅ ${t("s_approved")}</span>`, rejected: `<span class="chip bad">↩️ ${t("s_rejected")}</span>`,
+}[s] || "");
+const avatar = (id, name, has) => has
+  ? `<img class="avatar" src="${userUrl(id)}" alt="">`
+  : `<div class="avatar">${esc((name || "?").trim().charAt(0).toUpperCase())}</div>`;
+
+function render(html) { $app.innerHTML = html; window.scrollTo(0, 0); }
+function setBack() {
+  if (!tg || !tg.BackButton) return;
+  if (S.stack.length > 0) tg.BackButton.show(); else tg.BackButton.hide();
+}
+function push(fn) { S.stack.push(fn); setBack(); fn(); }
+async function goBack() {
+  if (U && !(await leaveSubmit())) return;
+  S.stack.pop(); setBack();
+  const f = S.stack[S.stack.length - 1];
+  if (f) f(); else home();
+}
+if (tg && tg.BackButton) tg.BackButton.onClick(goBack);
+
+function loading() { render(`<div class="center"><div class="spin"></div><div class="hint">${t("loading")}</div></div>`); }
+function errorScreen(e, retryFn) {
+  render(`<div class="center"><div class="big">⚠️</div><h2>${esc(errText(e))}</h2>
+    ${retryFn ? `<button class="btn" id="retry" style="max-width:260px;margin-top:10px">↻ ${t("retry")}</button>` : ""}</div>`);
+  const b = document.getElementById("retry"); if (b) b.onclick = retryFn;
+}
+
+/* ================================ Bosh sahifa ================================ */
+function topBar() {
+  const u = S.user;
+  const sub = u.role === "worker" ? `${t("stage")}: ${esc(stepName(u.step))}` : u.role === "qc" ? "QC" : "Admin";
+  return `<div class="top">${avatar(u.id, u.name, u.photo)}<div class="who"><b>${esc(u.name)}</b><span class="hint">${sub}</span></div>
+    <button class="iconbtn" id="refresh" title="↻">↻</button></div>`;
+}
+function tabsBar(active) {
+  const u = S.user;
+  if (u.role === "admin") return "";
+  const first = u.role === "qc" ? ["queue", "🔔", t("queue"), S.counts.queue] : ["tasks", "📋", t("tasks"), S.counts.tasks];
+  const items = [first, ["history", "🕘", t("history"), 0]];
+  return `<div class="tabs">${items.map(([k, ic, lb, n]) =>
+    `<button data-tab="${k}" class="${active === k ? "on" : ""}"><span class="ic">${ic}</span>${lb}${n ? `<span class="badge">${n}</span>` : ""}</button>`).join("")}</div>`;
+}
+function bindTabs() {
+  document.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => { S.stack = []; setBack(); S.tab = b.dataset.tab; home(); });
+  const r = document.getElementById("refresh"); if (r) r.onclick = () => home();
+}
+
+async function home() {
+  U = null; clearInterval(S.timer);
+  const u = S.user;
+  if (u.role === "admin") return adminHome();
+  const tab = S.tab === "history" ? "history" : (u.role === "qc" ? "queue" : "tasks");
+  S.tab = tab;
+  try {
+    if (!document.querySelector(".task")) loading();
+    const [list, h] = await Promise.all([api(tab === "history" ? "/app/api/history" : tab === "queue" ? "/app/api/queue" : "/app/api/tasks"), api("/app/api/home")]);
+    S.counts = h.counts;
+    render(`<div class="wrap">${topBar()}<h1 style="margin-bottom:12px">${tab === "history" ? t("history") : tab === "queue" ? t("queue") : t("tasks")}</h1>
+      <div class="list">${list.items.length ? list.items.map(taskCard).join("") : emptyBlock(tab)}</div></div>${tabsBar(tab)}`);
+    bindTabs();
+    document.querySelectorAll("[data-step]").forEach((c) => c.onclick = () => push(() => openStep(+c.dataset.step)));
+    S.timer = setInterval(() => { if (document.visibilityState === "visible" && !U && S.stack.length === 0) refreshQuiet(); }, 30000);
+  } catch (e) { errorScreen(e, home); }
+}
+async function refreshQuiet() {
+  const tab = S.tab;
+  try {
+    const list = await api(tab === "history" ? "/app/api/history" : tab === "queue" ? "/app/api/queue" : "/app/api/tasks");
+    const box = document.querySelector(".list"); if (box && S.stack.length === 0) {
+      box.innerHTML = list.items.length ? list.items.map(taskCard).join("") : emptyBlock(tab);
+      document.querySelectorAll("[data-step]").forEach((c) => c.onclick = () => push(() => openStep(+c.dataset.step)));
+    }
+  } catch (e) {}
+}
+function emptyBlock(tab) {
+  const m = tab === "history" ? [t("no_hist"), ""] : tab === "queue" ? [t("no_queue"), t("no_queue_hint")] : [t("no_tasks"), t("no_tasks_hint")];
+  return `<div class="empty"><div class="big">${tab === "history" ? "🕘" : "🎉"}</div><h2>${m[0]}</h2><p>${m[1]}</p></div>`;
+}
+function taskCard(it) {
+  const isQc = S.user.role === "qc";
+  const img = it.has_image ? `<img loading="lazy" src="${modelUrl(it.model_id)}" alt="">` : "🚚";
+  const rej = it.status === "rejected" && it.qc_comment && S.tab !== "history" ? `<div class="banner">↩️ ${t("reason")}: ${esc(it.qc_comment)}</div>` : "";
+  const who = isQc && it.worker_name ? `<span class="chip">👷 ${esc(it.worker_name)}</span>` : "";
+  const wait = isQc && S.tab === "queue" && it.submitted_at ? `<span class="chip warn">⏱ ${t("waiting", { t: ago(it.submitted_at) })}</span>` : "";
+  const files = it.media_count ? `<span class="chip">📎 ${t("files", { n: it.media_count })}</span>` : "";
+  return `<button class="card task" data-step="${it.step_id}"><div class="img">${img}</div><div class="body">
+    <div class="ttl"><b>${esc(it.serial_number)}</b><span class="hint">${esc(stepName(it.step_number))}</span></div>
+    <div class="hint">${esc(it.model || "")}${it.customer ? " · " + esc(it.customer) : ""}</div>
+    <div class="meta">${S.tab === "history" ? statusChip(it.status) : ""}${deadlineChip(it.deadline)}${prioChip(it.priority)}${who}${wait}${files}</div>${rej}</div></button>`;
+}
+async function adminHome() {
+  try {
+    loading();
+    const h = await api("/app/api/home"); const c = h.counts;
+    render(`<div class="wrap">${topBar()}<h1 style="margin-bottom:12px">Baaz Trucks</h1>
+      <div class="tiles">
+        <div class="card tile"><b>${c.active}</b><span>${t("active")}</span></div><div class="card tile"><b>${c.done}</b><span>${t("done")}</span></div>
+        <div class="card tile"><b>${c.review}</b><span>${t("review")}</span></div><div class="card tile"><b>${c.returned}</b><span>${t("returned_n")}</span></div>
+      </div><div class="actions"><button class="btn" id="panel">🖥 ${t("open_panel")}</button></div></div>`);
+    bindTabs();
+    document.getElementById("panel").onclick = () => { const u = location.origin + "/"; tg && tg.openLink ? tg.openLink(u) : window.open(u, "_blank"); };
+  } catch (e) { errorScreen(e, adminHome); }
+}
+
+/* ============================ Vazifa / ish tafsiloti ============================ */
+async function openStep(id) {
+  U = null; loading();
+  try {
+    const d = await api("/app/api/step/" + id);
+    const isQc = S.user.role === "qc";
+    const hero = d.has_image ? `<img src="${modelUrl(d.model_id)}" alt="">` : "🚚";
+    const media = (d.media.length && !d.can_work) ? `<div class="gal">${d.media.map((m, i) => m.kind === "video"
+      ? `<div><video src="${mediaUrl(m.id)}" controls playsinline preload="metadata"></video></div>`
+      : `<div data-view="${i}"><img src="${mediaUrl(m.id, true)}" alt=""></div>`).join("")}</div>` : "";
+    const rej = d.status === "rejected" && d.qc_comment ? `<div class="banner">↩️ ${t("reason")}: ${esc(d.qc_comment)}</div>` : "";
+    let actions = "";
+    if (d.can_work) actions = `<button class="btn" id="work">📷 ${t("send_work")}</button>`;
+    else if (d.can_review) actions = `<div class="row2"><button class="btn bad" id="rej">❌ ${t("reject")}</button><button class="btn ok" id="appr">✅ ${t("approve")}</button></div>`;
+    render(`<div class="wrap"><div class="card"><div class="hero">${hero}</div>
+      <div class="sect"><div class="ttl" style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><h1>${esc(d.serial_number)}</h1>${statusChip(d.status)}</div>
+        <div class="hint">${esc(stepName(d.step_number))}</div>${rej}</div>
+      ${media ? `<div class="sect" style="padding-bottom:4px">${media}</div>` : ""}
+      <div class="sect"><div class="kv"><span>${t("model")}</span><b>${esc(d.model || "—")}</b></div>
+        ${d.customer ? `<div class="kv"><span>${t("customer")}</span><b>${esc(d.customer)}</b></div>` : ""}
+        <div class="kv"><span>${t("deadline")}</span><b>${d.deadline ? deadlineChip(d.deadline) : "—"}</b></div>
+        ${isQc && d.worker_name ? `<div class="kv"><span>${t("worker")}</span><b class="who2">${avatar(d.worker_id, d.worker_name, d.worker_photo)}${esc(d.worker_name)}</b></div>` : ""}
+        ${prioChip(d.priority) ? `<div class="kv"><span>${t("prio_label")}</span><b>${prioChip(d.priority)}</b></div>` : ""}</div>
+      ${d.model_desc ? `<div class="sect"><div class="hint" style="margin-bottom:4px">${t("what_to_do")}</div><div class="note">${esc(d.model_desc)}</div></div>` : ""}
+      ${d.worker_comment && d.status !== "pending" && d.status !== "rejected" ? `<div class="sect"><div class="hint" style="margin-bottom:4px">💬</div><div class="note">${esc(d.worker_comment)}</div></div>` : ""}
+      </div>
+      ${actions ? `<div class="actions">${actions}</div>` : ""}</div>`);
+    const w = document.getElementById("work"); if (w) w.onclick = () => push(() => submitScreen(d));
+    const a = document.getElementById("appr"); if (a) a.onclick = () => approveFlow(d);
+    const r = document.getElementById("rej"); if (r) r.onclick = () => rejectSheet(d);
+    document.querySelectorAll("[data-view]").forEach((el) => el.onclick = () => viewer(d.media, +el.dataset.view));
+  } catch (e) { errorScreen(e, () => openStep(id)); }
+}
+function viewer(list, i) {
+  const m = list[i]; const v = document.createElement("div"); v.className = "viewer";
+  v.innerHTML = `<button class="close">✕</button>${m.kind === "video" ? `<video src="${mediaUrl(m.id)}" controls autoplay playsinline></video>` : `<img src="${mediaUrl(m.id)}" alt="">`}`;
+  v.querySelector(".close").onclick = () => v.remove(); document.body.appendChild(v);
+}
+
+/* ================================== QC amallari ================================== */
+function approveFlow(d) {
+  const go = async () => {
+    try { await api(`/app/api/step/${d.step_id}/approve`, { method: "POST", json: {} }); HAPTIC("success"); toast(t("done_ok"), "ok"); backToList(); }
+    catch (e) { HAPTIC("error"); toast(errText(e), "bad"); }
+  };
+  if (tg && tg.showConfirm) tg.showConfirm(t("approve_q"), (ok) => ok && go()); else if (confirm(t("approve_q"))) go();
+}
+function rejectSheet(d) {
+  let reason = "";
+  const bg = document.createElement("div"); bg.className = "sheet-bg";
+  bg.innerHTML = `<div class="sheet"><h2>${t("reject_title")}</h2><div class="chips">${t("reasons").map((r) => `<button data-r="${esc(r)}">${esc(r)}</button>`).join("")}</div>
+    <textarea placeholder="${esc(t("reject_ph"))}"></textarea>
+    <div class="row2" style="margin-top:12px"><button class="btn ghost" id="c">${t("cancel")}</button><button class="btn bad" id="s" disabled>${t("send_reject")}</button></div></div>`;
+  document.body.appendChild(bg);
+  const ta = bg.querySelector("textarea"), send = bg.querySelector("#s");
+  const upd = () => { reason = ta.value.trim(); send.disabled = reason.length < 3; };
+  ta.oninput = upd;
+  bg.querySelectorAll("[data-r]").forEach((b) => b.onclick = () => { ta.value = b.dataset.r; upd(); bg.querySelectorAll("[data-r]").forEach((x) => x.classList.toggle("on", x === b)); });
+  bg.querySelector("#c").onclick = () => bg.remove();
+  bg.onclick = (e) => { if (e.target === bg) bg.remove(); };
+  send.onclick = async () => {
+    send.disabled = true;
+    try { await api(`/app/api/step/${d.step_id}/reject`, { method: "POST", json: { reason } }); HAPTIC("warning"); bg.remove(); toast(t("rejected_ok")); backToList(); }
+    catch (e) { send.disabled = false; HAPTIC("error"); toast(errText(e), "bad"); }
+  };
+}
+function backToList() { S.stack = []; setBack(); S.tab = "queue"; home(); }
+
+/* ================================ Ish yuborish ================================ */
+let U = null;   // joriy yuborish holati: {step, items:[], comment, running}
+function submitScreen(d) {
+  U = { step: d, items: d.drafts.map((m) => ({ key: m.id, id: m.id, kind: m.kind, state: "done", pct: 100, thumb: mediaUrl(m.id, true) })), comment: "", running: 0, seq: 0 };
+  drawSubmit();
+  try { tg && tg.enableClosingConfirmation && tg.enableClosingConfirmation(); } catch (e) {}
+}
+function counts() {
+  const c = { photo: 0, video: 0 };
+  U.items.forEach((i) => { if (i.state !== "removed") c[i.kind]++; });
+  return c;
+}
+function submitState() {
+  const c = counts(), lim = U.step.limits;
+  const pending = U.items.some((i) => i.state === "queued" || i.state === "up"), failed = U.items.some((i) => i.state === "err");
+  return { c, lim, pending, ready: c.photo + c.video > 0 && !pending && !failed };
+}
+function gridHtml() { return U.items.filter((i) => i.state !== "removed").map(thumbHtml).join(""); }
+function bindThumbs() {
+  document.querySelectorAll("[data-rm]").forEach((b) => b.onclick = (e) => { e.stopPropagation(); removeItem(b.dataset.rm); });
+  document.querySelectorAll("[data-rt]").forEach((b) => b.onclick = (e) => { e.stopPropagation(); const it = U.items.find((i) => i.key === b.dataset.rt); if (it) { it.state = "queued"; it.pct = 0; drawSubmit(); pump(); } });
+}
+function drawSubmit() {
+  if (!U) return;
+  if (document.getElementById("pickers")) return patchSubmit();
+  const d = U.step, { c, lim, pending, ready } = submitState();
+  render(`<div class="wrap"><div class="card"><div class="sect"><h1>${esc(d.serial_number)}</h1><div class="hint">${esc(stepName(d.step_number))}</div>
+    ${d.status === "rejected" && d.qc_comment ? `<div class="banner">↩️ ${t("reason")}: ${esc(d.qc_comment)}</div>` : ""}</div>
+    <div class="sect"><div class="row2" id="pickers">
+      <button class="pick" id="pp"><span class="ic">📷</span>${t("add_photo")}</button>
+      <button class="pick" id="pv"><span class="ic">🎥</span>${t("add_video")}</button></div>
+      <div class="cnt" id="cnt"></div><div class="grid" id="grid"></div></div>
+    <div class="sect"><textarea id="cm" placeholder="${esc(t("comment_ph"))}">${esc(U.comment)}</textarea></div></div>
+    <div class="actions"><button class="btn ok" id="go">✅ ${t("submit")}</button></div></div>
+    <input type="file" id="fp" accept="image/*" multiple hidden><input type="file" id="fv" accept="video/*" multiple hidden>`);
+  document.getElementById("pp").onclick = () => document.getElementById("fp").click();
+  document.getElementById("pv").onclick = () => document.getElementById("fv").click();
+  document.getElementById("fp").onchange = (e) => { addFiles([...e.target.files], "photo"); e.target.value = ""; };
+  document.getElementById("fv").onchange = (e) => { addFiles([...e.target.files], "video"); e.target.value = ""; };
+  document.getElementById("cm").oninput = (e) => { U.comment = e.target.value; };
+  document.getElementById("go").onclick = doSubmit;
+  patchSubmit();
+}
+function patchSubmit() {
+  const { c, lim, pending, ready } = submitState();
+  document.getElementById("pp").disabled = c.photo >= lim.photos;
+  document.getElementById("pv").disabled = c.video >= lim.videos;
+  document.getElementById("cnt").innerHTML = `<span class="chip">📷 ${t("photos")}: ${c.photo}/${lim.photos}</span><span class="chip">🎥 ${t("videos")}: ${c.video}/${lim.videos}</span>`;
+  const g = document.getElementById("grid"), html = gridHtml();
+  if (g.dataset.h !== html) { g.innerHTML = html; g.dataset.h = html; bindThumbs(); }
+  const go = document.getElementById("go");
+  go.disabled = !ready; go.innerHTML = pending ? "⏳ " + t("uploading") : "✅ " + t("submit");
+}
+function thumbHtml(i) {
+  const media = i.kind === "video"
+    ? (i.thumb && i.local ? `<video src="${i.thumb}#t=0.1" muted playsinline preload="metadata"></video>` : `<div style="position:absolute;inset:0;display:grid;place-items:center;font-size:34px">🎥</div>`)
+    : `<img src="${i.thumb}" alt="">`;
+  let ov = "";
+  if (i.state === "queued") ov = `<div class="ov">…</div>`;
+  else if (i.state === "up") ov = `<div class="ov">${Math.round(i.pct)}%</div><div class="bar"><i style="width:${i.pct}%"></i></div>`;
+  else if (i.state === "err") ov = `<div class="ov err"><div>⚠️<br><button data-rt="${i.key}" style="color:#fff;text-decoration:underline">${t("retry")}</button></div></div>`;
+  return `<div class="thumb">${media}${i.kind === "video" ? `<span class="vid">🎥</span>` : ""}${ov}<button class="x" data-rm="${i.key}">✕</button></div>`;
+}
+async function shrink(file) {
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const k = Math.min(1, 1920 / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement("canvas"); cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
+    cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
+    const blob = await new Promise((r) => cv.toBlob(r, "image/jpeg", 0.86));
+    if (blob && blob.size < file.size) return new File([blob], "photo.jpg", { type: "image/jpeg" });
+  } catch (e) {}
+  return file;
+}
+function addFiles(files, kind) {
+  if (!U) return;
+  const lim = U.step.limits, c = counts();
+  const room = (kind === "photo" ? lim.photos : lim.videos) - c[kind];
+  if (files.length > room) toast(t(kind === "photo" ? "err_limit_photos" : "err_limit_videos", { n: kind === "photo" ? lim.photos : lim.videos }), "bad");
+  files.slice(0, Math.max(0, room)).forEach((f) => {
+    U.items.push({ key: "l" + (++U.seq), kind, state: "queued", pct: 0, file: f, local: true, thumb: URL.createObjectURL(f) });
+  });
+  drawSubmit(); pump();
+}
+async function pump() {
+  if (!U) return;
+  while (U && U.running < 2) {
+    const it = U.items.find((i) => i.state === "queued");
+    if (!it) break;
+    it.state = "up"; U.running++; drawSubmit();
+    uploadOne(it).finally(() => { if (U) { U.running--; drawSubmit(); pump(); } });
+  }
+}
+function xhrUpload(file, stepId, onprog) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open("POST", `/app/api/step/${stepId}/upload`); x.setRequestHeader("Authorization", "Bearer " + S.token);
+    x.upload.onprogress = (e) => e.lengthComputable && onprog(e.loaded / e.total * 100);
+    x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {}
+      if (x.status >= 200 && x.status < 300) resolve(j); else reject(new ApiError(j.error || (x.status === 401 ? "auth" : "server"), x.status)); };
+    x.onerror = () => reject(new ApiError("network", 0)); x.ontimeout = () => reject(new ApiError("network", 0)); x.timeout = 10 * 60 * 1000;
+    const fd = new FormData(); fd.append("file", file); x.send(fd);
+  });
+}
+async function uploadOne(it) {
+  try {
+    const file = it.kind === "photo" ? await shrink(it.file) : it.file;
+    let res;
+    try { res = await xhrUpload(file, U.step.step_id, (p) => { if (p - it.pct >= 3 || p >= 99) { it.pct = p; drawSubmit(); } }); }
+    catch (e) { if (e.status === 401) { await authenticate(); res = await xhrUpload(file, U.step.step_id, (p) => { if (p - it.pct >= 3 || p >= 99) { it.pct = p; drawSubmit(); } }); } else throw e; }
+    if (it.state === "removed") { api(`/app/api/step/${U.step.step_id}/media/${res.id}`, { method: "DELETE" }).catch(() => {}); return; }
+    it.id = res.id; it.state = "done"; it.pct = 100;
+  } catch (e) {
+    if (it.state === "removed") return;
+    it.state = "err"; it.err = e.code;
+    if (["limit_photos", "limit_videos", "bad_file", "too_big", "not_available"].includes(e.code)) { toast(errText(e), "bad"); it.state = "removed"; }
+  }
+}
+async function removeItem(key) {
+  const it = U.items.find((i) => i.key === key); if (!it) return;
+  const wasDone = it.state === "done" && it.id;
+  it.state = "removed"; drawSubmit();
+  if (wasDone) api(`/app/api/step/${U.step.step_id}/media/${it.id}`, { method: "DELETE" }).catch(() => {});
+}
+async function doSubmit() {
+  const b = document.getElementById("go"); b.disabled = true; b.textContent = "⏳ " + t("sending");
+  try {
+    await api(`/app/api/step/${U.step.step_id}/submit`, { method: "POST", json: { comment: U.comment } });
+    HAPTIC("success"); U = null; try { tg && tg.disableClosingConfirmation && tg.disableClosingConfirmation(); } catch (e) {}
+    S.stack = []; setBack();
+    render(`<div class="center"><div class="big">✅</div><h1>${t("sent_title")}</h1><p class="hint">${t("sent_hint")}</p>
+      <button class="btn" id="back" style="max-width:300px;margin-top:14px">${t("back_tasks")}</button></div>`);
+    document.getElementById("back").onclick = () => { S.tab = "tasks"; home(); };
+  } catch (e) { HAPTIC("error"); toast(errText(e), "bad"); drawSubmit(); }
+}
+async function leaveSubmit() {
+  if (!U) return true;
+  const unsent = U.items.some((i) => i.state !== "removed");
+  if (unsent && !(await new Promise((res) => { if (tg && tg.showConfirm) tg.showConfirm(t("unsent"), res); else res(confirm(t("unsent"))); }))) return false;
+  U = null; try { tg && tg.disableClosingConfirmation && tg.disableClosingConfirmation(); } catch (e) {}
+  return true;
+}
+
+/* ================================== Boshlash ================================== */
+async function boot() {
+  try { if (tg) { tg.ready(); tg.expand(); } } catch (e) {}
+  try {
+    const j = await authenticate();
+    const go = qs.get("go"), id = +qs.get("id");
+    history.replaceState(null, "", location.pathname);
+    if (go === "step" && id) { S.tab = j.user.role === "qc" ? "queue" : "tasks"; push(() => openStep(id)); return; }
+    home();
+  } catch (e) {
+    const L = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.language_code === "ru") ? "ru" : "uz";
+    S.lang = L;
+    const box = (ic, h, p) => render(`<div class="center"><div class="big">${ic}</div><h2>${h}</h2><p class="hint">${p}</p></div>`);
+    if (e.code === "no_telegram") return box("📱", t("in_tg"), t("in_tg_hint"));
+    if (e.code === "not_registered") return box("👋", t("not_registered"), t("not_registered_hint"));
+    if (e.code === "inactive") return box("⏸", t("inactive"), t("inactive_hint"));
+    errorScreen(e, boot);
+  }
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && S.user && !U && S.stack.length === 0 && S.user.role !== "admin") refreshQuiet(); });
+boot();
+</script>
+</body>
+</html>

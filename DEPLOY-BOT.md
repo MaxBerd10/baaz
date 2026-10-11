@@ -135,3 +135,19 @@ Veb'dan yuboriladigan «yangi buyurtma» xabari 22:00–07:00 (Toshkent) oralig'
 Soatlar: `QUIET_FROM` (standart 22) va `QUIET_TO` (standart 7) muhit o'zgaruvchilari; ikkalasi teng bo'lsa — o'chiq.
 Botning o'z xabarlari («Yangi vazifa», «Yangi ish keldi») bunga kirmaydi.
 
+## Telegram Mini App (ishchi va QC uchun ilova)
+Botning pastki menyusidagi **«📱 Ilova»** tugmasi Telegram ichida oddiy ilova ochadi (`https://<domen>/app`):
+- **Ishchi:** vazifalar (truck rasmi, nima qilish kerak, muddat), rasm/video yuklash (ko'rinish, jarayon chizig'i, 10 rasm + 5 video), yuborish, tarix.
+- **QC:** navbat, galereya, ✅ tasdiqlash / ❌ sabab bilan rad etish, tarix.
+- **Admin:** qisqa sanoqlar va veb-panelga havola.
+Botdagi eski tugmalar ham ishlayveradi (zaxira yo'l). Xabarlar ostida «📱 Ochish» tugmasi shu ishning o'ziga olib boradi.
+
+**Kirish:** parol yo'q. Telegram ilovaga imzolangan `initData` beradi (bot tokeni bilan HMAC tekshiriladi, 24 soatdan eski bo'lsa rad etiladi);
+server qisqa muddatli (12 soat) sessiya tokeni beradi. Foydalanuvchi har so'rovda bazadan o'qiladi: faolsizlantirilsa yoki roli o'zgarsa darrov kuchga kiradi.
+**Fayllar** botdan emas, to'g'ridan-to'g'ri veb-serverga yuklanadi: Telegram'ning 20 MB chegarasi yo'q (Cloudflare bepul rejasi bitta so'rovga 100 MB beradi, shuning uchun video ≤95 MB).
+Yuborilganda birinchi rasm ishchining chatiga ham yuboriladi, shunda bot orqali tekshiruvchi QC ham uni ko'ra oladi (Telegram `file_id` saqlanadi).
+
+**Sozlash:** serverdagi `deploy/.env` ga `MINIAPP_URL=https://factory.baaztrucks.uz/app` qo'shing, keyin `sudo docker compose up -d --build web`.
+Veb ishga tushganda pastki menyu tugmasini o'zi o'rnatadi. `MINIAPP_URL` bo'sh bo'lsa ilova o'chiq.
+**Sinov:** `tests/` (13 ta, haqiqiy Postgres kerak; muhit o'zgaruvchilari `tests/conftest.py` boshida yozilgan).
+
