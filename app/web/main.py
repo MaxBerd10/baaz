@@ -233,6 +233,11 @@ templates.env.globals["ACTION_LABEL"] = _ACTION_LABEL
 
 # Production: API hujjatlari (/docs, /redoc, /openapi.json) tashqariga ochiq bo'lmasin.
 app = FastAPI(title="Baaz — Ishlab chiqarish nazorati", docs_url=None, redoc_url=None, openapi_url=None)
+if settings.bot_db:  # Telegram Mini App (ishchi va QC uchun) faqat bot rejimida
+    from app.services import miniapp_notify
+    from app.web import miniapp_routes
+
+    miniapp_routes.register(app)
 install_redirect_handler(app)
 
 _static = BASE_DIR / "static"
@@ -258,7 +263,11 @@ async def _force_https(request: Request, call_next):
 async def _security_headers(request: Request, call_next):
     resp = await call_next(request)
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
-    resp.headers.setdefault("X-Frame-Options", "DENY")
+    if request.url.path == "/app" or request.url.path.startswith("/app/"):
+        # Telegram Mini App Telegram ilovasi/web.telegram.org ichida (iframe/WebView) ochiladi
+        resp.headers.setdefault("Content-Security-Policy", "frame-ancestors https://web.telegram.org https://*.telegram.org")
+    else:
+        resp.headers.setdefault("X-Frame-Options", "DENY")
     resp.headers.setdefault("Referrer-Policy", "same-origin")
     resp.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
     return resp
@@ -326,6 +335,12 @@ async def _startup() -> None:
         await _bootstrap_once()
     except Exception as exc:  # pragma: no cover
         _log.warning("startup: %s", exc)
+    if settings.bot_db and miniapp_notify.MINIAPP_URL:
+        try:  # botning pastki menyu tugmasi «📱 Ilova» bo'lsin
+            ok = await miniapp_notify.set_menu_button()
+            _log.info("Mini App menyu tugmasi: %s", "o'rnatildi" if ok else "o'rnatilmadi")
+        except Exception as exc:  # pragma: no cover
+            _log.warning("menyu tugmasi: %s", exc)
 
 
 # Xato tafsilotlarini (traceback) brauzerga faqat SHOW_ERRORS=1 bo'lsa ko'rsatamiz (demo). Standart — o'chiq.

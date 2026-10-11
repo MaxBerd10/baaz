@@ -97,6 +97,9 @@ services:
       MEDIA_ROOT: /app/media   # model rasmlari va Telegram keshi shu yerga yoziladi
       BOT_MEDIA_ROOT: /botmedia   # botning ishchilar yuborgan rasm/videolari (faqat o'qish)
       BOT_MEDIA_PREFIX: /app/media
+      MINIAPP_URL: ${MINIAPP_URL:-}   # Telegram Mini App manzili (https://.../app); bo'sh bo'lsa ilova menyu tugmasi qo'yilmaydi
+      QUIET_FROM: ${QUIET_FROM:-22}   # tungi tinch rejim: shu soatlar orasida xabarlar ovozsiz ketadi
+      QUIET_TO: ${QUIET_TO:-7}
     volumes:
       - web_media:/app/media
       - bot_media:/botmedia:ro

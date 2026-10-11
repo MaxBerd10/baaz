@@ -27,10 +27,14 @@ CREATE TABLE IF NOT EXISTS truck_step_media (
     id          serial PRIMARY KEY,
     step_id     integer NOT NULL REFERENCES truck_steps(id) ON DELETE CASCADE,
     media_type  varchar(16) NOT NULL,
-    file_id     varchar(512) NOT NULL,
+    file_id     varchar(512),                 -- Telegram file_id; Mini App'dan yuklangan faylda bo'lmasligi mumkin (local_path bor)
     local_path  varchar(512),
     added_by_id integer REFERENCES users(id) ON DELETE SET NULL,
     draft       boolean NOT NULL DEFAULT true,
     created_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS ix_truck_step_media_step ON truck_step_media (step_id);
+-- Avval yaratilgan jadvalda ham file_id bo'sh bo'lishi mumkin (Mini App fayllari uchun)
+ALTER TABLE truck_step_media ALTER COLUMN file_id DROP NOT NULL;
+ALTER TABLE truck_step_media ADD COLUMN IF NOT EXISTS size_bytes bigint;
+

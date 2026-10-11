@@ -74,7 +74,8 @@ T = {
 }
 
 
-def _api(method: str, fields: dict, file: tuple[str, str, bytes] | None = None, timeout: int = 20) -> dict:
+def _api(method: str, fields: dict, file: tuple[str, str, bytes] | None = None, timeout: int = 20,
+         field: str = "photo") -> dict:
     """Telegram Bot API chaqiruvi (sinxron; asyncio.to_thread ichida ishlatiladi)."""
     url = f"{_TG_API}/bot{settings.bot_token}/{method}"
     if file:
@@ -83,7 +84,7 @@ def _api(method: str, fields: dict, file: tuple[str, str, bytes] | None = None, 
         for k, v in fields.items():
             body += (f"--{boundary}\r\nContent-Disposition: form-data; name=\"{k}\"\r\n\r\n{v}\r\n").encode()
         fname, ctype, data = file
-        body += (f"--{boundary}\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"{fname}\"\r\n"
+        body += (f"--{boundary}\r\nContent-Disposition: form-data; name=\"{field}\"; filename=\"{fname}\"\r\n"
                  f"Content-Type: {ctype}\r\n\r\n").encode() + data + f"\r\n--{boundary}--\r\n".encode()
         req = urllib.request.Request(url, data=body, headers={
             "Content-Type": f"multipart/form-data; boundary={boundary}"})

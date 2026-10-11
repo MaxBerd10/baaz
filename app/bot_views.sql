@@ -139,13 +139,15 @@ CREATE TABLE IF NOT EXISTS public.truck_step_media (
     id          serial PRIMARY KEY,
     step_id     integer NOT NULL REFERENCES public.truck_steps(id) ON DELETE CASCADE,
     media_type  varchar(16) NOT NULL,
-    file_id     varchar(512) NOT NULL,
+    file_id     varchar(512),
     local_path  varchar(512),
     added_by_id integer REFERENCES public.users(id) ON DELETE SET NULL,
     draft       boolean NOT NULL DEFAULT true,
     created_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS ix_truck_step_media_step ON public.truck_step_media (step_id);
+ALTER TABLE public.truck_step_media ALTER COLUMN file_id DROP NOT NULL;
+ALTER TABLE public.truck_step_media ADD COLUMN IF NOT EXISTS size_bytes bigint;
 
 -- id: yangi fayllar 1_000_000_000 + id (eski bitta-media qatorlari id'si bilan to'qnashmasligi uchun).
 -- Eski (jadvalgacha yuborilgan) ishlar uchun truck_steps.media_* ishlatiladi.
