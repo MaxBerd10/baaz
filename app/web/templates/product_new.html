@@ -81,7 +81,8 @@
       </div>
     </div>
     <div class="fld" style="max-width:180px"><label>Nechta truck</label><input class="fi" type="number" name="count" min="1" max="10" value="{{ form.get('count') or 1 }}"></div>
-    <label class="chk"><input type="checkbox" name="notify" value="1" {{ 'checked' if (not form) or form.get('notify') }}> Telegramda hammaga «yangi buyurtma keldi» xabarini yuborish</label>
+    <label class="chk"><input type="checkbox" name="notify" value="1" {{ 'checked' if (not form) or form.get('notify') }}> Telegramda «yangi buyurtma keldi» xabarini yuborish <span class="muted" style="font-weight:500">(adminlar, QC va Karkas ishchilariga)</span></label>
+    <label class="chk" style="margin-top:-8px"><input type="checkbox" name="notify_all" value="1" {{ 'checked' if form.get('notify_all') }}> Boshqa bosqich ishchilariga ham ogohlantirish yuborish <span class="muted" style="font-weight:500">(ularga «navbat sizga kelganda xabar olasiz» deb yoziladi)</span></label>
     <button class="btn" type="submit" {{ 'disabled' if not models }}>Buyurtma yaratish</button>
   </form>
 

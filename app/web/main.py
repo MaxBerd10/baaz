@@ -887,13 +887,13 @@ async def product_new_form(request: Request, session: AsyncSession = Depends(get
 async def product_create(
     request: Request, model: str = Form(""), serial: str = Form(""), customer: str = Form(""),
     priority: str = Form("normal"), deadline: str = Form(""), notify: str = Form(""),
-    count: str = Form("1"),
+    notify_all: str = Form(""), count: str = Form("1"),
     session: AsyncSession = Depends(get_session), _=Depends(require_login),
 ):
     if not settings.bot_db:
         return RedirectResponse("/products", status_code=302)
     form = {"model": model, "serial": serial, "customer": customer, "priority": priority,
-            "deadline": deadline, "notify": notify, "count": count}
+            "deadline": deadline, "notify": notify, "notify_all": notify_all, "count": count}
 
     async def fail(msg: str):
         ctx = await _new_truck_ctx(session)
@@ -937,6 +937,10 @@ async def product_create(
     q = {"created": 1, "n": n, "sent": 0, "failed": 0}
     if notify:
         recips = await factory_svc.recipients(session)
+        if not notify_all:
+            # Standart: adminlar, QC va 1-bosqich (Karkas) ishchilari. Boshqa bosqich ishchilari o'z navbatida
+            # botning o'zidan «Yangi vazifa» xabarini oladi — bo'sh «Vazifalarim» ko'rib adashmasin.
+            recips = [r for r in recips if r["role"] != "worker" or r.get("step_number") == 1]
         res = await telegram_notify.notify_new_order(
             recips, model=card.name, serial=serial, customer=customer.strip() or None,
             priority=priority, deadline=due.isoformat() if due else None, description=card.description,
