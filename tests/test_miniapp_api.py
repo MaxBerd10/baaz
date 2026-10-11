@@ -262,3 +262,40 @@ def test_history_lists(client):
     client.post(f"/app/api/step/{sid}/approve", headers=qc)
     items = client.get("/app/api/history", headers=qc).json()["items"]
     assert serial in [i["serial_number"] for i in items]
+
+
+def test_admin_truck_list_and_detail_are_admin_only(client, sent):
+    tid, serial = new_truck()
+    w1, qc, adm = login(client, "w1"), login(client, "qc"), login(client, "admin")
+    sid = step_id(tid, 1)
+    upload(client, w1, sid)
+    client.post(f"/app/api/step/{sid}/submit", headers=w1, json={})
+    client.post(f"/app/api/step/{sid}/reject", headers=qc, json={"reason": "Rasm xira, qayta yuboring"})
+    upload(client, w1, sid)
+    client.post(f"/app/api/step/{sid}/submit", headers=w1, json={})
+
+    # ro'yxat: tekshiruvdagi truck ko'rinadi, noto'g'ri filtr 404
+    items = client.get("/app/api/trucks?f=review", headers=adm).json()["items"]
+    assert serial in [i["serial_number"] for i in items]
+    assert client.get("/app/api/trucks?f=zzz", headers=adm).status_code == 404
+
+    # batafsil: 6 bosqich, 1-bosqich bir marta qaytarilgan va hozir tekshiruvda
+    d = client.get(f"/app/api/truck/{tid}", headers=adm).json()
+    assert d["serial_number"] == serial and len(d["stages"]) == 6
+    s1 = d["stages"][0]
+    assert s1["status"] == "in_review" and s1["rejects"] == 1 and s1["is_current"] and s1["media_count"] >= 1
+    assert d["stages"][1]["status"] == "pending" and not d["stages"][1]["is_current"]
+    assert client.get("/app/api/truck/99999999", headers=adm).status_code == 404
+
+    # tasdiqlangach vaqt hisoblanadi
+    client.post(f"/app/api/step/{sid}/approve", headers=qc)
+    s1 = client.get(f"/app/api/truck/{tid}", headers=adm).json()["stages"][0]
+    assert s1["status"] == "approved" and s1["seconds"] >= 0
+
+    # ishchi va QC kira olmaydi
+    for hdr in (w1, qc):
+        assert client.get("/app/api/trucks?f=active", headers=hdr).status_code == 403
+        assert client.get(f"/app/api/truck/{tid}", headers=hdr).status_code == 403
+    # admin ishning ichini ko'ra oladi, lekin tasdiqlay olmaydi
+    assert client.get(f"/app/api/step/{sid}", headers=adm).status_code == 200
+    assert client.post(f"/app/api/step/{sid}/approve", headers=adm).status_code == 403

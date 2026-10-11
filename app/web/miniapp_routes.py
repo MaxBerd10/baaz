@@ -110,6 +110,16 @@ async def api_history(user: dict = Depends(current_user), session: AsyncSession 
     return {"items": await mini.history(session, user)}
 
 
+@router.get("/app/api/trucks")
+async def api_trucks(f: str = "active", user: dict = Depends(current_user), session: AsyncSession = Depends(get_db)):
+    return {"items": await mini.trucks_list(session, user, f)}
+
+
+@router.get("/app/api/truck/{truck_id}")
+async def api_truck(truck_id: int, user: dict = Depends(current_user), session: AsyncSession = Depends(get_db)):
+    return await mini.truck_detail(session, user, truck_id)
+
+
 @router.get("/app/api/step/{step_id}")
 async def api_step(step_id: int, user: dict = Depends(current_user), session: AsyncSession = Depends(get_db)):
     return await mini.step_detail(session, user, step_id)

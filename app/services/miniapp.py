@@ -152,6 +152,67 @@ async def deadlines(session: AsyncSession, user: dict, limit: int = 6) -> list[d
     return [clean(r) for r in rows]
 
 
+TRUCK_FILTERS = ("active", "done", "review", "returned")
+
+
+async def trucks_list(session: AsyncSession, user: dict, f: str) -> list[dict]:
+    """Admin: sanoq kartochkasi bosilganda ochiladigan trucklar ro'yxati (joriy bosqichi bilan)."""
+    _need_role(user, "admin")
+    if f not in TRUCK_FILTERS:
+        raise AppError("not_found", 404)
+    where, order = {
+        "active": ("t.status = 'in_progress'", "t.priority DESC, t.deadline ASC NULLS LAST, t.id DESC"),
+        "done": ("t.status = 'completed'", "t.completed_at DESC NULLS LAST, t.id DESC"),
+        "review": ("ts.status = 'in_review'", "ts.submitted_at ASC NULLS LAST"),
+        "returned": ("ts.status = 'rejected'", "ts.reviewed_at DESC NULLS LAST"),
+    }[f]
+    rows = (await session.execute(text(f"""
+        SELECT t.id AS truck_id, t.serial_number, t.model, t.customer, t.deadline, t.priority::text AS priority,
+               t.status::text AS truck_status, t.current_step, mc.id AS model_id, (mc.image_file IS NOT NULL) AS has_image,
+               ts.id AS step_id, ts.status::text AS step_status, ts.submitted_at, ts.qc_comment,
+               w.full_name AS worker_name
+        FROM public.trucks t
+        JOIN public.truck_steps ts ON ts.truck_id = t.id AND ts.step_number = t.current_step
+        LEFT JOIN web.model_cards mc ON mc.name = t.model
+        LEFT JOIN public.users w ON w.id = ts.worker_id
+        WHERE {where} ORDER BY {order} LIMIT 100"""))).mappings().all()
+    return [clean(r) for r in rows]
+
+
+async def truck_detail(session: AsyncSession, user: dict, truck_id: int) -> dict:
+    """Admin: bitta truck va uning 6 bosqichi (kim, qancha vaqt, necha marta qaytarilgan). Faqat o'qish."""
+    _need_role(user, "admin")
+    head = (await session.execute(text("""
+        SELECT t.id AS truck_id, t.serial_number, t.model, t.customer, t.deadline, t.priority::text AS priority,
+               t.status::text AS truck_status, t.current_step, t.created_at, t.completed_at,
+               mc.id AS model_id, (mc.image_file IS NOT NULL) AS has_image
+        FROM public.trucks t LEFT JOIN web.model_cards mc ON mc.name = t.model WHERE t.id = :i"""),
+        {"i": truck_id})).mappings().first()
+    if head is None:
+        raise AppError("not_found", 404)
+    rows = (await session.execute(text("""
+        SELECT ts.id AS step_id, ts.step_number, ts.status::text AS status, ts.submitted_at, ts.reviewed_at, ts.qc_comment,
+               w.id AS worker_id, w.full_name AS worker_name, (w.photo_file_id IS NOT NULL OR w.photo_path IS NOT NULL) AS worker_photo,
+               (SELECT count(*) FROM public.truck_step_events e WHERE e.step_id = ts.id AND e.event = 'rejected') AS rejects,
+               (SELECT count(*) FROM public.truck_step_media m WHERE m.step_id = ts.id AND NOT m.draft) AS media_count
+        FROM public.truck_steps ts LEFT JOIN public.users w ON w.id = ts.worker_id
+        WHERE ts.truck_id = :i ORDER BY ts.step_number"""), {"i": truck_id})).mappings().all()
+    d = clean(head)
+    stages, prev_end = [], head["created_at"]
+    for r in rows:
+        st = clean(r)
+        st["is_current"] = r["step_number"] == head["current_step"] and head["truck_status"] == "in_progress"
+        # bosqich boshlanishi = oldingi bosqich tasdiqlangan payt (1-bosqich: truck yaratilgan payt)
+        st["started_at"] = iso(prev_end) if r["status"] != "pending" or st["is_current"] else None
+        if r["status"] == "approved" and r["reviewed_at"] and prev_end:
+            st["seconds"] = max(0, int((r["reviewed_at"] - prev_end).total_seconds()))
+        if r["status"] == "approved" and r["reviewed_at"]:
+            prev_end = r["reviewed_at"]
+        stages.append(st)
+    d["stages"] = stages
+    return d
+
+
 # --------------------------------------------------------------------------- #
 # Bitta vazifa / ish
 # --------------------------------------------------------------------------- #

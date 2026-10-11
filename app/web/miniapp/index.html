@@ -114,6 +114,17 @@ textarea{width:100%;min-height:84px;border:1.5px solid var(--line);border-radius
 @keyframes sp{to{transform:rotate(360deg)}}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .tile{padding:18px 16px} .tile b{display:block;font-size:34px;line-height:1.1} .tile span{color:var(--hint);font-size:15px}
+.tile{width:100%;text-align:left;display:block}
+.tile:active,.dl.go:active,.stage.go:active{opacity:.7}
+.dl.go{width:100%;text-align:left;font:inherit}
+.back{display:inline-flex;align-items:center;gap:4px;margin:2px 0 10px;padding:6px 12px 6px 8px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-size:16px;font-weight:650}
+.stage{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-top:1px solid var(--line);font:inherit}
+.stage:first-child{border-top:0}
+.stage .dot{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:17px;font-weight:700;background:rgba(120,128,150,.16);color:var(--hint)}
+.stage .dot.ok{background:rgba(23,168,112,.18);color:var(--ok)} .stage .dot.bad{background:rgba(229,72,77,.16);color:var(--bad)}
+.stage .dot.info{background:rgba(59,130,246,.16);color:var(--info)} .stage .dot.cur{box-shadow:0 0 0 2px var(--accent)}
+.stage .mid{flex:1;min-width:0} .stage .mid b{display:block} .stage .mid small{display:block;color:var(--hint);font-size:14px;margin-top:2px}
+.stage .end{flex:none;text-align:right;font-size:14px;font-weight:650;color:var(--hint)} .stage.wait{opacity:.55}
 .who2{display:flex;align-items:center;gap:10px}
 .who2 .avatar{width:38px;height:38px;font-size:16px}
 </style>
@@ -130,7 +141,7 @@ const STEPS = {
 };
 const T = {
   uz: {
-    tasks: "Vazifalar", history: "Tarix", queue: "Navbat", panel: "Panel", hello: "Salom", stage: "Bosqich",
+    back: "Orqaga", stages: "Bosqichlar", no_trucks: "Bu yerda truck yo'q", rej_times: "{n} marta qaytarilgan", took: "{t} ketdi", since: "{t} bo'ldi", s_wait: "Navbat kutmoqda", back_all: "Orqaga", tasks: "Vazifalar", history: "Tarix", queue: "Navbat", panel: "Panel", hello: "Salom", stage: "Bosqich",
     no_tasks: "Hozircha vazifa yo'q", no_tasks_hint: "Yangi vazifa kelganda botda xabar olasiz.",
     no_queue: "Tekshirish uchun ish yo'q", no_queue_hint: "Ishchilar ish yuborganda shu yerda ko'rinadi.",
     no_hist: "Tarix hozircha bo'sh", deadline: "Muddat", today: "Bugun", tomorrow: "Ertaga", overdue: "{n} kun kechikdi",
@@ -161,7 +172,7 @@ const T = {
     err_inactive: "Hisobingiz faol emas", err_bad_init: "Kirish tasdiqlanmadi. Ilovani yopib, qayta oching",
   },
   uz_cyrl: {
-    tasks: "Вазифалар", history: "Тарих", queue: "Навбат", panel: "Панель", hello: "Салом", stage: "Босқич",
+    back: "Орқага", stages: "Босқичлар", no_trucks: "Бу ерда truck йўқ", rej_times: "{n} марта қайтарилган", took: "{t} кетди", since: "{t} бўлди", s_wait: "Навбат кутмоқда", back_all: "Орқага", tasks: "Вазифалар", history: "Тарих", queue: "Навбат", panel: "Панель", hello: "Салом", stage: "Босқич",
     no_tasks: "Ҳозирча вазифа йўқ", no_tasks_hint: "Янги вазифа келганда ботда хабар оласиз.",
     no_queue: "Текшириш учун иш йўқ", no_queue_hint: "Ишчилар иш юборганда шу ерда кўринади.",
     no_hist: "Тарих ҳозирча бўш", deadline: "Муддат", today: "Бугун", tomorrow: "Эртага", overdue: "{n} кун кечикди",
@@ -192,7 +203,7 @@ const T = {
     err_inactive: "Ҳисобингиз фаол эмас", err_bad_init: "Кириш тасдиқланмади. Иловани ёпиб, қайта очинг",
   },
   ru: {
-    tasks: "Задачи", history: "История", queue: "Очередь", panel: "Панель", hello: "Здравствуйте", stage: "Этап",
+    back: "Назад", stages: "Этапы", no_trucks: "Здесь нет trucks", rej_times: "возвращено раз: {n}", took: "ушло: {t}", since: "{t} назад", s_wait: "Ожидает очереди", back_all: "Назад", tasks: "Задачи", history: "История", queue: "Очередь", panel: "Панель", hello: "Здравствуйте", stage: "Этап",
     no_tasks: "Пока нет задач", no_tasks_hint: "Когда появится новая задача, придёт сообщение в боте.",
     no_queue: "Нет работ для проверки", no_queue_hint: "Когда рабочие отправят работу, она появится здесь.",
     no_hist: "История пока пуста", deadline: "Срок", today: "Сегодня", tomorrow: "Завтра", overdue: "просрочено на {n} дн.",
@@ -410,11 +421,11 @@ async function adminHome() {
   try {
     loading();
     const h = await api("/app/api/home"); const c = h.counts;
-    const dl = (h.deadlines || []).map((x) => `<div class="dl"><div class="who"><b>${esc(x.serial_number)}</b><small>${esc(stepName(x.current_step))}${x.customer ? " · " + esc(x.customer) : ""}</small></div>${deadlineChip(x.deadline)}</div>`).join("");
+    const dl = (h.deadlines || []).map((x) => `<button class="dl go" data-truck="${x.truck_id}"><div class="who"><b>${esc(x.serial_number)}</b><small>${esc(stepName(x.current_step))}${x.customer ? " · " + esc(x.customer) : ""}</small></div>${deadlineChip(x.deadline)}</button>`).join("");
     render(`<div class="wrap">${topBar()}<h1 style="margin-bottom:12px">Baaz Trucks</h1>
       <div class="tiles">
-        <div class="card tile"><b>${c.active}</b><span>${t("active")}</span></div><div class="card tile"><b>${c.done}</b><span>${t("done")}</span></div>
-        <div class="card tile"><b>${c.review}</b><span>${t("review")}</span></div><div class="card tile"><b>${c.returned}</b><span>${t("returned_n")}</span></div>
+        <button class="card tile" data-f="active"><b>${c.active}</b><span>${t("active")}</span></button><button class="card tile" data-f="done"><b>${c.done}</b><span>${t("done")}</span></button>
+        <button class="card tile" data-f="review"><b>${c.review}</b><span>${t("review")}</span></button><button class="card tile" data-f="returned"><b>${c.returned}</b><span>${t("returned_n")}</span></button>
       </div>
       <div class="sub">${t("today_title")}</div>
       <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
@@ -425,8 +436,78 @@ async function adminHome() {
       ${dl ? `<div class="sub">${t("near_deadlines")}</div><div class="card">${dl}</div>` : ""}
       <div class="actions"><button class="btn" id="panel">🖥 ${t("open_panel")}</button></div></div>`);
     bindTabs();
+    document.querySelectorAll("[data-f]").forEach((b) => b.onclick = () => push(() => trucksScreen(b.dataset.f)));
+    document.querySelectorAll("[data-truck]").forEach((b) => b.onclick = () => push(() => openTruck(+b.dataset.truck)));
     document.getElementById("panel").onclick = () => { const u = location.origin + "/"; tg && tg.openLink ? tg.openLink(u) : window.open(u, "_blank"); };
   } catch (e) { errorScreen(e, adminHome); }
+}
+
+/* ============================ Admin: trucklar va bosqichlar ============================ */
+const backBtn = () => (tg && tg.BackButton && tg.initData) ? "" : `<button class="back" id="back">‹ ${t("back")}</button>`;
+const bindBack = () => { const b = document.getElementById("back"); if (b) b.onclick = goBack; };
+function fmtDur(sec) {
+  const m = Math.max(1, Math.round(sec / 60));
+  if (m < 60) return t("min_ago", { n: m });
+  if (m < 2880) return t("hour_ago", { n: Math.round(m / 60) });
+  return t("day_ago", { n: Math.round(m / 1440) });
+}
+async function trucksScreen(f) {
+  U = null; loading();
+  try {
+    const r = await api("/app/api/trucks?f=" + f);
+    const title = { active: t("active"), done: t("done"), review: t("review"), returned: t("returned_n") }[f];
+    const card = (x) => {
+      const rej = x.step_status === "rejected" && x.qc_comment ? `<div class="banner">↩️ ${t("reason")}: ${esc(x.qc_comment)}</div>` : "";
+      const st = x.truck_status === "completed" ? `<span class="chip ok">✅ ${t("done")}</span>` : statusChip(x.step_status === "pending" ? "" : x.step_status);
+      const who = x.worker_name && x.truck_status !== "completed" ? `<span class="chip">👷 ${esc(x.worker_name)}</span>` : "";
+      const wait = x.step_status === "in_review" && x.submitted_at ? `<span class="chip warn">⏱ ${t("waiting", { t: ago(x.submitted_at) })}</span>` : "";
+      return `<button class="card task" data-truck="${x.truck_id}"><div class="img pic">${pic(x.has_image ? modelUrl(x.model_id) : "")}</div><div class="body">
+        <div class="ttl"><b>${esc(x.serial_number)}</b><span class="go">›</span></div>
+        <div class="hint">${esc(stepName(x.current_step))} · ${esc(x.model || "")}${x.customer ? " · " + esc(x.customer) : ""}</div>
+        <div class="meta">${st}${x.truck_status === "completed" ? "" : deadlineChip(x.deadline)}${prioChip(x.priority)}${who}${wait}</div>
+        ${stepper(x.current_step, x.truck_status === "completed")}${rej}</div></button>`;
+    };
+    render(`<div class="wrap">${backBtn()}<h1 style="margin-bottom:12px">${title} <span class="hint">· ${r.items.length}</span></h1>
+      <div class="list">${r.items.length ? r.items.map(card).join("") : `<div class="empty"><div class="big">🚚</div><h2>${t("no_trucks")}</h2></div>`}</div></div>`);
+    bindBack();
+    document.querySelectorAll("[data-truck]").forEach((c) => c.onclick = () => push(() => openTruck(+c.dataset.truck)));
+  } catch (e) { errorScreen(e, () => trucksScreen(f)); }
+}
+async function openTruck(id) {
+  U = null; loading();
+  try {
+    const d = await api("/app/api/truck/" + id);
+    const done = d.truck_status === "completed";
+    const hero = d.has_image ? `<div class="hero pic">${pic(modelUrl(d.model_id))}</div>` : "";
+    const facts = [
+      `<div class="fact"><small>${t("deadline")}</small><b>${d.deadline ? deadlineChip(d.deadline) : "—"}</b></div>`,
+      `<div class="fact"><small>${t("prio_label")}</small><b>${prioChip(d.priority) || `<span class="chip">${t("prio_normal")}</span>`}</b></div>`,
+      d.customer ? `<div class="fact wide"><small>${t("customer")}</small><b>${esc(d.customer)}</b></div>` : "",
+    ].join("");
+    const row = (s) => {
+      const never = s.status === "pending" && !s.is_current && !s.worker_name;
+      const dot = s.status === "approved" ? ["ok", "✓"] : s.status === "in_review" ? ["info", "⏳"] : s.status === "rejected" ? ["bad", "↩"] : ["", String(s.step_number)];
+      const sub = [];
+      if (s.worker_name) sub.push("👷 " + esc(s.worker_name));
+      if (s.rejects) sub.push("↩️ " + t("rej_times", { n: s.rejects }));
+      if (never) sub.push(t("s_wait"));
+      let end = "";
+      if (s.status === "approved" && s.seconds != null) end = "⏱ " + fmtDur(s.seconds);
+      else if (s.status === "in_review" && s.submitted_at) end = t("waiting", { t: ago(s.submitted_at) });
+      else if (s.is_current && s.started_at) end = t("since", { t: ago(s.started_at) });
+      const tag = never ? "div" : "button";
+      return `<${tag} class="stage ${never ? "wait" : "go"}" ${never ? "" : `data-step="${s.step_id}"`}><div class="dot ${dot[0]} ${s.is_current ? "cur" : ""}">${dot[1]}</div>
+        <div class="mid"><b>${esc(stepName(s.step_number))}</b>${sub.length ? `<small>${sub.join(" · ")}</small>` : ""}</div><div class="end">${end}</div></${tag}>`;
+    };
+    render(`<div class="wrap">${backBtn()}<div class="card">${hero}
+      <div class="sect"><h1 class="serial">${esc(d.serial_number)}</h1>
+        <div class="tline" style="margin-top:4px"><div class="hint">${esc(d.model || "")}</div>${done ? `<span class="chip ok">✅ ${t("done")}</span>` : ""}</div>
+        ${stepper(d.current_step, done, true)}</div>
+      <div class="facts">${facts}</div></div>
+      <div class="sub">${t("stages")}</div><div class="card">${d.stages.map(row).join("")}</div></div>`);
+    bindBack();
+    document.querySelectorAll("[data-step]").forEach((c) => c.onclick = () => push(() => openStep(+c.dataset.step)));
+  } catch (e) { errorScreen(e, () => openTruck(id)); }
 }
 
 /* ============================ Vazifa / ish tafsiloti ============================ */
@@ -450,7 +531,7 @@ async function openStep(id) {
       d.customer ? `<div class="fact wide"><small>${t("customer")}</small><b>${esc(d.customer)}</b></div>` : "",
       isQc && d.worker_name ? `<div class="fact wide"><small>${t("worker")}</small><b class="who2">${avatar(d.worker_id, d.worker_name, d.worker_photo)}${esc(d.worker_name)}</b></div>` : "",
     ].join("");
-    render(`<div class="wrap"><div class="card">${d.has_image ? `<div class="hero pic">${hero}</div>` : ""}
+    render(`<div class="wrap">${S.user.role === "admin" ? backBtn() : ""}<div class="card">${d.has_image ? `<div class="hero pic">${hero}</div>` : ""}
       <div class="sect"><h1 class="serial">${esc(d.serial_number)}</h1>
         <div class="tline" style="margin-top:4px"><div class="hint">${esc(stepName(d.step_number))}${d.model ? " · " + esc(d.model) : ""}</div>${d.status === "pending" ? "" : statusChip(d.status)}</div>${stepper(d.step_number, d.status === "approved", true)}${rej}</div>
       ${media ? `<div class="sect" style="padding-bottom:4px">${media}</div>` : ""}
@@ -459,6 +540,7 @@ async function openStep(id) {
       ${d.worker_comment && d.status !== "pending" && d.status !== "rejected" ? `<div class="todo" style="border-left-color:var(--hint);background:rgba(120,128,150,.12)"><div class="hint">💬</div><div class="note">${esc(d.worker_comment)}</div></div>` : ""}
       </div>
       ${actions ? `<div class="actions">${actions}</div>` : ""}</div>`);
+    bindBack();
     const w = document.getElementById("work"); if (w) w.onclick = () => push(() => submitScreen(d));
     const a = document.getElementById("appr"); if (a) a.onclick = () => approveFlow(d);
     const r = document.getElementById("rej"); if (r) r.onclick = () => rejectSheet(d);
